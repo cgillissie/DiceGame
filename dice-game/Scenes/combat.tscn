@@ -157,6 +157,7 @@ theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Next Fight"
 
 [node name="DebugWinButton" type="Button" parent="." unique_id=1774507278]
+visible = false
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -169,6 +170,7 @@ grow_horizontal = 2
 text = "DEBUG: WIN"
 
 [node name="DebugGoldButton" type="Button" parent="." unique_id=1446857691]
+visible = false
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -386,14 +388,28 @@ size_flags_vertical = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "End Turn"
 
+[node name="DefeatLabel" type="Label" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=1238438577]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Defeat!"
+
+[node name="RestartRunButton" type="Button" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=523253605]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Restart Run"
+
 [node name="LeftMarginContainer" type="MarginContainer" parent="." unique_id=553270972]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_top = -90.0
+offset_top = -96.0
 offset_right = 1038.0
-offset_bottom = 90.0
+offset_bottom = 96.0
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 20
@@ -429,12 +445,6 @@ theme_override_fonts/font = ExtResource("8_d53gg")
 visible = false
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
-
-[node name="DefeatLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=1238438577]
-visible = false
-layout_mode = 2
-theme_override_fonts/font = ExtResource("8_d53gg")
-text = "Defeat!"
 
 [node name="Spacer" type="Control" parent="LeftMarginContainer/VBoxContainer" unique_id=1869727748]
 custom_minimum_size = Vector2(0, 40)

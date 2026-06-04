@@ -32,7 +32,7 @@ var camera_original_position: Vector3
 @onready var gold_container: GridContainer = $LeftMarginContainer/VBoxContainer/GoldGroup/GoldDiceContainer
 @onready var healing_container: GridContainer = $LeftMarginContainer/VBoxContainer/HealingGroup/HealingDiceContainer
 @onready var misses_container: GridContainer = $DiceArea/CenterContainer/DiceGroupsContainer/MissesGroup/MissesDiceContainer
-@onready var defeat_label: Label = $LeftMarginContainer/VBoxContainer/DefeatLabel
+@onready var defeat_label: Label = $TopMarginContainer/CenterContainer/VBoxContainer/DefeatLabel
 @onready var player_hp_label: Label = $LeftMarginContainer/VBoxContainer/PlayerHPLabel
 @onready var end_round_button: Button = $TopMarginContainer/CenterContainer/VBoxContainer/EndRoundButton
 @export var enemy_dice: Array[DiceData]
@@ -93,6 +93,8 @@ var dropped_face: DiceFace
 @onready var buy_heal_button: Button = $ShopPanel/VBoxContainer/ItemGrid/BuyHealButton
 @onready var next_fight_button: Button = $ShopPanel/VBoxContainer/NextFightButton
 @export var random_die_pool: Array[DiceData]
+
+@onready var restart_run_button: Button = $TopMarginContainer/CenterContainer/VBoxContainer/RestartRunButton
 
 # Dice Editing panel
 @onready var edit_dice_button: Button = $ShopPanel/VBoxContainer/EditDiceButton
@@ -201,6 +203,7 @@ func _ready():
 	misses_button.pressed.connect(select_group.bind(misses_container))
 	camera_original_position = combat_camera.position
 	apply_volatile_core_button.pressed.connect(apply_volatile_core)
+	restart_run_button.pressed.connect(restart_run)
 	if current_encounter == null:
 		if encounter_pool.size() > 0:
 			current_encounter = encounter_pool.pick_random()
@@ -1172,64 +1175,78 @@ func end_round():
 
 	update_enemy_3d_nodes()
 
-	var total_enemy_attack := 0
-	var total_enemy_crit := 0
+	last_damage_taken = 0
 
-	for i in active_enemies.size():
-		var enemy = active_enemies[i]
+	for enemy_index in active_enemies.size():
+		if enemy_index < 0 or enemy_index >= active_enemies.size():
+			continue
 
-		total_enemy_attack += enemy["attack"]
-		total_enemy_crit += get_enemy_crit_after_dodge(i)
+		var enemy = active_enemies[enemy_index]
 
-		if enemy["attack"] > 0 or enemy["crit"] > 0:
-			if i < enemy_3d_nodes.size():
-				if is_instance_valid(enemy_3d_nodes[i]):
-					await enemy_3d_nodes[i].play_attack_animation()
+		if enemy_index >= enemy_3d_nodes.size():
+			continue
 
-	var blocked_amount = min(total_enemy_attack, player_block)
+		if !is_instance_valid(enemy_3d_nodes[enemy_index]):
+			continue
 
-	if blocked_amount > 0:
-		AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
-		show_popup_text(
-			player_3d_node,
-			"Block -" + str(blocked_amount),
-			1.0,
-			Color.CORNFLOWER_BLUE
-		)
+		for roll in enemy["rolled_faces"]:
+			var face: DiceFace = roll["face"]
 
-	var damage_taken = total_enemy_attack - player_block
+			if face.result_type != "hit" and face.result_type != "crit":
+				continue
 
-	if damage_taken < 0:
-		damage_taken = 0
+			await enemy_3d_nodes[enemy_index].play_attack_animation()
+			await launch_enemy_die_at_player(enemy_index, face)
 
-	damage_taken += total_enemy_crit
+			var damage := face.value
+
+			if face.result_type == "hit":
+				var blocked_amount = min(damage, player_block)
+
+				if blocked_amount > 0:
+					player_block -= blocked_amount
+
+					if player_block < 0:
+						player_block = 0
+
+					AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
+					show_popup_text(
+						player_3d_node,
+						"Block -" + str(blocked_amount),
+						1.0,
+						Color.CORNFLOWER_BLUE
+					)
+					update_player_block_label()
+					await hit_stop(0.015)
+
+				damage -= blocked_amount
+
+			if damage > 0:
+				player_hp -= damage
+
+				if player_hp < 0:
+					player_hp = 0
+
+				last_damage_taken += damage
+
+				AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
+				show_damage_popup(player_3d_node, damage)
+				player_3d_node.hit_flash()
+				player_3d_node.hurt_bump()
+				screen_shake(0.08, 0.12)
+				update_player_hp_label()
+				await hit_stop(0.035)
+
+			if player_hp <= 0:
+				lose_combat()
+				is_resolving_turn = false
+				return
 
 	clear_used_assigned_dice()
-
-	player_hp -= damage_taken
-
-	if player_hp < 0:
-		player_hp = 0
-
-	last_damage_taken = damage_taken
-
-	if player_3d_node != null and is_instance_valid(player_3d_node):
-		if damage_taken > 0:
-			AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
-			show_damage_popup(player_3d_node, damage_taken)
-			player_3d_node.hit_flash()
-			player_3d_node.hurt_bump()
-			screen_shake(0.08, 0.12)
-			await hit_stop(0.04)
 
 	update_player_hp_label()
 	update_player_block_label()
 	update_combat_log()
-
-	if player_hp <= 0:
-		lose_combat()
-		is_resolving_turn = false
-		return
 
 	apply_end_round_relics()
 
@@ -1428,6 +1445,10 @@ func lose_combat():
 
 	end_round_button.disabled = true
 	defeat_label.visible = true
+	restart_run_button.visible = true
+	
+func restart_run():
+	get_tree().reload_current_scene()
 	
 func start_new_combat():
 	combat_over = false
