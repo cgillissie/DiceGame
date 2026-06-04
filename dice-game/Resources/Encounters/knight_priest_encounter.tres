@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://b15etw1mjr3wf"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_t8i00"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_2mogb"]
+[ext_resource type="Resource" uid="uid://d1ntd5vnlbm8r" path="res://Resources/Enemies/knight.tres" id="2_75ysp"]
+[ext_resource type="Resource" uid="uid://bsq715u8lxlwo" path="res://Resources/Enemies/priest.tres" id="3_acoxe"]
+
+[resource]
+script = ExtResource("2_2mogb")
+encounter_name = "Pilgrim Escort"
+enemies = Array[ExtResource("1_t8i00")]([ExtResource("2_75ysp"), ExtResource("3_acoxe")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

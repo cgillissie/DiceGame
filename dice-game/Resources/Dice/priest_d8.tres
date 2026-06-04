@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://bxhdjt8rdci25"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_fawx4"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_6pxlk"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_tc7mh"]
+[ext_resource type="Texture2D" uid="uid://b6upkl1qfj4bi" path="res://Assets/Sprites/FaceIcons/HealFace.png" id="3_hx7jg"]
+[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="4_ttfvb"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="5_sa3vo"]
+
+[sub_resource type="Resource" id="Resource_fawx4"]
+script = ExtResource("1_fawx4")
+icon = ExtResource("2_6pxlk")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_tc7mh"]
+script = ExtResource("1_fawx4")
+result_type = "heal"
+value = 2
+label = "Heal 2"
+icon = ExtResource("3_hx7jg")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_6pxlk"]
+script = ExtResource("1_fawx4")
+result_type = "heal"
+value = 2
+label = "Heal 2"
+icon = ExtResource("3_hx7jg")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_b0216"]
+script = ExtResource("1_fawx4")
+result_type = "heal"
+value = 3
+label = "Heal 3"
+icon = ExtResource("3_hx7jg")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_hx7jg"]
+script = ExtResource("1_fawx4")
+result_type = "block"
+value = 2
+label = "Block 2"
+icon = ExtResource("4_ttfvb")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_ttfvb"]
+script = ExtResource("1_fawx4")
+result_type = "block"
+value = 2
+label = "Block 2"
+icon = ExtResource("4_ttfvb")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_sa3vo"]
+script = ExtResource("1_fawx4")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("5_sa3vo")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_yb6ni"]
+script = ExtResource("1_fawx4")
+result_type = "hit"
+value = 2
+label = "Hit 2"
+icon = ExtResource("5_sa3vo")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_tc7mh")
+die_name = "Priest D8"
+sides = 8
+faces = Array[ExtResource("1_fawx4")]([SubResource("Resource_fawx4"), SubResource("Resource_tc7mh"), SubResource("Resource_6pxlk"), SubResource("Resource_b0216"), SubResource("Resource_hx7jg"), SubResource("Resource_ttfvb"), SubResource("Resource_sa3vo"), SubResource("Resource_yb6ni")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

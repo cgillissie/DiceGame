@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://bwg810kbjv25b"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_wp66o"]
+
+[resource]
+script = ExtResource("1_wp66o")
+face_name = "Dodge"
+result_type = "dodge"
+label = "Dodge"
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://c14idgf8wxtoa"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_bdwlu"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_lgnks"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_7era2"]
+[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="2_k51dg"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="3_87vh8"]
+[ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="4_fjb84"]
+
+[sub_resource type="Resource" id="Resource_j8io2"]
+script = ExtResource("1_bdwlu")
+icon = ExtResource("2_7era2")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_mpvj5"]
+script = ExtResource("1_bdwlu")
+result_type = "block"
+value = 2
+icon = ExtResource("2_k51dg")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_ib4p8"]
+script = ExtResource("1_bdwlu")
+result_type = "hit"
+value = 1
+icon = ExtResource("3_87vh8")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_vf8qh"]
+script = ExtResource("1_bdwlu")
+result_type = "hit"
+value = 1
+icon = ExtResource("3_87vh8")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_ivtpr"]
+script = ExtResource("1_bdwlu")
+result_type = "hit"
+value = 1
+icon = ExtResource("3_87vh8")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_k2ktx"]
+script = ExtResource("1_bdwlu")
+result_type = "crit"
+value = 3
+icon = ExtResource("4_fjb84")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("1_lgnks")
+can_explode = true
+die_name = "Basic D6"
+faces = Array[ExtResource("1_bdwlu")]([SubResource("Resource_j8io2"), SubResource("Resource_mpvj5"), SubResource("Resource_ib4p8"), SubResource("Resource_vf8qh"), SubResource("Resource_ivtpr"), SubResource("Resource_k2ktx")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

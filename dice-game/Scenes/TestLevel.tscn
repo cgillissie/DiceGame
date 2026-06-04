@@ -1,0 +1,63 @@
+[gd_scene format=3 uid="uid://ig314vnvt0q3"]
+
+[ext_resource type="PackedScene" uid="uid://bjaeeix81al1x" path="res://Assets/3D Models/StoneDirtBackground.gltf" id="1_bhm8u"]
+[ext_resource type="PackedScene" uid="uid://cjmjbkhykcaty" path="res://Scenes/StandingTorch.tscn" id="2_5ms4e"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5ms4e"]
+
+[sub_resource type="Environment" id="Environment_bhm8u"]
+ambient_light_energy = 0.2
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.01
+
+[node name="Node3D" type="Node3D" unique_id=520438478]
+
+[node name="default" parent="." unique_id=1313860571 instance=ExtResource("1_bhm8u")]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="default" unique_id=1697613233]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="default/StaticBody3D" unique_id=618016855]
+transform = Transform3D(16, 0, 0, 0, 16, 0, 0, 0, 16, 0, -7.955118, 0)
+shape = SubResource("BoxShape3D_5ms4e")
+
+[node name="default2" parent="." unique_id=855050463 instance=ExtResource("1_bhm8u")]
+transform = Transform3D(1, 0, 0, 0, 0.12477913, -0.9921845, 0, 0.9921845, 0.12477913, 0, -8.347224, -0.45896912)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="default2" unique_id=2094561533]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="default2/StaticBody3D" unique_id=396166395]
+transform = Transform3D(16, 0, 0, 0, 16, 0, 0, 0, 16, 0, -7.955118, 0)
+shape = SubResource("BoxShape3D_5ms4e")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=446332238]
+environment = SubResource("Environment_bhm8u")
+
+[node name="Node3D" parent="." unique_id=515978237 instance=ExtResource("2_5ms4e")]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, -4.4115305, 0.3727448, -2.987249)
+
+[node name="Node3D2" parent="." unique_id=930156447 instance=ExtResource("2_5ms4e")]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, -1.5057106, 0.3727448, -2.987249)
+
+[node name="Node3D3" parent="." unique_id=580458815 instance=ExtResource("2_5ms4e")]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 1.7174103, 0.3727448, -2.987249)
+
+[node name="Node3D4" parent="." unique_id=410103862 instance=ExtResource("2_5ms4e")]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 4.426918, 0.3727448, -2.987249)
+
+[node name="Spotlight3D" type="SpotLight3D" parent="." unique_id=1790239446]
+transform = Transform3D(0.8910065, -0.34624422, 0.29363647, 0.05150339, 0.7197055, 0.6923664, -0.45105967, -0.6017797, 0.6590951, 0, 4.4094534, 3.086374)
+light_color = Color(0.8817765, 0.51975286, 0.31919432, 1)
+shadow_enabled = true
+distance_fade_enabled = true
+spot_range = 11.393
+spot_attenuation = -1.09
+spot_angle = 25.4
+
+[node name="Spotlight3D2" type="SpotLight3D" parent="." unique_id=1737478973]
+transform = Transform3D(0.8910063, 0.31422633, -0.32767224, 0, 0.7217601, 0.69214296, 0.4539904, -0.6167039, 0.64309293, 0, 4.4094534, 3.086374)
+light_color = Color(0.8817765, 0.51975286, 0.31919432, 1)
+shadow_enabled = true
+distance_fade_enabled = true
+spot_range = 11.393
+spot_attenuation = -1.09
+spot_angle = 25.4

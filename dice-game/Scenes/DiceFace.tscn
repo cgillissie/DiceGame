@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://tykxv72ibv5j"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_slm57"]
+
+[node name="DiceFace" type="Node" unique_id=689420741]
+script = ExtResource("1_slm57")

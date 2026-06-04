@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://grxx6jpankx2"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_p3kti"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_2fkvk"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_8ech3"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="3_nfua6"]
+[ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="4_ik0ll"]
+
+[sub_resource type="Resource" id="Resource_wwr7j"]
+script = ExtResource("1_p3kti")
+icon = ExtResource("2_8ech3")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_0o4f0"]
+script = ExtResource("1_p3kti")
+result_type = "hit"
+value = 1
+icon = ExtResource("3_nfua6")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_sr5ib"]
+script = ExtResource("1_p3kti")
+result_type = "hit"
+value = 2
+icon = ExtResource("3_nfua6")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_4gido"]
+script = ExtResource("1_p3kti")
+result_type = "hit"
+value = 2
+icon = ExtResource("3_nfua6")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_kkepu"]
+script = ExtResource("1_p3kti")
+result_type = "hit"
+value = 3
+icon = ExtResource("3_nfua6")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_pdlem"]
+script = ExtResource("1_p3kti")
+result_type = "crit"
+value = 3
+icon = ExtResource("4_ik0ll")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_2fkvk")
+die_name = "Enemy Attack D6"
+faces = Array[ExtResource("1_p3kti")]([SubResource("Resource_wwr7j"), SubResource("Resource_0o4f0"), SubResource("Resource_sr5ib"), SubResource("Resource_4gido"), SubResource("Resource_kkepu"), SubResource("Resource_pdlem")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

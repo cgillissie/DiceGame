@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://wyx6nrds81fu"]
+
+[ext_resource type="Script" uid="uid://dupq0kcds3ysj" path="res://damage_popup_3d.gd" id="1_akjtq"]
+[ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="2_ueoxf"]
+
+[node name="DamagePopup3D" type="Node3D" unique_id=691398509]
+script = ExtResource("1_akjtq")
+
+[node name="Label3D" type="Label3D" parent="." unique_id=187155928]
+billboard = 1
+no_depth_test = true
+font = ExtResource("2_ueoxf")
+font_size = 48
+outline_size = 8

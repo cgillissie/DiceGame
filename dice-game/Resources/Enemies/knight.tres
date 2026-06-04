@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://d1ntd5vnlbm8r"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_w8iod"]
+[ext_resource type="Resource" uid="uid://ce7mugms5kks4" path="res://Resources/Dice/basic_d8.tres" id="2_yusvf"]
+[ext_resource type="Resource" uid="uid://bre3sadthm15k" path="res://Resources/Dice/knight_attack_d6.tres" id="3_wtf8f"]
+[ext_resource type="Resource" uid="uid://daexndfltroac" path="res://Resources/Dice/enemy_defense_d6.tres" id="4_od7d8"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="5_cgnl8"]
+[ext_resource type="Resource" uid="uid://d26iud6qeexv5" path="res://Resources/Faces/block_1_face.tres" id="6_d2vjs"]
+[ext_resource type="Resource" uid="uid://sqmtv632iip5" path="res://Resources/Faces/block_2_face.tres" id="7_b6shd"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="8_wahoo"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="9_gei1o"]
+[ext_resource type="SpriteFrames" uid="uid://b18wn4grfop71" path="res://Resources/SpriteFrames/KnightSpriteSheet.tres" id="10_yusvf"]
+
+[resource]
+script = ExtResource("9_gei1o")
+enemy_name = "Knight"
+max_hp = 5
+dice_pool = Array[ExtResource("1_w8iod")]([ExtResource("3_wtf8f"), ExtResource("4_od7d8")])
+face_drop_pool = Array[ExtResource("5_cgnl8")]([ExtResource("6_d2vjs"), ExtResource("7_b6shd"), ExtResource("8_wahoo")])
+dice_drop_pool = Array[ExtResource("1_w8iod")]([ExtResource("2_yusvf")])
+dice_drop_chance = 0.1
+volatile_core_drop_chance = 0.05
+sprite_frames = ExtResource("10_yusvf")
+sprite_scale = Vector3(4, 4, 4)
+sprite_offset = Vector3(0, 0.1, 0)
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

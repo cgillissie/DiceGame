@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://5gpwcvp6nbm4"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_t7c7u"]
+[ext_resource type="Resource" uid="uid://crbay6mgltlg0" path="res://Resources/Dice/acolyte_d8.tres" id="2_62f34"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_dn2q0"]
+[ext_resource type="Resource" uid="uid://cip0r1wht8x4h" path="res://Resources/Dice/acolyte_d10.tres" id="2_rkmco"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="3_2qdje"]
+[ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="3_dvjqi"]
+[ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="5_m0xso"]
+[ext_resource type="SpriteFrames" uid="uid://cc4neuin2qp6k" path="res://Resources/SpriteFrames/AcolyteSpriteFrames.tres" id="8_m0xso"]
+
+[resource]
+script = ExtResource("3_2qdje")
+enemy_name = "Acolyte"
+max_hp = 3
+dice_pool = Array[ExtResource("1_t7c7u")]([ExtResource("2_rkmco"), ExtResource("3_dvjqi")])
+face_drop_pool = Array[ExtResource("2_dn2q0")]([ExtResource("5_m0xso")])
+dice_drop_pool = Array[ExtResource("1_t7c7u")]([ExtResource("2_62f34")])
+dice_drop_chance = 0.1
+gold_reward = 20
+volatile_core_drop_chance = 0.15
+sprite_frames = ExtResource("8_m0xso")
+sprite_scale = Vector3(4, 4, 4)
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

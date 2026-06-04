@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://4shp1rvmh8wp"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_5a2vq"]
+[ext_resource type="Resource" uid="uid://s7033tbvm1f2" path="res://Resources/Dice/basic_d4.tres" id="2_65j85"]
+[ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="3_uralg"]
+[ext_resource type="Resource" uid="uid://daexndfltroac" path="res://Resources/Dice/enemy_defense_d6.tres" id="4_brliy"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="5_g8hdv"]
+[ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="6_a11xo"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="7_5qokg"]
+[ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="8_peuxe"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="9_nh72w"]
+[ext_resource type="SpriteFrames" uid="uid://2oesgg5ytnd7" path="res://Resources/SpriteFrames/GoblinSpriteFrames.tres" id="10_65j85"]
+
+[resource]
+script = ExtResource("9_nh72w")
+enemy_name = "Goblin"
+max_hp = 3
+dice_pool = Array[ExtResource("1_5a2vq")]([ExtResource("3_uralg"), ExtResource("4_brliy")])
+face_drop_pool = Array[ExtResource("5_g8hdv")]([ExtResource("6_a11xo"), ExtResource("7_5qokg"), ExtResource("8_peuxe")])
+dice_drop_pool = Array[ExtResource("1_5a2vq")]([ExtResource("2_65j85")])
+dice_drop_chance = 0.1
+volatile_core_drop_chance = 0.05
+sprite_frames = ExtResource("10_65j85")
+sprite_scale = Vector3(4, 4, 4)
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

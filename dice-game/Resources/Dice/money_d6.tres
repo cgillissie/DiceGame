@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://brr2ndd54ku0q"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_w3l2n"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_0o33u"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_jomye"]
+[ext_resource type="Texture2D" uid="uid://qvfhsu0sul02" path="res://Assets/Sprites/FaceIcons/GoldIcon.png" id="3_kvd5r"]
+[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="4_j57ly"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="5_0eon4"]
+
+[sub_resource type="Resource" id="Resource_w3l2n"]
+script = ExtResource("1_w3l2n")
+icon = ExtResource("2_0o33u")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_jomye"]
+script = ExtResource("1_w3l2n")
+result_type = "gold"
+value = 2
+label = "Gold 2"
+icon = ExtResource("3_kvd5r")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_t58ts"]
+script = ExtResource("1_w3l2n")
+result_type = "gold"
+value = 2
+label = "Gold 2"
+icon = ExtResource("3_kvd5r")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_pvts2"]
+script = ExtResource("1_w3l2n")
+result_type = "gold"
+value = 3
+label = "Gold 3"
+icon = ExtResource("3_kvd5r")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_w0cvq"]
+script = ExtResource("1_w3l2n")
+result_type = "block"
+value = 1
+label = "Block 1"
+icon = ExtResource("4_j57ly")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_1u2th"]
+script = ExtResource("1_w3l2n")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("5_0eon4")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_jomye")
+die_name = "Bandit Die"
+faces = Array[ExtResource("1_w3l2n")]([SubResource("Resource_w3l2n"), SubResource("Resource_jomye"), SubResource("Resource_t58ts"), SubResource("Resource_pvts2"), SubResource("Resource_w0cvq"), SubResource("Resource_1u2th")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

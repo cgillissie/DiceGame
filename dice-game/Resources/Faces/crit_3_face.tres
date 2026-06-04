@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://bsmdc53g4o3c5"]
+
+[ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="1_i1s2x"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_l718h"]
+
+[resource]
+script = ExtResource("1_l718h")
+result_type = "crit"
+value = 3
+label = "Crit 3"
+icon = ExtResource("1_i1s2x")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://cbhejdob6qdba"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_6sisn"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_20w3k"]
+[ext_resource type="Resource" uid="uid://dgh00weyr8smo" path="res://Resources/Enemies/bandit.tres" id="2_jm7fb"]
+
+[resource]
+script = ExtResource("2_20w3k")
+encounter_name = "Bandit Ambush"
+enemies = Array[ExtResource("1_6sisn")]([ExtResource("2_jm7fb"), ExtResource("2_jm7fb"), ExtResource("2_jm7fb")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

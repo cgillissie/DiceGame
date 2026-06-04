@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://bdegaytpdlf3p"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_22ow4"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="1_n2gd4"]
+
+[resource]
+script = ExtResource("1_22ow4")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("1_n2gd4")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

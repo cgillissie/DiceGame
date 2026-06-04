@@ -1,0 +1,84 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://cbl1o38c3eud6"]
+
+[ext_resource type="Texture2D" uid="uid://c00ui743cfj1y" path="res://Assets/Sprites/SpriteSheets/PriestSpriteSheet.png" id="1_yi7rt"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yi7rt"]
+atlas = ExtResource("1_yi7rt")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cgncn"]
+atlas = ExtResource("1_yi7rt")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xrscq"]
+atlas = ExtResource("1_yi7rt")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7i0tm"]
+atlas = ExtResource("1_yi7rt")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nv500"]
+atlas = ExtResource("1_yi7rt")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uf2ei"]
+atlas = ExtResource("1_yi7rt")
+region = Rect2(64, 32, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yi7rt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cgncn")
+}],
+"loop": true,
+"name": &"attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xrscq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xrscq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xrscq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xrscq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xrscq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xrscq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xrscq")
+}],
+"loop": true,
+"name": &"heal",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7i0tm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nv500")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uf2ei")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nv500")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

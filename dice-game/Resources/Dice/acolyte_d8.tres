@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://crbay6mgltlg0"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_7hoip"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_nrxa4"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_yi0d1"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="3_2jn3d"]
+[ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="4_vhfge"]
+
+[sub_resource type="Resource" id="Resource_7hoip"]
+script = ExtResource("1_7hoip")
+icon = ExtResource("2_yi0d1")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_nrxa4"]
+script = ExtResource("1_7hoip")
+icon = ExtResource("2_yi0d1")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_2mv7y"]
+script = ExtResource("1_7hoip")
+result_type = "hit"
+value = 2
+label = "Hit 2"
+icon = ExtResource("3_2jn3d")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_yi0d1"]
+script = ExtResource("1_7hoip")
+result_type = "crit"
+value = 3
+label = "Crit 3"
+icon = ExtResource("4_vhfge")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_2jn3d"]
+script = ExtResource("1_7hoip")
+result_type = "crit"
+value = 3
+label = "Crit 3"
+icon = ExtResource("4_vhfge")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_vhfge"]
+script = ExtResource("1_7hoip")
+result_type = "crit"
+value = 4
+label = "Crit 4"
+icon = ExtResource("4_vhfge")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_3utos"]
+script = ExtResource("1_7hoip")
+result_type = "crit"
+value = 4
+label = "Crit 4"
+icon = ExtResource("4_vhfge")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_ge5dv"]
+script = ExtResource("1_7hoip")
+result_type = "crit"
+value = 5
+label = "Crit 5"
+icon = ExtResource("4_vhfge")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_nrxa4")
+die_name = "Acolyte D8"
+sides = 8
+faces = Array[ExtResource("1_7hoip")]([SubResource("Resource_7hoip"), SubResource("Resource_nrxa4"), SubResource("Resource_2mv7y"), SubResource("Resource_yi0d1"), SubResource("Resource_2jn3d"), SubResource("Resource_vhfge"), SubResource("Resource_3utos"), SubResource("Resource_ge5dv")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

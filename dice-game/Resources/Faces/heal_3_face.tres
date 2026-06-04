@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://dj6p82bkcskuk"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_645mt"]
+[ext_resource type="Texture2D" uid="uid://b6upkl1qfj4bi" path="res://Assets/Sprites/FaceIcons/HealFace.png" id="1_fyaid"]
+
+[resource]
+script = ExtResource("1_645mt")
+result_type = "heal"
+value = 3
+label = "Heal 3"
+icon = ExtResource("1_fyaid")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://dfkdar8lyf48p"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_g4o3u"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_ucd6g"]
+
+[sub_resource type="Resource" id="Resource_g4o3u"]
+script = ExtResource("1_g4o3u")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_ucd6g"]
+script = ExtResource("1_g4o3u")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_iciwp"]
+script = ExtResource("1_g4o3u")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_guw1h"]
+script = ExtResource("1_g4o3u")
+result_type = "crit"
+value = 3
+label = "Crit 3"
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_76svs"]
+script = ExtResource("1_g4o3u")
+result_type = "crit"
+value = 4
+label = "Crit 4"
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_uq1nj"]
+script = ExtResource("1_g4o3u")
+result_type = "crit"
+value = 5
+label = "Crit 5"
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_ucd6g")
+faces = Array[ExtResource("1_g4o3u")]([SubResource("Resource_g4o3u"), SubResource("Resource_ucd6g"), SubResource("Resource_iciwp"), SubResource("Resource_guw1h"), SubResource("Resource_76svs"), SubResource("Resource_uq1nj")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

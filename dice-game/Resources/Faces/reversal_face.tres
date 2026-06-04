@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://dy3ws0w57a5eq"]
+
+[ext_resource type="Texture2D" uid="uid://cmjs6j7hxopy6" path="res://Assets/Sprites/FaceIcons/ReversalFace.png" id="1_2ci6u"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_vuj3n"]
+
+[resource]
+script = ExtResource("1_vuj3n")
+face_name = "Reversal"
+result_type = "reversal"
+label = "Reversal"
+icon = ExtResource("1_2ci6u")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

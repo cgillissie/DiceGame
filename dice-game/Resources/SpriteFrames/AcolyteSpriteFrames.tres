@@ -1,0 +1,61 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://cc4neuin2qp6k"]
+
+[ext_resource type="Texture2D" uid="uid://b5fqou3h3ntvq" path="res://Assets/Sprites/SpriteSheets/AcolyteSpriteSheet.png" id="1_bcil4"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ydj4c"]
+atlas = ExtResource("1_bcil4")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_umnik"]
+atlas = ExtResource("1_bcil4")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_80odp"]
+atlas = ExtResource("1_bcil4")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ch5c6"]
+atlas = ExtResource("1_bcil4")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2u8c8"]
+atlas = ExtResource("1_bcil4")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8mrmj"]
+atlas = ExtResource("1_bcil4")
+region = Rect2(240, 0, 48, 48)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ydj4c")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_umnik")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_80odp")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ch5c6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2u8c8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8mrmj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2u8c8")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

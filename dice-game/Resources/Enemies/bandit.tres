@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://dgh00weyr8smo"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_s1pfn"]
+[ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="2_0mn4v"]
+[ext_resource type="Resource" uid="uid://brr2ndd54ku0q" path="res://Resources/Dice/money_d6.tres" id="2_b3vgr"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_yofmu"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="3_1h330"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="4_b3vgr"]
+[ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="5_pggym"]
+[ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="6_bw7nq"]
+[ext_resource type="SpriteFrames" uid="uid://dn80imd65aq2x" path="res://Resources/SpriteFrames/BanditSpriteFrames.tres" id="9_5cxva"]
+
+[resource]
+script = ExtResource("3_1h330")
+enemy_name = "Bandit"
+max_hp = 3
+dice_pool = Array[ExtResource("1_s1pfn")]([ExtResource("2_0mn4v"), ExtResource("2_0mn4v")])
+face_drop_pool = Array[ExtResource("2_yofmu")]([ExtResource("4_b3vgr"), ExtResource("5_pggym"), ExtResource("6_bw7nq")])
+dice_drop_pool = Array[ExtResource("1_s1pfn")]([ExtResource("2_b3vgr")])
+dice_drop_chance = 0.1
+gold_reward = 20
+volatile_core_drop_chance = 0.1
+sprite_frames = ExtResource("9_5cxva")
+sprite_scale = Vector3(4, 4, 4)
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

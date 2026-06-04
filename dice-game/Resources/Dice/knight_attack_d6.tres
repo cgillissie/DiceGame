@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://bre3sadthm15k"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_ik7dq"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_33dnb"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_qk104"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="3_agsgk"]
+[ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="4_8xtsc"]
+
+[sub_resource type="Resource" id="Resource_ik7dq"]
+script = ExtResource("1_ik7dq")
+icon = ExtResource("2_qk104")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_33dnb"]
+script = ExtResource("1_ik7dq")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("3_agsgk")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_ipumx"]
+script = ExtResource("1_ik7dq")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("3_agsgk")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_cr63k"]
+script = ExtResource("1_ik7dq")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("3_agsgk")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_65fko"]
+script = ExtResource("1_ik7dq")
+result_type = "hit"
+value = 2
+label = "Hit 2"
+icon = ExtResource("3_agsgk")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_pkaru"]
+script = ExtResource("1_ik7dq")
+result_type = "crit"
+value = 3
+label = "Crit 3"
+icon = ExtResource("4_8xtsc")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_33dnb")
+die_name = "Knight Attack D6"
+faces = Array[ExtResource("1_ik7dq")]([SubResource("Resource_ik7dq"), SubResource("Resource_33dnb"), SubResource("Resource_ipumx"), SubResource("Resource_cr63k"), SubResource("Resource_65fko"), SubResource("Resource_pkaru")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

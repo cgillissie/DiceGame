@@ -1,0 +1,691 @@
+[gd_scene format=3 uid="uid://bgsgbcu5fnjsq"]
+
+[ext_resource type="Script" uid="uid://dwgntrk4awjl8" path="res://Scripts/combat.gd" id="1_7jmb3"]
+[ext_resource type="PackedScene" uid="uid://b0h6mrmklvsv3" path="res://Scenes/dice.tscn" id="2_ubpar"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="3_ut0kg"]
+[ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="4_yt1oa"]
+[ext_resource type="PackedScene" uid="uid://bb6efoip4j802" path="res://Scenes/enemy_3d.tscn" id="5_f8ge6"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="6_8xcd4"]
+[ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="7_3w34b"]
+[ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/bandit_acolyte_encounter.tres" id="7_f8ge6"]
+[ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/goblin_encounter.tres" id="8_50454"]
+[ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="8_d53gg"]
+[ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/knight_priest_encounter.tres" id="9_ceo1n"]
+[ext_resource type="FontFile" uid="uid://ikng2ikqxt7i" path="res://Assets/Fonts/PixelOperator8-Bold.ttf" id="9_twsak"]
+[ext_resource type="Resource" uid="uid://s7033tbvm1f2" path="res://Resources/Dice/basic_d4.tres" id="10_8xcd4"]
+[ext_resource type="Resource" uid="uid://ce7mugms5kks4" path="res://Resources/Dice/basic_d8.tres" id="11_f8ge6"]
+[ext_resource type="Resource" uid="uid://dctwxhfavvhag" path="res://Resources/Dice/basic_d10.tres" id="12_50454"]
+[ext_resource type="AudioStream" uid="uid://bic5prsgjpvct" path="res://Assets/Sounds/DiceSFX/DiceClick01.wav" id="14_jcm61"]
+[ext_resource type="AudioStream" uid="uid://btr6pneseftkw" path="res://Assets/Sounds/DiceSFX/DiceGrab02.wav" id="15_ley77"]
+[ext_resource type="AudioStream" uid="uid://cl2nrxpwywjn6" path="res://Assets/Sounds/DiceSFX/DiceClick02.wav" id="16_tmuf1"]
+[ext_resource type="AudioStream" uid="uid://c0y7yq51hap6o" path="res://Assets/Sounds/AttackSFX/SwooshHit01.wav" id="17_5kjvk"]
+[ext_resource type="AudioStream" uid="uid://cwbvygo78th3f" path="res://Assets/Sounds/AttackSFX/ArmorHit01.wav" id="18_3cqtn"]
+[ext_resource type="AudioStream" uid="uid://bbge4urhnjudy" path="res://Assets/Sounds/AttackSFX/Death01.wav" id="19_nar6d"]
+
+[node name="Combat" type="Control" unique_id=1112470734]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_7jmb3")
+dice_scene = ExtResource("2_ubpar")
+starting_dice = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa")])
+enemy_3d_scene = ExtResource("5_f8ge6")
+hit_2_face = ExtResource("7_3w34b")
+basic_d6 = ExtResource("4_yt1oa")
+encounter_pool = Array[ExtResource("6_8xcd4")]([ExtResource("7_f8ge6"), ExtResource("8_50454"), ExtResource("9_ceo1n")])
+random_die_pool = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("10_8xcd4"), ExtResource("11_f8ge6"), ExtResource("12_50454")])
+ui_click_sound = ExtResource("14_jcm61")
+roll_all_sound = ExtResource("15_ley77")
+dice_select_sound = ExtResource("16_tmuf1")
+dice_select_all = ExtResource("15_ley77")
+hit_damage_sound = ExtResource("17_5kjvk")
+hit_blocked_sound = ExtResource("18_3cqtn")
+enemy_death_sound = ExtResource("19_nar6d")
+
+[node name="DiceContainer" type="HBoxContainer" parent="." unique_id=1252800238]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 12
+
+[node name="RollAllButton" type="Button" parent="." unique_id=797202976]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.5
+offset_top = -20.0
+offset_right = 30.5
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Roll"
+
+[node name="ShopPanel" type="Panel" parent="." unique_id=972016648]
+visible = false
+custom_minimum_size = Vector2(300, 220)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -319.0
+offset_top = -247.5
+offset_right = 319.0
+offset_bottom = 247.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ShopPanel" unique_id=175246877]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="ShopLabel" type="Label" parent="ShopPanel/VBoxContainer" unique_id=1746579632]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Buy stuff!"
+
+[node name="GoldLabel" type="Label" parent="ShopPanel/VBoxContainer" unique_id=1384055023]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Gold: "
+
+[node name="ItemGrid" type="GridContainer" parent="ShopPanel/VBoxContainer" unique_id=1083451626]
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 2
+
+[node name="BuyD6Button" type="Button" parent="ShopPanel/VBoxContainer/ItemGrid" unique_id=1617536527]
+custom_minimum_size = Vector2(160, 70)
+layout_mode = 2
+text = "+1 D6"
+
+[node name="BuyReserveSlotButton" type="Button" parent="ShopPanel/VBoxContainer/ItemGrid" unique_id=2062235948]
+custom_minimum_size = Vector2(160, 70)
+layout_mode = 2
+text = "+1 Reserve Slot"
+
+[node name="BuyHealButton" type="Button" parent="ShopPanel/VBoxContainer/ItemGrid" unique_id=1579174481]
+custom_minimum_size = Vector2(160, 70)
+layout_mode = 2
+text = "Heal 10 HP"
+
+[node name="BuyMoneyD6Button" type="Button" parent="ShopPanel/VBoxContainer/ItemGrid" unique_id=620645510]
+visible = false
+custom_minimum_size = Vector2(160, 70)
+layout_mode = 2
+text = "+1 Money D6"
+
+[node name="BuyFaceButton" type="Button" parent="ShopPanel/VBoxContainer/ItemGrid" unique_id=649068335]
+visible = false
+custom_minimum_size = Vector2(160, 70)
+layout_mode = 2
+text = "Hit 2 Face"
+
+[node name="EditDiceButton" type="Button" parent="ShopPanel/VBoxContainer" unique_id=1582558296]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Graft Die"
+
+[node name="NextFightButton" type="Button" parent="ShopPanel/VBoxContainer" unique_id=1676193131]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Next Fight"
+
+[node name="DebugWinButton" type="Button" parent="." unique_id=1774507278]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -186.0
+offset_top = 4.0
+offset_right = -82.0
+offset_bottom = 35.0
+grow_horizontal = 2
+text = "DEBUG: WIN"
+
+[node name="DebugGoldButton" type="Button" parent="." unique_id=1446857691]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 44.0
+offset_top = 5.0
+offset_right = 201.0
+offset_bottom = 36.0
+grow_horizontal = 2
+text = "DEBUG: GOLD +100"
+
+[node name="EditDicePanel" type="Panel" parent="." unique_id=2114238137]
+visible = false
+custom_minimum_size = Vector2(700, 400)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -296.0
+offset_top = -244.0
+offset_right = 304.0
+offset_bottom = 258.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="EditDicePanel" unique_id=1695636420]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 6.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(0, -50)
+
+[node name="EditTitleLabel" type="Label" parent="EditDicePanel/MainVBox" unique_id=682851975]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Edit Faces"
+
+[node name="ApplyVolatileCoreButton" type="Button" parent="EditDicePanel/MainVBox" unique_id=271405246]
+custom_minimum_size = Vector2(60, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Apply Volatile Core"
+
+[node name="ColumnsHBox" type="HBoxContainer" parent="EditDicePanel/MainVBox" unique_id=794230346]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OwnedDiceVbox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=1315731784]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OwnedDiceTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=901338589]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Owned Dice"
+
+[node name="OwnedDiceContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=41111104]
+layout_mode = 2
+
+[node name="DiceFacesVBox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=1510403255]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DiceFacesTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=1247270624]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Die Faces"
+
+[node name="DieFacesContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=807091473]
+layout_mode = 2
+
+[node name="InventoryFacesVBox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=219320983]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="InventoryFacesTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=827871074]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Face Inventory"
+
+[node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1050298506]
+layout_mode = 2
+
+[node name="FuseFacesButton" type="Button" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1559103172]
+custom_minimum_size = Vector2(60, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Fuse Faces"
+
+[node name="CloseEditButton" type="Button" parent="EditDicePanel" unique_id=1863397998]
+custom_minimum_size = Vector2(90, 35)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -38.0
+offset_right = 30.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Close"
+
+[node name="LootPanel" type="Panel" parent="." unique_id=759087292]
+visible = false
+custom_minimum_size = Vector2(300, 220)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -182.0
+offset_right = 150.0
+offset_bottom = 202.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LootVBox" type="VBoxContainer" parent="LootPanel" unique_id=1251335491]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="LootTitleLabel" type="Label" parent="LootPanel/LootVBox" unique_id=159370214]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Loot Claimed!"
+horizontal_alignment = 1
+
+[node name="LootGoldLabel" type="Label" parent="LootPanel/LootVBox" unique_id=770409695]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+theme_override_fonts/font = ExtResource("8_d53gg")
+horizontal_alignment = 1
+
+[node name="LootFaceLabel" type="Label" parent="LootPanel/LootVBox" unique_id=1530673133]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+theme_override_fonts/font = ExtResource("8_d53gg")
+horizontal_alignment = 1
+
+[node name="LootVolatileCoreLabel" type="Label" parent="LootPanel/LootVBox" unique_id=2023435355]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="LootBonusDropLabel" type="Label" parent="LootPanel/LootVBox" unique_id=950226633]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+theme_override_font_sizes/font_size = 24
+
+[node name="LootContinueButton" type="Button" parent="LootPanel/LootVBox" unique_id=426157888]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Continue"
+
+[node name="TopMarginContainer" type="MarginContainer" parent="." unique_id=1023306623]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 156.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="CenterContainer" type="MarginContainer" parent="TopMarginContainer" unique_id=1950962874]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TopMarginContainer/CenterContainer" unique_id=400246781]
+layout_mode = 2
+
+[node name="CombatNumberLabel" type="Label" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=109504293]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Fight: 1"
+
+[node name="EndRoundButton" type="Button" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=374448024]
+custom_minimum_size = Vector2(90, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "End Turn"
+
+[node name="LeftMarginContainer" type="MarginContainer" parent="." unique_id=553270972]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -90.0
+offset_right = 1038.0
+offset_bottom = 90.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LeftMarginContainer" unique_id=855186828]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="CombatLogLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=29125521]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="PlayerHPLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=740199404]
+visible = false
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "player_hp_label.text = \"Player HP: \" + str(player_hp) + \"/\" + str(max_player_hp)"
+
+[node name="ReserveSlotsLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=180732504]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="PlayerBlockLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=1845361872]
+visible = false
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="IncomingDamageLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=578210502]
+visible = false
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="DefeatLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=1238438577]
+visible = false
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Defeat!"
+
+[node name="Spacer" type="Control" parent="LeftMarginContainer/VBoxContainer" unique_id=1869727748]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="BlocksGroup" type="VBoxContainer" parent="LeftMarginContainer/VBoxContainer" unique_id=879070404]
+visible = false
+custom_minimum_size = Vector2(120, 90)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="BlocksButton" type="Button" parent="LeftMarginContainer/VBoxContainer/BlocksGroup" unique_id=1886245652]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Blocks"
+
+[node name="BlocksDiceContainer" type="GridContainer" parent="LeftMarginContainer/VBoxContainer/BlocksGroup" unique_id=1009821216]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
+[node name="HealingGroup" type="VBoxContainer" parent="LeftMarginContainer/VBoxContainer" unique_id=464980064]
+visible = false
+custom_minimum_size = Vector2(120, 90)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="HealingButton" type="Button" parent="LeftMarginContainer/VBoxContainer/HealingGroup" unique_id=349543232]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Healing"
+
+[node name="HealingDiceContainer" type="GridContainer" parent="LeftMarginContainer/VBoxContainer/HealingGroup" unique_id=1638010600]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
+[node name="GoldGroup" type="VBoxContainer" parent="LeftMarginContainer/VBoxContainer" unique_id=1118932694]
+visible = false
+custom_minimum_size = Vector2(120, 90)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="GoldButton" type="Button" parent="LeftMarginContainer/VBoxContainer/GoldGroup" unique_id=1995270888]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Gold"
+
+[node name="GoldDiceContainer" type="GridContainer" parent="LeftMarginContainer/VBoxContainer/GoldGroup" unique_id=1279993701]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="RightMarginContainer" type="MarginContainer" parent="." unique_id=1751299702]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -216.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RightMarginContainer" unique_id=560344934]
+layout_mode = 2
+
+[node name="EnemiesLabel" type="Label" parent="RightMarginContainer/VBoxContainer" unique_id=2105378525]
+visible = false
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Enemies"
+
+[node name="EnemyButtonsContainer" type="VBoxContainer" parent="RightMarginContainer/VBoxContainer" unique_id=1721480681]
+layout_mode = 2
+theme_override_constants/separation = 64
+
+[node name="EncounterPanel" type="Panel" parent="." unique_id=1764677060]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -154.0
+offset_top = -121.0
+offset_right = 171.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="EncounterPanel" unique_id=1651252849]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="EncounterTitleLabel" type="Label" parent="EncounterPanel/VBoxContainer" unique_id=284923240]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Choose Your Next Fight"
+
+[node name="ChoiceButton1" type="Button" parent="EncounterPanel/VBoxContainer" unique_id=1831464656]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="ChoiceButton2" type="Button" parent="EncounterPanel/VBoxContainer" unique_id=915807162]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="ChoiceButton3" type="Button" parent="EncounterPanel/VBoxContainer" unique_id=1658272009]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="DiceArea" type="Control" parent="." unique_id=404056048]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="DiceArea" unique_id=900916830]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -19.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DiceGroupsContainer" type="HBoxContainer" parent="DiceArea/CenterContainer" unique_id=1332855313]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+
+[node name="HitsGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=1065417075]
+visible = false
+custom_minimum_size = Vector2(170, 180)
+layout_mode = 2
+
+[node name="HitsButton" type="Button" parent="DiceArea/CenterContainer/DiceGroupsContainer/HitsGroup" unique_id=213242566]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Hits"
+
+[node name="HitsDiceContainer" type="GridContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer/HitsGroup" unique_id=138648008]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 4
+
+[node name="CritsGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=2116378373]
+visible = false
+custom_minimum_size = Vector2(170, 180)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CritsButton" type="Button" parent="DiceArea/CenterContainer/DiceGroupsContainer/CritsGroup" unique_id=1447337386]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Crits"
+
+[node name="CritsDiceContainer" type="GridContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer/CritsGroup" unique_id=2090880017]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 4
+
+[node name="MissesGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=408449911]
+visible = false
+custom_minimum_size = Vector2(170, 180)
+layout_mode = 2
+
+[node name="MissesButton" type="Button" parent="DiceArea/CenterContainer/DiceGroupsContainer/MissesGroup" unique_id=824009496]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Misses"
+
+[node name="MissesDiceContainer" type="GridContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer/MissesGroup" unique_id=245989900]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 4
+
+[node name="ActionsGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=2068123690]
+visible = false
+layout_mode = 2
+
+[node name="ActionsButton" type="Button" parent="DiceArea/CenterContainer/DiceGroupsContainer/ActionsGroup" unique_id=1828632501]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Actions"
+
+[node name="ActionsDiceContainer" type="GridContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer/ActionsGroup" unique_id=1235442747]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 4
+
+[node name="RelicLabel" type="Label" parent="." unique_id=73021013]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="AssignedDiceOverlay" type="Control" parent="." unique_id=1295446666]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EnemyRollOverlay" type="Control" parent="." unique_id=1489674176]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RollAnimationArea" type="CenterContainer" parent="." unique_id=1358301581]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RollingHiddenArea" type="Control" parent="." unique_id=1452667070]
+visible = false
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2

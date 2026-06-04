@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://s7033tbvm1f2"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_eo6pu"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_0m811"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_gt1kv"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="3_4j663"]
+[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="4_2a1tp"]
+
+[sub_resource type="Resource" id="Resource_eo6pu"]
+script = ExtResource("1_eo6pu")
+icon = ExtResource("2_gt1kv")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_0m811"]
+script = ExtResource("1_eo6pu")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("3_4j663")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_qxrca"]
+script = ExtResource("1_eo6pu")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("3_4j663")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_gt1kv"]
+script = ExtResource("1_eo6pu")
+result_type = "block"
+value = 1
+label = "Block 1"
+icon = ExtResource("4_2a1tp")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_0m811")
+die_name = "Basic D4"
+sides = 4
+faces = Array[ExtResource("1_eo6pu")]([SubResource("Resource_eo6pu"), SubResource("Resource_0m811"), SubResource("Resource_qxrca"), SubResource("Resource_gt1kv")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

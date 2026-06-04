@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://cjmjbkhykcaty"]
+
+[ext_resource type="Texture2D" uid="uid://d3si5haafqneo" path="res://Assets/Sprites/StandingTorch.png" id="1_enbe1"]
+[ext_resource type="Material" uid="uid://cksbopme2brm0" path="res://Scenes/Spark.tres" id="2_qvqrk"]
+[ext_resource type="Material" uid="uid://b3uofmkjs2g7c" path="res://Scenes/Ash.tres" id="3_aq8v4"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_bocgh"]
+emission_shape_scale = Vector3(0.05, 0.05, 0.05)
+emission_shape = 1
+emission_sphere_radius = 0.7
+gravity = Vector3(0, 0.03, 0)
+
+[sub_resource type="SphereMesh" id="SphereMesh_i18r6"]
+material = ExtResource("2_qvqrk")
+radius = 0.001
+height = 0.001
+
+[sub_resource type="SphereMesh" id="SphereMesh_47vrg"]
+material = ExtResource("3_aq8v4")
+radius = 0.001
+height = 0.001
+
+[node name="Node3D" type="Node3D" unique_id=515978237]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 0, 0, 0)
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=952995287]
+texture_filter = 0
+texture = ExtResource("1_enbe1")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=598763444]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15888682, 0)
+light_color = Color(1, 0.2784314, 0, 1)
+shadow_enabled = true
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="." unique_id=384275026]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15893458, 0)
+lifetime = 4.0
+interp_to_end = 1.0
+explosiveness = 0.33
+randomness = 0.23
+process_material = SubResource("ParticleProcessMaterial_bocgh")
+draw_pass_1 = SubResource("SphereMesh_i18r6")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=2037667656]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15893458, 0)
+lifetime = 4.0
+interp_to_end = 1.0
+explosiveness = 0.53
+randomness = 0.28
+process_material = SubResource("ParticleProcessMaterial_bocgh")
+draw_passes = 2
+draw_pass_1 = SubResource("SphereMesh_47vrg")
+draw_pass_2 = null

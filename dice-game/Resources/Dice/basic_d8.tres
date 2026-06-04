@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://ce7mugms5kks4"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_jt24p"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_4efv5"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_lsmlu"]
+[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="3_kpmhy"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="4_6iygj"]
+
+[sub_resource type="Resource" id="Resource_jt24p"]
+script = ExtResource("1_jt24p")
+icon = ExtResource("2_4efv5")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_lsmlu"]
+script = ExtResource("1_jt24p")
+result_type = "block"
+value = 2
+label = "Block 2"
+icon = ExtResource("3_kpmhy")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_soit3"]
+script = ExtResource("1_jt24p")
+result_type = "block"
+value = 2
+label = "Block 2"
+icon = ExtResource("3_kpmhy")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_4efv5"]
+script = ExtResource("1_jt24p")
+result_type = "block"
+value = 3
+label = "Block 3"
+icon = ExtResource("3_kpmhy")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_kpmhy"]
+script = ExtResource("1_jt24p")
+result_type = "block"
+value = 4
+label = "Block 4"
+icon = ExtResource("3_kpmhy")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_6iygj"]
+script = ExtResource("1_jt24p")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("4_6iygj")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_nj3gv"]
+script = ExtResource("1_jt24p")
+result_type = "hit"
+value = 1
+label = "Hit 1"
+icon = ExtResource("4_6iygj")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_v1400"]
+script = ExtResource("1_jt24p")
+result_type = "hit"
+value = 2
+label = "Hit 2"
+icon = ExtResource("4_6iygj")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_lsmlu")
+die_name = "Basic D8"
+sides = 8
+faces = Array[ExtResource("1_jt24p")]([SubResource("Resource_jt24p"), SubResource("Resource_lsmlu"), SubResource("Resource_soit3"), SubResource("Resource_4efv5"), SubResource("Resource_kpmhy"), SubResource("Resource_6iygj"), SubResource("Resource_nj3gv"), SubResource("Resource_v1400")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

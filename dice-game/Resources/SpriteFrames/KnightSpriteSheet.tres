@@ -1,0 +1,61 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://b18wn4grfop71"]
+
+[ext_resource type="Texture2D" uid="uid://b5c37hee84vbf" path="res://Assets/Sprites/SpriteSheets/KnightSpriteSheet.png" id="1_ha10i"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f2n8y"]
+atlas = ExtResource("1_ha10i")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jrhcm"]
+atlas = ExtResource("1_ha10i")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_72uyx"]
+atlas = ExtResource("1_ha10i")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jgld6"]
+atlas = ExtResource("1_ha10i")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wckh6"]
+atlas = ExtResource("1_ha10i")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_30wn8"]
+atlas = ExtResource("1_ha10i")
+region = Rect2(240, 0, 48, 48)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f2n8y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jrhcm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_72uyx")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jgld6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wckh6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_30wn8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wckh6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

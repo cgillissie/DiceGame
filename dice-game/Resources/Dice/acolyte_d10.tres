@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://cip0r1wht8x4h"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_5isvi"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_g1e04"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_lmymk"]
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="2_scjkh"]
+[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="3_g1e04"]
+[ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="4_7lspm"]
+
+[sub_resource type="Resource" id="Resource_5isvi"]
+script = ExtResource("1_5isvi")
+icon = ExtResource("2_g1e04")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_lmymk"]
+script = ExtResource("1_5isvi")
+icon = ExtResource("2_g1e04")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_kxr3p"]
+script = ExtResource("1_5isvi")
+result_type = "hit"
+value = 2
+label = "Hit 2"
+icon = ExtResource("2_scjkh")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_scjkh"]
+script = ExtResource("1_5isvi")
+result_type = "hit"
+value = 2
+label = "Hit 2"
+icon = ExtResource("2_scjkh")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_g1e04"]
+script = ExtResource("1_5isvi")
+result_type = "block"
+value = 2
+label = "Block 2"
+icon = ExtResource("3_g1e04")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_7lspm"]
+script = ExtResource("1_5isvi")
+result_type = "block"
+value = 2
+label = "Block 2"
+icon = ExtResource("3_g1e04")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_npxub"]
+script = ExtResource("1_5isvi")
+result_type = "crit"
+value = 3
+label = "Crit 3"
+icon = ExtResource("4_7lspm")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_7qqr3"]
+script = ExtResource("1_5isvi")
+result_type = "crit"
+value = 3
+label = "Crit 3"
+icon = ExtResource("4_7lspm")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_383wf"]
+script = ExtResource("1_5isvi")
+result_type = "crit"
+value = 4
+label = "Crit 4"
+icon = ExtResource("4_7lspm")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_moelv"]
+script = ExtResource("1_5isvi")
+result_type = "crit"
+value = 4
+label = "Crit 4"
+icon = ExtResource("4_7lspm")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_lmymk")
+die_name = "Acolyte D10"
+sides = 10
+faces = Array[ExtResource("1_5isvi")]([SubResource("Resource_5isvi"), SubResource("Resource_lmymk"), SubResource("Resource_kxr3p"), SubResource("Resource_scjkh"), SubResource("Resource_g1e04"), SubResource("Resource_7lspm"), SubResource("Resource_npxub"), SubResource("Resource_7qqr3"), SubResource("Resource_383wf"), SubResource("Resource_moelv")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"
