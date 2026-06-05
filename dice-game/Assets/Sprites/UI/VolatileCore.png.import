@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bt3e23o7t1maf"
-path="res://.godot/imported/VolatileCore.png-3c027869102900d76e8d6e71ebdf4c54.ctex"
+path="res://.godot/imported/VolatileCore.png-5154b1f61fa2929da17ab617713d0bc9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/FaceIcons/VolatileCore.png"
-dest_files=["res://.godot/imported/VolatileCore.png-3c027869102900d76e8d6e71ebdf4c54.ctex"]
+source_file="res://Assets/Sprites/UI/VolatileCore.png"
+dest_files=["res://.godot/imported/VolatileCore.png-5154b1f61fa2929da17ab617713d0bc9.ctex"]
 
 [params]
 

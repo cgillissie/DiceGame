@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bes0na0diuqsl"]
 
-[ext_resource type="Script" uid="uid://ckg7se57kja7i" path="res://Scenes/player_3d.gd" id="1_ryx18"]
+[ext_resource type="Script" uid="uid://ckg7se57kja7i" path="res://Scripts/player_3d.gd" id="1_ryx18"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="2_hsehg"]
 [ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="2_pll4t"]
 

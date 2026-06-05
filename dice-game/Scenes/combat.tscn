@@ -6,8 +6,11 @@
 [ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="4_yt1oa"]
 [ext_resource type="PackedScene" uid="uid://bb6efoip4j802" path="res://Scenes/enemy_3d.tscn" id="5_f8ge6"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="6_8xcd4"]
+[ext_resource type="PackedScene" uid="uid://bn5rpt5shg320" path="res://Scenes/InventoryFaceButton.tscn" id="6_e8ln5"]
+[ext_resource type="PackedScene" uid="uid://cxycx6mqq2suc" path="res://Scenes/OwnedDieButton.tscn" id="6_nar6d"]
 [ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="7_3w34b"]
 [ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/bandit_acolyte_encounter.tres" id="7_f8ge6"]
+[ext_resource type="PackedScene" uid="uid://bes0na0diuqsl" path="res://Scenes/player_3d.tscn" id="7_umvpd"]
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/goblin_encounter.tres" id="8_50454"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="8_d53gg"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/knight_priest_encounter.tres" id="9_ceo1n"]
@@ -18,9 +21,12 @@
 [ext_resource type="AudioStream" uid="uid://bic5prsgjpvct" path="res://Assets/Sounds/DiceSFX/DiceClick01.wav" id="14_jcm61"]
 [ext_resource type="AudioStream" uid="uid://btr6pneseftkw" path="res://Assets/Sounds/DiceSFX/DiceGrab02.wav" id="15_ley77"]
 [ext_resource type="AudioStream" uid="uid://cl2nrxpwywjn6" path="res://Assets/Sounds/DiceSFX/DiceClick02.wav" id="16_tmuf1"]
+[ext_resource type="PackedScene" uid="uid://cbsgq1ayk5uoq" path="res://Scenes/equipped_face_button.tscn" id="17_5g3cp"]
 [ext_resource type="AudioStream" uid="uid://c0y7yq51hap6o" path="res://Assets/Sounds/AttackSFX/SwooshHit01.wav" id="17_5kjvk"]
 [ext_resource type="AudioStream" uid="uid://cwbvygo78th3f" path="res://Assets/Sounds/AttackSFX/ArmorHit01.wav" id="18_3cqtn"]
 [ext_resource type="AudioStream" uid="uid://bbge4urhnjudy" path="res://Assets/Sounds/AttackSFX/Death01.wav" id="19_nar6d"]
+[ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/VolatileCore.png" id="26_2n3pb"]
+[ext_resource type="Texture2D" uid="uid://bisodn2buja81" path="res://Assets/Sprites/UI/SewingNeedle.png" id="26_5g3cp"]
 
 [node name="Combat" type="Control" unique_id=1112470734]
 layout_mode = 3
@@ -33,10 +39,14 @@ script = ExtResource("1_7jmb3")
 dice_scene = ExtResource("2_ubpar")
 starting_dice = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa")])
 enemy_3d_scene = ExtResource("5_f8ge6")
+inventory_face_button_scene = ExtResource("6_e8ln5")
+player_3d_scene = ExtResource("7_umvpd")
 hit_2_face = ExtResource("7_3w34b")
 basic_d6 = ExtResource("4_yt1oa")
 encounter_pool = Array[ExtResource("6_8xcd4")]([ExtResource("7_f8ge6"), ExtResource("8_50454"), ExtResource("9_ceo1n")])
 random_die_pool = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("10_8xcd4"), ExtResource("11_f8ge6"), ExtResource("12_50454")])
+owned_die_button_scene = ExtResource("6_nar6d")
+equipped_face_button_scene = ExtResource("17_5g3cp")
 ui_click_sound = ExtResource("14_jcm61")
 roll_all_sound = ExtResource("15_ley77")
 dice_select_sound = ExtResource("16_tmuf1")
@@ -105,8 +115,8 @@ theme_override_constants/separation = 16
 [node name="ShopLabel" type="Label" parent="ShopPanel/VBoxContainer" unique_id=1746579632]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("8_d53gg")
-text = "Buy stuff!"
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "SHOP"
 
 [node name="GoldLabel" type="Label" parent="ShopPanel/VBoxContainer" unique_id=1384055023]
 layout_mode = 2
@@ -220,24 +230,33 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Apply Volatile Core"
+icon = ExtResource("26_2n3pb")
 
 [node name="ColumnsHBox" type="HBoxContainer" parent="EditDicePanel/MainVBox" unique_id=794230346]
 layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="OwnedDiceVbox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=1315731784]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(260, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="OwnedDiceTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=901338589]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_fonts/font = ExtResource("9_twsak")
 text = "Owned Dice"
 
-[node name="OwnedDiceContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=41111104]
+[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=1355921481]
+custom_minimum_size = Vector2(260, 300)
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="OwnedDiceContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer" unique_id=41111104]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="DiceFacesVBox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=1510403255]
 custom_minimum_size = Vector2(200, 0)
@@ -247,7 +266,7 @@ size_flags_horizontal = 3
 [node name="DiceFacesTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=1247270624]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_fonts/font = ExtResource("9_twsak")
 text = "Die Faces"
 
 [node name="DieFacesContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=807091473]
@@ -261,10 +280,15 @@ size_flags_horizontal = 3
 [node name="InventoryFacesTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=827871074]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_fonts/font = ExtResource("9_twsak")
 text = "Face Inventory"
 
-[node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1050298506]
+[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1493564940]
+custom_minimum_size = Vector2(0, 250)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer" unique_id=1050298506]
 layout_mode = 2
 
 [node name="FuseFacesButton" type="Button" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1559103172]
@@ -273,6 +297,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Fuse Faces"
+icon = ExtResource("26_5g3cp")
 
 [node name="CloseEditButton" type="Button" parent="EditDicePanel" unique_id=1863397998]
 custom_minimum_size = Vector2(90, 35)
@@ -393,7 +418,7 @@ visible = false
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
-text = "Defeat!"
+text = "YOU DIED!"
 
 [node name="RestartRunButton" type="Button" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=523253605]
 visible = false

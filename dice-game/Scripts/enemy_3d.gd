@@ -23,8 +23,13 @@ signal selected(enemy_index)
 var enemy_index: int = -1
 var enemy_data: EnemyData
 
+var home_position: Vector3
+var hurt_tween: Tween
+
 func _ready():
 	area.input_event.connect(_on_area_input_event)
+	home_position = position
+	
 func setup(index: int, enemy: Dictionary):
 	enemy_index = index
 	
@@ -69,12 +74,13 @@ func death_animation():
 	queue_free()
 	
 func hurt_bump():
-	var start_pos := position
+	if hurt_tween != null and hurt_tween.is_valid():
+		hurt_tween.kill()
 
-	position = start_pos + Vector3(0.30, 0, 0)
+	position = home_position + Vector3(0.30, 0, 0)
 
-	var tween := create_tween()
-	tween.tween_property(self, "position", start_pos, 0.08)
+	hurt_tween = create_tween()
+	hurt_tween.tween_property(self, "position", home_position, 0.08)
 	
 func play_attack_animation():
 	if enemy_data == null:

@@ -4,6 +4,7 @@ extends Control
 @export var dice_scene: PackedScene
 @export var starting_dice: Array[DiceData]
 @export var enemy_3d_scene: PackedScene
+@export var inventory_face_button_scene: PackedScene
 
 var enemy_3d_nodes: Array[Enemy3D] = []
 
@@ -99,16 +100,20 @@ var dropped_face: DiceFace
 # Dice Editing panel
 @onready var edit_dice_button: Button = $ShopPanel/VBoxContainer/EditDiceButton
 @onready var edit_dice_panel: Panel = $EditDicePanel
-@onready var owned_dice_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox/OwnedDiceContainer
 @onready var die_faces_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox/DieFacesContainer
-@onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox/InventoryFacesContainer
 @onready var close_edit_button: Button = $EditDicePanel/CloseEditButton
 @onready var fuse_faces_button: Button = $EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox/FuseFacesButton
 @onready var apply_volatile_core_button = $EditDicePanel/MainVBox/ApplyVolatileCoreButton
+@onready var owned_dice_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer/OwnedDiceContainer
+@export var owned_die_button_scene: PackedScene
+@export var equipped_face_button_scene: PackedScene
+@onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer/InventoryFacesContainer
 
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
-
+var selected_die_face_index: int = -1
+var selected_die_face_index_2: int = -1
+var selected_edit_die: DiceData = null
 
 # Loot panel
 @onready var loot_panel: Panel = $LootPanel
@@ -153,8 +158,7 @@ var last_volatile_cores_gained: int = 0
 
 var owned_dice: Array[DiceData] = []
 
-var selected_edit_die: DiceData = null
-var selected_die_face_index: int = -1
+
 
 var hovered_enemy_index: int = -1
 
@@ -1604,11 +1608,16 @@ func toggle_fusion_mode():
 	refresh_edit_dice_panel()
 	
 func handle_inventory_face_click(index: int):
-	if fusion_mode:
-		select_inventory_face(index)
-	else:
-		install_inventory_face(index)
 	AudioManager.play_ui(ui_click_sound)
+
+	if selected_die_face_index != -1 and !fusion_mode:
+		install_inventory_face(index)
+		selected_inventory_face_indices.clear()
+		refresh_edit_dice_panel()
+		return
+
+	select_inventory_face(index)
+	refresh_edit_dice_panel()
 func open_edit_dice_panel():
 	if shop_panel.visible == false:
 		return
@@ -1633,62 +1642,105 @@ func close_edit_dice_panel():
 	update_fuse_button_text()
 
 func refresh_edit_dice_panel():
+	rebuild_owned_dice_grid()
 
-	# then rebuild buttons here
-	clear_container(owned_dice_container)
 	clear_container(die_faces_container)
 	clear_container(inventory_faces_container)
-	
-	for child in owned_dice_container.get_children():
-		owned_dice_container.remove_child(child)
-		child.queue_free()
 
-	for child in die_faces_container.get_children():
-		die_faces_container.remove_child(child)
-		child.queue_free()
+	rebuild_face_inventory_grid()
 
-	for child in inventory_faces_container.get_children():
-		inventory_faces_container.remove_child(child)
-		child.queue_free()
-
-	for i in owned_dice.size():
-		var die_button := Button.new()
-		die_button.text = owned_dice[i].die_name + " #" + str(i + 1)
-
-		if owned_dice[i] == selected_edit_die:
-			die_button.text = "> " + die_button.text + " <"
-
-		die_button.pressed.connect(select_edit_die.bind(owned_dice[i]))
-		owned_dice_container.add_child(die_button)
-		
-	print("Face inventory size: ", face_inventory.size())
-	for i in face_inventory.size():
-		var inv_face := face_inventory[i]
-		var inv_button := Button.new()
-		inv_button.text = get_face_display_name(inv_face)
-
-		if selected_inventory_face_indices.has(i):
-			inv_button.text = "> " + inv_button.text + " <"
-
-		inv_button.pressed.connect(handle_inventory_face_click.bind(i))
-		inventory_faces_container.add_child(inv_button)
-	
 	if selected_edit_die != null:
 		for i in selected_edit_die.faces.size():
 			var face := selected_edit_die.faces[i]
-			var face_button := Button.new()
-			face_button.text = str(i + 1) + ": " + get_face_display_name(face)
-			
-			if face.result_type == "miss" and count_misses(selected_edit_die) <= 1:
-				face_button.text += " (Required)"
 
-			if i == selected_die_face_index:
-				face_button.text = "> " + face_button.text + " <"
-
-			face_button.pressed.connect(select_die_face.bind(i))
+			var face_button = equipped_face_button_scene.instantiate()
 			die_faces_container.add_child(face_button)
-		
 
+			face_button.setup(face, i, i == selected_die_face_index)
+			face_button.pressed.connect(select_die_face.bind(i))
+	
+func rebuild_face_inventory_grid():
+	clear_container(inventory_faces_container)
+
+	var face_order := [
+		"hit",
+		"crit",
+		"block",
+		"heal",
+		"vitality",
+		"gold",
+		"dodge",
+		"reversal",
+		"miss"
+	]
+
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	inventory_faces_container.add_child(grid)
+
+	for result_type in face_order:
+		for i in face_inventory.size():
+			var face := face_inventory[i]
+
+			if face.result_type != result_type:
+				continue
+
+			var button: InventoryFaceButton = inventory_face_button_scene.instantiate()
+			grid.add_child(button)
+
+			button.setup(face, selected_inventory_face_indices.has(i))
+			button.pressed.connect(handle_inventory_face_click.bind(i))
+			
+func rebuild_owned_dice_grid():
+	clear_container(owned_dice_container)
+
+	var die_sizes := [4, 6, 8, 10, 12, 20]
+
+	for sides in die_sizes:
+		var dice_of_size: Array[int] = []
+
+		for i in owned_dice.size():
+			if owned_dice[i].sides == sides:
+				dice_of_size.append(i)
+
+		if dice_of_size.is_empty():
+			continue
+
+		var label := Label.new()
+		label.text = "D" + str(sides)
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		owned_dice_container.add_child(label)
+
+		var grid := GridContainer.new()
+		grid.columns = 3
+		grid.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		grid.custom_minimum_size = Vector2(240, 0)
+		grid.add_theme_constant_override("h_separation", 8)
+		grid.add_theme_constant_override("v_separation", 8)
+		owned_dice_container.add_child(grid)
+
+		var category_index := 1
+
+		for global_index in dice_of_size:
+			var button: OwnedDieButton = owned_die_button_scene.instantiate()
+			grid.add_child(button)
+
+			button.setup(
+				owned_dice[global_index],
+				category_index,
+				owned_dice[global_index] == selected_edit_die
+			)
+
+			button.pressed.connect(select_edit_die.bind(owned_dice[global_index]))
+
+			button.custom_minimum_size = Vector2(64, 64)
+			button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+			category_index += 1
+			
 func select_inventory_face(index: int):
 	if selected_inventory_face_indices.has(index):
 		selected_inventory_face_indices.erase(index)
@@ -1718,6 +1770,25 @@ func clear_container(container: Container):
 		child.queue_free()
 		
 func fuse_selected_faces():
+	if selected_edit_die != null and selected_die_face_index != -1 and selected_inventory_face_indices.size() == 1:
+		var equipped_face: DiceFace = selected_edit_die.faces[selected_die_face_index]
+		var inventory_index: int = selected_inventory_face_indices[0]
+		var inventory_face: DiceFace = face_inventory[inventory_index]
+
+		if !can_fuse_faces(equipped_face, inventory_face):
+			return
+
+		var new_face := create_fused_face(equipped_face, inventory_face)
+
+		selected_edit_die.faces[selected_die_face_index] = new_face
+		face_inventory.remove_at(inventory_index)
+
+		selected_die_face_index = -1
+		selected_inventory_face_indices.clear()
+
+		refresh_edit_dice_panel()
+		return
+
 	if fusion_mode:
 		fuse_faces_button.text = "Fuse Selected"
 	else:
@@ -1848,9 +1919,44 @@ func select_die_face(face_index: int):
 
 	if face.result_type == "miss" and count_misses(selected_edit_die) <= 1:
 		return
+
 	AudioManager.play_ui(ui_click_sound)
-	selected_die_face_index = face_index
-	call_deferred("refresh_edit_dice_panel")
+
+	# Inventory face already selected → swap inventory with equipped.
+	if selected_inventory_face_indices.size() > 0 and !fusion_mode:
+		var inventory_index := selected_inventory_face_indices[0]
+		selected_die_face_index = face_index
+		install_inventory_face(inventory_index)
+		selected_inventory_face_indices.clear()
+		selected_die_face_index_2 = -1
+		refresh_edit_dice_panel()
+		return
+
+	# No equipped face selected yet.
+	if selected_die_face_index == -1:
+		selected_die_face_index = face_index
+		selected_die_face_index_2 = -1
+		refresh_edit_dice_panel()
+		return
+
+	# Clicking same equipped face deselects it.
+	if selected_die_face_index == face_index:
+		selected_die_face_index = -1
+		selected_die_face_index_2 = -1
+		refresh_edit_dice_panel()
+		return
+
+	# Different equipped face selected → swap them.
+	selected_die_face_index_2 = face_index
+
+	var temp_face: DiceFace = selected_edit_die.faces[selected_die_face_index]
+	selected_edit_die.faces[selected_die_face_index] = selected_edit_die.faces[selected_die_face_index_2]
+	selected_edit_die.faces[selected_die_face_index_2] = temp_face
+
+	selected_die_face_index = -1
+	selected_die_face_index_2 = -1
+
+	refresh_edit_dice_panel()
 
 
 func install_inventory_face(inventory_index: int):
@@ -1908,7 +2014,7 @@ func count_misses(die_data: DiceData) -> int:
 	return count
 
 func get_reserved_die_count() -> int:
-	rescue_assigned_dice()
+	
 	dice_nodes = dice_nodes.filter(func(die):
 		return is_instance_valid(die)
 	)
@@ -2361,7 +2467,6 @@ func show_enemy_hit_sequence(enemy_index: int, blocked_amount: int, damage_amoun
 	for i in blocked_amount:
 		AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
 
-		active_enemies[enemy_index]["block"] -= 1
 		if active_enemies[enemy_index]["block"] < 0:
 			active_enemies[enemy_index]["block"] = 0
 
@@ -2493,31 +2598,26 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 	match die.current_face.result_type:
 		"hit":
-			var blocked_amount: int = min(die.current_face.value, enemy["block"])
-			var damage_after_block: int = die.current_face.value - blocked_amount
+			var hit_value: int = die.current_face.value
+			var blocked_amount: int = min(hit_value, enemy["block"])
+			var damage_after_block: int = hit_value - blocked_amount
 
 			if enemy["exposed"]:
 				damage_after_block += 1
 				enemy["exposed"] = false
 				show_popup_text(enemy_node, "EXPOSED +1", 2.2, Color.YELLOW)
 
-			for i in blocked_amount:
-				AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
-				enemy["block"] -= 1
-				update_enemy_3d_nodes()
-				show_popup_text(enemy_node, "Block -1", 1.0, Color.CORNFLOWER_BLUE)
-				await hit_stop(0.01)
-				await get_tree().create_timer(0.025).timeout
+			enemy["block"] -= blocked_amount
+			if enemy["block"] < 0:
+				enemy["block"] = 0
+
+			if blocked_amount > 0:
+				await show_enemy_hit_sequence(enemy_index, blocked_amount, 0)
 
 			if damage_after_block > 0:
 				enemy["hp"] -= damage_after_block
 				last_player_damage += damage_after_block
-				AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
-				show_damage_popup(enemy_node, damage_after_block)
-				enemy_node.hit_flash()
-				enemy_node.hurt_bump()
-				screen_shake(0.04, 0.08)
-				await hit_stop(0.02)
+				await show_enemy_hit_sequence(enemy_index, 0, damage_after_block)
 
 		"crit":
 			enemy["hp"] -= die.current_face.value
