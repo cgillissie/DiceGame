@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3 uid="uid://bys75twtv27tr"]
+
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="1_c4bi5"]
+[ext_resource type="Texture2D" uid="uid://c6cuc8tlir2fw" path="res://Assets/Sprites/UI/Food/AppleIcon.png" id="1_gtfer"]
+
+[resource]
+script = ExtResource("1_c4bi5")
+item_name = "Apple"
+description = "+10 Max HP"
+icon = ExtResource("1_gtfer")
+cost = 20
+increase_max_hp = 10
+metadata/_custom_type_script = "uid://cg2kq5l1graas"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3 uid="uid://c4ce8fhdnmv4r"]
+
+[ext_resource type="Texture2D" uid="uid://ctqpbbvmy0plh" path="res://Assets/Sprites/UI/Food/BreadIcon.png" id="1_bmsmx"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="1_l4qgy"]
+
+[resource]
+script = ExtResource("1_l4qgy")
+item_name = "Bread"
+description = "Heals 5 HP"
+icon = ExtResource("1_bmsmx")
+heal_amount = 10
+cost = 10
+metadata/_custom_type_script = "uid://cg2kq5l1graas"

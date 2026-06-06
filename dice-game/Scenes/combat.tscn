@@ -24,9 +24,20 @@
 [ext_resource type="PackedScene" uid="uid://cbsgq1ayk5uoq" path="res://Scenes/equipped_face_button.tscn" id="17_5g3cp"]
 [ext_resource type="AudioStream" uid="uid://c0y7yq51hap6o" path="res://Assets/Sounds/AttackSFX/SwooshHit01.wav" id="17_5kjvk"]
 [ext_resource type="AudioStream" uid="uid://cwbvygo78th3f" path="res://Assets/Sounds/AttackSFX/ArmorHit01.wav" id="18_3cqtn"]
+[ext_resource type="PackedScene" uid="uid://dbvoffg4j0igx" path="res://Scenes/bounty_button.tscn" id="18_tasd2"]
 [ext_resource type="AudioStream" uid="uid://bbge4urhnjudy" path="res://Assets/Sounds/AttackSFX/Death01.wav" id="19_nar6d"]
+[ext_resource type="PackedScene" uid="uid://bsq7fckelmss" path="res://Scenes/ItemButton.tscn" id="25_iv3ie"]
 [ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/VolatileCore.png" id="26_2n3pb"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="26_2r6hp"]
 [ext_resource type="Texture2D" uid="uid://bisodn2buja81" path="res://Assets/Sprites/UI/SewingNeedle.png" id="26_5g3cp"]
+[ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="27_fvi2h"]
+[ext_resource type="Texture2D" uid="uid://b5ee8exgwe82a" path="res://Assets/Sprites/UI/OpenScroll.png" id="28_qwuba"]
+[ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="28_xu8d0"]
+[ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="29_47v24"]
+[ext_resource type="Texture2D" uid="uid://qvfhsu0sul02" path="res://Assets/Sprites/FaceIcons/GoldIcon.png" id="29_qwuba"]
+[ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="30_8is30"]
+[ext_resource type="Texture2D" uid="uid://cta4b83gkfkx8" path="res://Assets/Sprites/UI/LootPopupGoblinFace.png" id="30_iv3ie"]
+[ext_resource type="Texture2D" uid="uid://dswjln01xa1b8" path="res://Assets/Sprites/UI/Player.png" id="31_1rebt"]
 
 [node name="Combat" type="Control" unique_id=1112470734]
 layout_mode = 3
@@ -47,6 +58,7 @@ encounter_pool = Array[ExtResource("6_8xcd4")]([ExtResource("7_f8ge6"), ExtResou
 random_die_pool = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("10_8xcd4"), ExtResource("11_f8ge6"), ExtResource("12_50454")])
 owned_die_button_scene = ExtResource("6_nar6d")
 equipped_face_button_scene = ExtResource("17_5g3cp")
+bounty_button_scene = ExtResource("18_tasd2")
 ui_click_sound = ExtResource("14_jcm61")
 roll_all_sound = ExtResource("15_ley77")
 dice_select_sound = ExtResource("16_tmuf1")
@@ -54,6 +66,8 @@ dice_select_all = ExtResource("15_ley77")
 hit_damage_sound = ExtResource("17_5kjvk")
 hit_blocked_sound = ExtResource("18_3cqtn")
 enemy_death_sound = ExtResource("19_nar6d")
+item_button_scene = ExtResource("25_iv3ie")
+merchant_food_pool = Array[ExtResource("26_2r6hp")]([ExtResource("27_fvi2h"), ExtResource("28_xu8d0"), ExtResource("29_47v24"), ExtResource("30_8is30")])
 
 [node name="DiceContainer" type="HBoxContainer" parent="." unique_id=1252800238]
 layout_mode = 1
@@ -159,7 +173,8 @@ text = "Hit 2 Face"
 [node name="EditDiceButton" type="Button" parent="ShopPanel/VBoxContainer" unique_id=1582558296]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
-text = "Graft Die"
+text = "Graft Dice"
+icon = ExtResource("26_5g3cp")
 
 [node name="NextFightButton" type="Button" parent="ShopPanel/VBoxContainer" unique_id=1676193131]
 layout_mode = 2
@@ -426,6 +441,9 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Restart Run"
+
+[node name="ActiveFoodContainer" type="HBoxContainer" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=1946169497]
+layout_mode = 2
 
 [node name="LeftMarginContainer" type="MarginContainer" parent="." unique_id=553270972]
 layout_mode = 1
@@ -724,3 +742,326 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
+
+[node name="TownPanel" type="Panel" parent="." unique_id=1273314795]
+custom_minimum_size = Vector2(300, 350)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TownPanel" unique_id=1405122934]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -106.0
+offset_top = -88.0
+offset_right = 106.0
+offset_bottom = 88.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="TownTitleLabel" type="Label" parent="TownPanel/VBoxContainer" unique_id=1082642835]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Town"
+
+[node name="BountyBoardButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=1288038863]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Bounty Board"
+icon = ExtResource("28_qwuba")
+
+[node name="EditDiceButtonTown" type="Button" parent="TownPanel/VBoxContainer" unique_id=1980885128]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Graft Dice"
+icon = ExtResource("26_5g3cp")
+
+[node name="MerchantButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=1106819082]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Merchant"
+icon = ExtResource("29_qwuba")
+
+[node name="TrophyButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=2125892391]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Trophies"
+icon = ExtResource("30_iv3ie")
+
+[node name="StartExpeditionButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=110454083]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Start Expedition"
+icon = ExtResource("31_1rebt")
+
+[node name="SelectedBountyLabel" type="Label" parent="TownPanel/VBoxContainer" unique_id=1272050877]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "No Bounty Selected"
+
+[node name="BountyBoardPanel" type="Panel" parent="." unique_id=1948194528]
+visible = false
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BountyBoardPanel" unique_id=794327171]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -91.0
+offset_right = 91.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="BountyBoardTitle" type="Label" parent="BountyBoardPanel/VBoxContainer" unique_id=1388181154]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Bounty Board"
+
+[node name="BountyButtonsContainer" type="VBoxContainer" parent="BountyBoardPanel/VBoxContainer" unique_id=791632575]
+layout_mode = 2
+
+[node name="CloseBountyBoardButton" type="Button" parent="BountyBoardPanel/VBoxContainer" unique_id=918270653]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Close"
+
+[node name="ExpeditionCampPanel" type="Panel" parent="." unique_id=1317433623]
+visible = false
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ExpeditionCampPanel" unique_id=1134211875]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -43.0
+offset_right = 20.0
+offset_bottom = 43.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CampTitleLabel" type="Label" parent="ExpeditionCampPanel/VBoxContainer" unique_id=90890587]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Camp"
+
+[node name="CampStatusLabel" type="Label" parent="ExpeditionCampPanel/VBoxContainer" unique_id=1961535326]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="CampEditDiceButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=2026622507]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Graft Dice"
+
+[node name="CampItemsButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=16657851]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Items"
+
+[node name="CampContinueButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=1325114275]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Continue"
+
+[node name="TrophyPanel" type="Panel" parent="." unique_id=1266931663]
+visible = false
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TrophyPanel" unique_id=1074366161]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -31.0
+offset_right = 20.0
+offset_bottom = 31.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TrophyTitleLabel" type="Label" parent="TrophyPanel/VBoxContainer" unique_id=1390837500]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Trophies"
+
+[node name="TrophyListLabel" type="Label" parent="TrophyPanel/VBoxContainer" unique_id=2108941618]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="CloseTrophyButton" type="Button" parent="TrophyPanel/VBoxContainer" unique_id=121410667]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Close"
+
+[node name="PrepareExpeditionPanel" type="Panel" parent="." unique_id=1367082705]
+visible = false
+custom_minimum_size = Vector2(500, 300)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PrepareExpeditionPanel" unique_id=1600757295]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="PrepareExpeditionLabel" type="Label" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=683000401]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Prepare Expedition"
+
+[node name="SelectedBountyLabel" type="Label" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=239376296]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="PrepareConsumablesContainer" type="GridContainer" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=9204060]
+layout_mode = 2
+columns = 4
+
+[node name="StartExpeditionButton" type="Button" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=431989340]
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Begin"
+
+[node name="CancelButton" type="Button" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=1729419594]
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Cancel"
+
+[node name="MerchantPanel" type="Panel" parent="." unique_id=1727071245]
+visible = false
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MerchantPanel" unique_id=1223079417]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -64.0
+offset_top = 8.0
+offset_right = 64.0
+offset_bottom = 56.0
+grow_horizontal = 2
+
+[node name="MerchantTitleLabel" type="Label" parent="MerchantPanel/VBoxContainer" unique_id=245209774]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Merchant"
+
+[node name="MerchantGoldLabel" type="Label" parent="MerchantPanel/VBoxContainer" unique_id=171989071]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="MerchantStockContainer" type="GridContainer" parent="MerchantPanel/VBoxContainer" unique_id=1179601818]
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 4
+
+[node name="CloseMerchantButton" type="Button" parent="MerchantPanel/VBoxContainer" unique_id=373517899]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Close"

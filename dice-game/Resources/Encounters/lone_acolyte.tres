@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://dq0i40tubry03"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_hu36t"]
+[ext_resource type="Resource" uid="uid://5gpwcvp6nbm4" path="res://Resources/Enemies/acolyte.tres" id="2_dsig7"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_msv4l"]
+
+[resource]
+script = ExtResource("2_msv4l")
+encounter_name = "Acolyte"
+enemies = Array[ExtResource("1_hu36t")]([ExtResource("2_dsig7")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

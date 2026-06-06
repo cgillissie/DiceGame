@@ -6,7 +6,6 @@
 [ext_resource type="PackedScene" uid="uid://bgsgbcu5fnjsq" path="res://Scenes/combat.tscn" id="2_bo1nx"]
 [ext_resource type="PackedScene" uid="uid://wyx6nrds81fu" path="res://Scenes/damage_popup_3d.tscn" id="5_21xkr"]
 [ext_resource type="Script" uid="uid://rk2mjb2mygmu" path="res://Scripts/PlayerCharacterData.gd" id="5_344ge"]
-[ext_resource type="PackedScene" uid="uid://bn5rpt5shg320" path="res://Scenes/InventoryFaceButton.tscn" id="5_jkdf5"]
 [ext_resource type="AudioStream" uid="uid://bak86wjrblxki" path="res://Assets/Sounds/DiceSFX/DiceRoll02.wav" id="5_kry3j"]
 [ext_resource type="SpriteFrames" uid="uid://d3gw0dsh6yjy1" path="res://Resources/SpriteFrames/PlayerKnightSpriteFrames.tres" id="6_ynf5e"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="7_fdnlq"]
@@ -14,6 +13,9 @@
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/goblin_encounter.tres" id="9_wsu2k"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/knight_priest_encounter.tres" id="10_k12tt"]
 [ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/bandit_ambush.tres" id="11_h1bgf"]
+[ext_resource type="PackedScene" uid="uid://dbvoffg4j0igx" path="res://Scenes/bounty_button.tscn" id="13_k12tt"]
+[ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="13_wsu2k"]
+[ext_resource type="Resource" uid="uid://0b5u3iojqwxq" path="res://Resources/Bounties/The Congregation.tres" id="14_k12tt"]
 
 [sub_resource type="Resource" id="Resource_hptm8"]
 script = ExtResource("5_344ge")
@@ -54,12 +56,11 @@ current = true
 size = 5.673
 
 [node name="CombatUI" parent="." unique_id=1112470734 instance=ExtResource("2_bo1nx")]
-inventory_face_button_scene = ExtResource("5_jkdf5")
 player_character_data = SubResource("Resource_hptm8")
-enemy_dice = null
 encounter_pool = Array[ExtResource("7_fdnlq")]([ExtResource("8_jkdf5"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
 damage_popup_scene = ExtResource("5_21xkr")
-enemy_face_drop_pool = null
+bounty_button_scene = ExtResource("13_k12tt")
+bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt")])
 
 [node name="DiceRollSFX" type="AudioStreamPlayer" parent="CombatUI" unique_id=2019394322]
 stream = ExtResource("5_kry3j")

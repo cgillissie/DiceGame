@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://dcran6njk6egl"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_v07qn"]
+[ext_resource type="Resource" uid="uid://d1ntd5vnlbm8r" path="res://Resources/Enemies/knight.tres" id="2_fljas"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_gbp5g"]
+
+[resource]
+script = ExtResource("2_gbp5g")
+encounter_name = "Templar Patrol"
+enemies = Array[ExtResource("1_v07qn")]([ExtResource("2_fljas"), ExtResource("2_fljas")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3 uid="uid://b0axp0mbl6kld"]
+
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="1_ia58v"]
+[ext_resource type="Texture2D" uid="uid://coye4idbmv8q4" path="res://Assets/Sprites/UI/Food/CarrotIcon.png" id="1_qv8ev"]
+
+[resource]
+script = ExtResource("1_ia58v")
+item_name = "Carrot"
+description = "+1 to Blocks"
+icon = ExtResource("1_qv8ev")
+cost = 10
+next_combat_block = 1
+metadata/_custom_type_script = "uid://cg2kq5l1graas"
