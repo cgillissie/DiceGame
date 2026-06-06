@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://c506jxx20y61j"]
+
+[ext_resource type="Script" uid="uid://d2otenqliojej" path="res://active_buff_icon.gd" id="1_c012t"]
+[ext_resource type="Texture2D" uid="uid://bihauefdjddfb" path="res://Assets/Sprites/UI/BuffIconFrame.png" id="2_vrsub"]
+
+[node name="ActiveBuffIcon" type="Control" unique_id=1908623877]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_c012t")
+
+[node name="Border" type="TextureRect" parent="." unique_id=953317722]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("2_vrsub")
+
+[node name="Icon" type="TextureRect" parent="." unique_id=38102297]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

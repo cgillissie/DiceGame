@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://0jjo5lmqwf6c"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_6o5xh"]
+[ext_resource type="Resource" uid="uid://4shp1rvmh8wp" path="res://Resources/Enemies/goblin.tres" id="2_jtmpv"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_typ3v"]
+
+[resource]
+script = ExtResource("2_typ3v")
+encounter_name = "The Chieftain"
+enemies = Array[ExtResource("1_6o5xh")]([null, ExtResource("2_jtmpv"), ExtResource("2_jtmpv")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

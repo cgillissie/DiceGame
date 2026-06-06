@@ -1,0 +1,61 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://b4e625c1ifwdt"]
+
+[ext_resource type="Texture2D" uid="uid://bahjrwxkbyl8r" path="res://Assets/Sprites/SpriteSheets/GoblinChieftainSpriteSheet.png" id="1_6khjs"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kwy8s"]
+atlas = ExtResource("1_6khjs")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jlgah"]
+atlas = ExtResource("1_6khjs")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hyhe1"]
+atlas = ExtResource("1_6khjs")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6t54u"]
+atlas = ExtResource("1_6khjs")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l7sac"]
+atlas = ExtResource("1_6khjs")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rxaan"]
+atlas = ExtResource("1_6khjs")
+region = Rect2(64, 32, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kwy8s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jlgah")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hyhe1")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6t54u")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l7sac")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rxaan")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l7sac")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

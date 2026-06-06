@@ -12,4 +12,5 @@ script = ExtResource("2_61cr2")
 bounty_name = "The Congregation"
 boss_encounter = ExtResource("1_nbqgd")
 expedition_encounter_pool = Array[ExtResource("1_dtjmy")]([ExtResource("3_bkxrh"), ExtResource("4_w1n20"), ExtResource("5_nbqgd")])
+required_encounters_before_boss = 5
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

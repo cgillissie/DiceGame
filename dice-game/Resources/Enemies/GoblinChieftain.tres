@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://dhi104g85ojrh"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_fbsrq"]
+[ext_resource type="Resource" uid="uid://dfkdar8lyf48p" path="res://Resources/Dice/cult_die_d6.tres" id="2_occ0g"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_wh862"]
+[ext_resource type="Resource" uid="uid://brr2ndd54ku0q" path="res://Resources/Dice/money_d6.tres" id="3_cm1cd"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="3_lnw71"]
+[ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="4_abubf"]
+[ext_resource type="Resource" uid="uid://ce7mugms5kks4" path="res://Resources/Dice/basic_d8.tres" id="4_panp2"]
+[ext_resource type="Resource" uid="uid://daexndfltroac" path="res://Resources/Dice/enemy_defense_d6.tres" id="5_7eoc8"]
+[ext_resource type="Resource" uid="uid://bwg810kbjv25b" path="res://Resources/Faces/dodge_face.tres" id="7_b0w32"]
+[ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="8_panp2"]
+[ext_resource type="Resource" uid="uid://d1ycpernyllfk" path="res://Resources/Faces/hit_3_face.tres" id="9_h5hr5"]
+[ext_resource type="SpriteFrames" uid="uid://b4e625c1ifwdt" path="res://Resources/SpriteFrames/GoblinChieftainSpriteFrames.tres" id="11_rw0gg"]
+
+[resource]
+script = ExtResource("3_lnw71")
+enemy_name = "The Chieftain"
+max_hp = 12
+dice_pool = Array[ExtResource("1_fbsrq")]([ExtResource("4_abubf"), ExtResource("5_7eoc8"), ExtResource("4_abubf")])
+face_drop_pool = Array[ExtResource("2_wh862")]([ExtResource("7_b0w32"), ExtResource("8_panp2"), ExtResource("9_h5hr5")])
+dice_drop_pool = Array[ExtResource("1_fbsrq")]([ExtResource("2_occ0g"), ExtResource("3_cm1cd"), ExtResource("4_panp2")])
+dice_drop_chance = 0.2
+gold_reward = 50
+volatile_core_drop_chance = 1.0
+sprite_frames = ExtResource("11_rw0gg")
+sprite_scale = Vector3(6, 6, 6)
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

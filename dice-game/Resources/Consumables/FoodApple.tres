@@ -9,5 +9,5 @@ item_name = "Apple"
 description = "+10 Max HP"
 icon = ExtResource("1_gtfer")
 cost = 20
-increase_max_hp = 10
+next_combat_max_hp = 10
 metadata/_custom_type_script = "uid://cg2kq5l1graas"

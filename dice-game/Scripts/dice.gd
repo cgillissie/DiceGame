@@ -32,6 +32,7 @@ var came_from_reserve: bool = false
 var assigned_enemy_index: int = -1
 var temporary: bool = false
 var has_exploded: bool = false
+var temporary_value_bonus: int = 0
 
 
 	
@@ -82,8 +83,8 @@ func update_visual():
 	var face = dice_data.faces[current_face_index]
 
 	face_icon.texture = face.icon
-
-	result_label.text = get_face_text(face)
+	result_label.text = str(get_display_value())
+	
 	face_index_label.text = str(current_face_index + 1) + "/" + str(dice_data.faces.size())
 	reserve_lock_icon.visible = came_from_reserve
 	if used:
@@ -133,7 +134,15 @@ func get_face_text(face: DiceFace) -> String:
 			return face.result_type
 
 
+func get_display_value() -> int:
+	if current_face == null:
+		return 0
 
+	if current_face.result_type == "hit":
+		return current_face.value + temporary_value_bonus
+
+	return current_face.value
+	
 func set_compact_mode(enabled: bool):
 	if enabled:
 		custom_minimum_size = Vector2(55, 55)

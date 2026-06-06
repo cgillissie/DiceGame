@@ -443,7 +443,9 @@ theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Restart Run"
 
 [node name="ActiveFoodContainer" type="HBoxContainer" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=1946169497]
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
+theme_override_constants/separation = 8
 
 [node name="LeftMarginContainer" type="MarginContainer" parent="." unique_id=553270972]
 layout_mode = 1

@@ -212,6 +212,9 @@ var active_food_items: Array[ConsumableItem] = []
 var active_combat_bonus_block := 0
 var active_combat_bonus_damage := 0
 @onready var active_food_container: HBoxContainer = $TopMarginContainer/CenterContainer/VBoxContainer/ActiveFoodContainer
+var prepare_return_context: String = "town"
+@onready var prepare_expedition_label: Label = $PrepareExpeditionPanel/VBoxContainer/PrepareExpeditionLabel
+@export var active_buff_icon_scene: PackedScene
 
 # Merchant #####################################
 @onready var merchant_panel: Panel = $MerchantPanel
@@ -286,7 +289,7 @@ func _ready():
 	prepare_cancel_button.pressed.connect(cancel_prepare_expedition)
 	merchant_button.pressed.connect(open_merchant)
 	close_merchant_button.pressed.connect(close_merchant)
-	
+	camp_items_button.pressed.connect(open_camp_items)
 	if current_encounter == null:
 		if encounter_pool.size() > 0:
 			current_encounter = encounter_pool.pick_random()
@@ -296,6 +299,7 @@ func _ready():
 	
 	roll_merchant_stock()
 	spawn_player_3d_node()
+	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_player_block_label()
 	update_incoming_damage_label()
@@ -310,7 +314,6 @@ func _ready():
 	
 	# reserve_button.pressed.connect(reserve_selected_dice)
 	end_round_button.pressed.connect(_on_end_turn_pressed)
-	update_player_hp_label()
 	buy_random_die_button.pressed.connect(buy_random_die)
 	buy_reserve_slot_button.pressed.connect(buy_reserve_slot)
 	buy_heal_button.pressed.connect(buy_heal)
@@ -1087,6 +1090,7 @@ func resolve_player_dice():
 					player_hp = max_player_hp
 
 				show_popup_text(player_3d_node, "+" + str(die.current_face.value), 1.8, Color.GREEN)
+				combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 				update_player_hp_label()
 
 			"vitality":
@@ -1094,6 +1098,7 @@ func resolve_player_dice():
 				player_hp += die.current_face.value
 
 				show_popup_text(player_3d_node, "+" + str(die.current_face.value), 1.8, Color.GREEN)
+				combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 				update_player_hp_label()
 				add_combat_log_entry("Vitality increased max HP by " + str(die.current_face.value) + ".")
 
@@ -1318,6 +1323,7 @@ func end_round():
 				player_3d_node.hit_flash()
 				player_3d_node.hurt_bump()
 				screen_shake(0.08, 0.12)
+				combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 				update_player_hp_label()
 				await hit_stop(0.035)
 
@@ -1328,6 +1334,7 @@ func end_round():
 
 	clear_used_assigned_dice()
 
+	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_player_block_label()
 	update_combat_log()
@@ -1337,6 +1344,9 @@ func end_round():
 	selected_enemy_index = -1
 
 	await roll_all_dice()
+	apply_damage_bonus_to_dice_visuals()
+	calculate_auto_block()
+	
 	roll_enemy_intents()
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
@@ -1375,6 +1385,7 @@ func update_player_hp_label():
 	player_hp_label.text = "Player HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
 	update_shop_buttons()
 	update_player_3d_node()
+	
 func get_incoming_damage_for_enemy(enemy_index: int) -> int:
 	var normal_damage := 0
 	var crit_damage := 0
@@ -1586,6 +1597,7 @@ func start_new_combat():
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 
 	player_hp += next_combat_heal
+
 	if player_hp > combat_max_player_hp:
 		player_hp = combat_max_player_hp
 
@@ -1606,6 +1618,8 @@ func start_new_combat():
 	selected_enemy_index = -1
 	spawn_dice()
 	await roll_all_dice()
+	apply_damage_bonus_to_dice_visuals()
+	calculate_auto_block()
 	calculate_auto_block()
 	regroup_dice()
 	update_group_visibility()
@@ -1613,6 +1627,7 @@ func start_new_combat():
 	end_round_button.disabled = false
 
 	update_combat_number_label()
+	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_reserve_slots_label()
 	refresh_enemy_buttons()
@@ -1652,6 +1667,7 @@ func buy_heal():
 	if player_hp > max_player_hp:
 		player_hp = max_player_hp
 
+	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_gold_label()
 	update_shop_buttons()
@@ -2188,6 +2204,7 @@ func apply_end_round_relics():
 		if player_hp > max_player_hp:
 			player_hp = max_player_hp
 
+		combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 		update_player_hp_label()
 
 func update_relic_label():
@@ -2824,7 +2841,8 @@ func start_expedition():
 		print("No bounty selected.")
 		return
 
-	player_hp = max_player_hp
+	
+	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 
 	expedition_progress = 0
@@ -2933,18 +2951,33 @@ func open_prepare_expedition():
 		print("No bounty selected.")
 		return
 
+	prepare_return_context = "town"
 	town_panel.visible = false
 	prepare_expedition_panel.visible = true
+	prepare_start_expedition_button.text = "Start Expedition"
 	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
+	prepare_expedition_label.text = "Prepare Expedition"
 	rebuild_prepare_consumables()
-	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
 
 func cancel_prepare_expedition():
 	prepare_expedition_panel.visible = false
-	town_panel.visible = true
 
+	if prepare_return_context == "camp":
+		expedition_camp_panel.visible = true
+	else:
+		town_panel.visible = true
+
+	prepare_return_context = "town"
+	
 func confirm_start_expedition():
 	prepare_expedition_panel.visible = false
+
+	if prepare_return_context == "camp":
+		expedition_camp_panel.visible = true
+		prepare_return_context = "town"
+		return
+
+	prepare_return_context = "town"
 	start_expedition()
 	
 func roll_merchant_stock():
@@ -3010,18 +3043,22 @@ func rebuild_prepare_consumables():
 	clear_container(prepare_consumables_container)
 
 	var item_counts := {}
+	var item_lookup := {}
 
 	for item in consumable_inventory:
-		if !item_counts.has(item):
-			item_counts[item] = 0
+		if !item_counts.has(item.item_name):
+			item_counts[item.item_name] = 0
+			item_lookup[item.item_name] = item
 
-		item_counts[item] += 1
+		item_counts[item.item_name] += 1
 
-	for item in item_counts.keys():
+	for item_name in item_counts.keys():
+		var item: ConsumableItem = item_lookup[item_name]
+
 		var button = item_button_scene.instantiate()
 		prepare_consumables_container.add_child(button)
 
-		button.setup(item, "x" + str(item_counts[item]), "")
+		button.setup(item, "x" + str(item_counts[item_name]), "")
 		button.pressed.connect(use_consumable_item.bind(item))
 		
 func use_consumable(index: int):
@@ -3043,27 +3080,52 @@ func use_consumable(index: int):
 	rebuild_prepare_consumables()
 	
 func use_consumable_item(item: ConsumableItem):
-	var index := consumable_inventory.find(item)
+	var index := find_consumable_index_by_name(item.item_name)
 
 	if index == -1:
 		return
 
+	# Instant heal food: can be used multiple times, does not become an active buff.
+	if item.heal_amount > 0 and item.next_combat_block == 0 and item.next_combat_damage == 0 and item.next_combat_max_hp == 0:
+		player_hp += item.heal_amount
+
+		if player_hp > combat_max_player_hp:
+			player_hp = combat_max_player_hp
+
+		consumable_inventory.remove_at(index)
+		update_player_hp_label()
+		rebuild_prepare_consumables()
+		return
+
+	# Buff food: only one of each active at a time.
 	if is_food_already_active(item):
 		return
 
 	active_food_items.append(item)
 
-	next_combat_heal += item.heal_amount
 	next_combat_bonus_block += item.next_combat_block
 	next_combat_bonus_damage += item.next_combat_damage
 	next_combat_bonus_max_hp += item.next_combat_max_hp
+	player_hp += item.next_combat_max_hp
+	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+	update_player_hp_label()
+	var temporary_max_hp := max_player_hp + next_combat_bonus_max_hp
+
+	if player_hp > temporary_max_hp:
+		player_hp = temporary_max_hp
 
 	consumable_inventory.remove_at(index)
 
-	update_player_hp_label()
 	rebuild_prepare_consumables()
 	update_active_food_icons()
 
+func find_consumable_index_by_name(item_name: String) -> int:
+	for i in consumable_inventory.size():
+		if consumable_inventory[i].item_name == item_name:
+			return i
+
+	return -1
+	
 func is_food_already_active(item: ConsumableItem) -> bool:
 	for active_item in active_food_items:
 		if active_item.item_name == item.item_name:
@@ -3075,10 +3137,29 @@ func update_active_food_icons():
 	clear_container(active_food_container)
 
 	for item in active_food_items:
-		var icon := TextureRect.new()
-		icon.texture = item.icon
-		icon.custom_minimum_size = Vector2(32, 32)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		active_food_container.add_child(icon)
+		var buff_icon = active_buff_icon_scene.instantiate()
+
+		buff_icon.setup(item.icon)
+		buff_icon.tooltip_text = item.description
+		active_food_container.add_child(buff_icon)
 		
+func open_camp_items():
+	prepare_return_context = "camp"
+	expedition_camp_panel.visible = false
+	prepare_expedition_panel.visible = true
+	prepare_start_expedition_button.text = "Return to Camp"
+	prepare_expedition_label.text = "Use Items"
+	if current_bounty != null:
+		prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
+	else:
+		prepare_selected_bounty_label.text = "Expedition Items"
+
+	rebuild_prepare_consumables()
+
+func apply_damage_bonus_to_dice_visuals():
+	for die in dice_nodes:
+		if !is_instance_valid(die):
+			continue
+
+		die.temporary_value_bonus = active_combat_bonus_damage
+		die.update_visual()

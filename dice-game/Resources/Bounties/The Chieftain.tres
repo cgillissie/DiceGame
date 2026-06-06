@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BountyData" format=3 uid="uid://2a2hro5n2rmn"]
+
+[ext_resource type="Resource" uid="uid://0jjo5lmqwf6c" path="res://Resources/Encounters/GoblinChieftainBossFight.tres" id="1_0ials"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="1_4cakj"]
+[ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/goblin_encounter.tres" id="2_7eg0c"]
+[ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_8417e"]
+[ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/bandit_ambush.tres" id="3_0ials"]
+[ext_resource type="Resource" uid="uid://bsbwvg4keah8q" path="res://Resources/Encounters/lone_goblin.tres" id="4_jgeje"]
+
+[resource]
+script = ExtResource("2_8417e")
+bounty_name = "The Chieftain"
+boss_encounter = ExtResource("1_0ials")
+expedition_encounter_pool = Array[ExtResource("1_4cakj")]([ExtResource("2_7eg0c"), ExtResource("3_0ials"), ExtResource("4_jgeje")])
+required_encounters_before_boss = 5
+metadata/_custom_type_script = "uid://cj0xiilvtky86"

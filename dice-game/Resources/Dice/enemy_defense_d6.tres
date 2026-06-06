@@ -47,6 +47,7 @@ metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
 
 [resource]
 script = ExtResource("2_uwxru")
+can_explode = true
 die_name = "Enemy Defense D6"
 faces = Array[ExtResource("1_gn32r")]([SubResource("Resource_vv71e"), SubResource("Resource_c16i5"), SubResource("Resource_31d8d"), SubResource("Resource_hdpkp"), SubResource("Resource_xkc48"), SubResource("Resource_8r46d")])
 metadata/_custom_type_script = "uid://2s2qkfsmu0bc"
