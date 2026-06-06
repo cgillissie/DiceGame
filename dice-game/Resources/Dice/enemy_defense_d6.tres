@@ -41,7 +41,7 @@ metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
 [sub_resource type="Resource" id="Resource_8r46d"]
 script = ExtResource("1_gn32r")
 result_type = "block"
-value = 4
+value = 3
 icon = ExtResource("3_1nlti")
 metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
 

@@ -7,5 +7,5 @@
 [resource]
 script = ExtResource("2_20w3k")
 encounter_name = "Bandit Ambush"
-enemies = Array[ExtResource("1_6sisn")]([ExtResource("2_jm7fb"), ExtResource("2_jm7fb"), ExtResource("2_jm7fb")])
+enemies = Array[ExtResource("1_6sisn")]([ExtResource("2_jm7fb"), ExtResource("2_jm7fb")])
 metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"
