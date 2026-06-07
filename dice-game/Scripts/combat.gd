@@ -522,6 +522,11 @@ func roll_enemy_intents():
 				"heal":
 					enemy["heal"] += face.value
 
+		var armored_value := get_enemy_trait_value(enemy, "armored")
+
+		if armored_value > 0:
+			enemy["block"] += armored_value
+
 	calculate_auto_block()
 	update_incoming_damage_label()
 	refresh_enemy_buttons()
@@ -682,7 +687,10 @@ func update_enemy_button_texts():
 		var enemy = active_enemies[i]
 		var data: EnemyData = enemy["data"]
 		var incoming_damage = get_incoming_damage_for_enemy(i)
+		var trait_text := get_enemy_trait_text(enemy)
 
+		if trait_text != "":
+			button.text += "\nTraits: " + trait_text
 	
 		button.text = data.enemy_name + "\n"
 		button.text += "HP: " + str(enemy["hp"]) + "\n"
@@ -1338,7 +1346,8 @@ func end_round():
 	update_player_hp_label()
 	update_player_block_label()
 	update_combat_log()
-
+	apply_enemy_end_round_traits()
+	update_enemy_3d_nodes()
 	apply_end_round_relics()
 
 	selected_enemy_index = -1
@@ -1349,7 +1358,6 @@ func end_round():
 	
 	roll_enemy_intents()
 	refresh_enemy_buttons()
-	update_enemy_3d_nodes()
 	update_player_3d_node()
 
 	is_resolving_turn = false
@@ -3163,3 +3171,45 @@ func apply_damage_bonus_to_dice_visuals():
 
 		die.temporary_value_bonus = active_combat_bonus_damage
 		die.update_visual()
+
+func get_enemy_trait_value(enemy: Dictionary, trait_id: String) -> int:
+	var data: EnemyData = enemy["data"]
+
+	for enemy_trait in data.traits:
+		if enemy_trait.trait_id == trait_id:
+			return enemy_trait.value
+
+	return 0
+
+
+func get_enemy_trait_text(enemy: Dictionary) -> String:
+	var data: EnemyData = enemy["data"]
+	var parts := []
+
+	for enemy_trait in data.traits:
+		parts.append(enemy_trait.trait_name + " " + str(enemy_trait.value))
+
+	return ", ".join(parts)
+	
+func apply_enemy_end_round_traits():
+	for enemy in active_enemies:
+		var regen_value := get_enemy_trait_value(enemy, "regenerating")
+
+		if regen_value <= 0:
+			continue
+
+		enemy["hp"] += regen_value
+
+		if enemy["hp"] > enemy["max_hp"]:
+			enemy["hp"] = enemy["max_hp"]
+
+		var enemy_index := active_enemies.find(enemy)
+
+		if enemy_index != -1 and enemy_index < enemy_3d_nodes.size():
+			if is_instance_valid(enemy_3d_nodes[enemy_index]):
+				show_popup_text(
+					enemy_3d_nodes[enemy_index],
+					"+" + str(regen_value),
+					1.8,
+					Color.GREEN
+				)

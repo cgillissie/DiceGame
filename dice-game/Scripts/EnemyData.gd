@@ -16,3 +16,4 @@ class_name EnemyData
 @export var sprite_offset: Vector3 = Vector3.ZERO
 @export var idle_animation: String = "idle"
 @export var attack_animation: String = "attack"
+@export var traits: Array[EnemyTrait]
