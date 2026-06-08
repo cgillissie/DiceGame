@@ -69,6 +69,22 @@ enemy_death_sound = ExtResource("19_nar6d")
 item_button_scene = ExtResource("25_iv3ie")
 merchant_food_pool = Array[ExtResource("26_2r6hp")]([ExtResource("27_fvi2h"), ExtResource("28_xu8d0"), ExtResource("29_47v24"), ExtResource("30_8is30")])
 
+[node name="StatusTooltipPanel" type="Panel" parent="." unique_id=1054450032]
+visible = false
+custom_minimum_size = Vector2(260, 80)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="StatusTooltipLabel" type="Label" parent="StatusTooltipPanel" unique_id=2052164430]
+custom_minimum_size = Vector2(240, 60)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+theme_override_fonts/font = ExtResource("8_d53gg")
+autowrap_mode = 2
+
 [node name="DiceContainer" type="HBoxContainer" parent="." unique_id=1252800238]
 layout_mode = 1
 anchors_preset = 7
@@ -470,6 +486,10 @@ theme_override_constants/separation = 10
 [node name="CombatLogLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=29125521]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="Spacer2" type="Control" parent="LeftMarginContainer/VBoxContainer" unique_id=1432461653]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
 
 [node name="PlayerHPLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=740199404]
 visible = false

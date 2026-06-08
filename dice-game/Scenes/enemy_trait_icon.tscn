@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://b7mwi566nj7ux"]
+
+[ext_resource type="Script" uid="uid://ypbgayp635al" path="res://Scripts/enemy_trait_icon.gd" id="1_l8nf2"]
+
+[node name="EnemyTraitIcon" type="Control" unique_id=1282435838]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_l8nf2")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1021624033]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

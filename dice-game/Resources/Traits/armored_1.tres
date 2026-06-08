@@ -1,9 +1,12 @@
 [gd_resource type="Resource" script_class="EnemyTrait" format=3 uid="uid://cs2belubiu3an"]
 
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="1_64c57"]
+[ext_resource type="Texture2D" uid="uid://jbbl8o2mnpa0" path="res://Assets/Sprites/UI/Traits/ArmoredIcon.png" id="1_ph20h"]
 
 [resource]
 script = ExtResource("1_64c57")
 trait_id = "armored"
 trait_name = "Armored"
+icon = ExtResource("1_ph20h")
+description = "Applies 1 Block at the beginning of each round"
 metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

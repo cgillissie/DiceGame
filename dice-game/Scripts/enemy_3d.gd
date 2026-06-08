@@ -18,13 +18,21 @@ signal selected(enemy_index)
 @onready var block_value: Label3D = $IntentIcons3D/BlockValue3D
 @onready var heal_icon: Sprite3D = $IntentIcons3D/HealIcon3D
 @onready var heal_value: Label3D = $IntentIcons3D/HealValue3D
-@onready var exposed_icon: Sprite3D = $ExposedIcon3D
 
+@onready var trait_icons_container: HBoxContainer = $TraitIcons/HBoxContainer
+@export var enemy_trait_icon_scene: PackedScene
+var active_status_icons: Array[Sprite3D] = []
+@onready var status_icons_3d: Node3D = $StatusIcons3D
+@export var exposed_icon_texture: Texture2D
+var status_icon_tooltips := {}
 var enemy_index: int = -1
 var enemy_data: EnemyData
 
 var home_position: Vector3
 var hurt_tween: Tween
+
+signal status_hovered(text: String)
+signal status_unhovered
 
 func _ready():
 	area.input_event.connect(_on_area_input_event)
@@ -50,7 +58,7 @@ func setup(index: int, enemy: Dictionary):
 	set_intent_pair(heal_icon, heal_value, enemy["heal"])
 	var hp_percent = float(enemy["hp"]) / float(enemy["max_hp"])
 	health_bar_fill.scale.x = clamp(hp_percent, 0.0, 1.0)
-	exposed_icon.visible = enemy["exposed"]
+	update_status_icons(data, enemy)
 	
 	
 func _on_area_input_event(camera, event, position, normal, shape_idx):
@@ -112,3 +120,76 @@ func set_intent_pair(icon: Sprite3D, label: Label3D, value: int):
 	icon.visible = should_show
 	label.visible = should_show
 	label.text = str(value)
+	
+func clear_trait_icons():
+	for child in trait_icons_container.get_children():
+		trait_icons_container.remove_child(child)
+		child.queue_free()
+		
+func update_status_icons(data: EnemyData, enemy: Dictionary):
+	clear_status_icons()
+	
+	var icon_index := 0
+
+	for enemy_trait in data.traits:
+		add_status_icon(
+		enemy_trait.icon,
+		icon_index,
+		enemy_trait.trait_name + " " + str(enemy_trait.value) + "\n" + enemy_trait.description,
+		enemy_trait.value
+	)
+		icon_index += 1
+
+	if enemy.has("exposed") and enemy["exposed"]:
+		add_status_icon(
+			exposed_icon_texture,
+			icon_index,
+			"Exposed\nThe next hit deals +1 bonus damage that ignores armor.",
+			1
+		)
+
+func add_status_icon(texture: Texture2D, index: int, tooltip: String, value: int = 0):
+	if texture == null:
+		return
+
+	var icon := Sprite3D.new()
+	icon.texture = texture
+	icon.pixel_size = 0.006
+	icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	icon.position = Vector3(index * 0.22, 0, 0)
+
+	var value_label := Label3D.new()
+	value_label.text = str(value)
+	value_label.pixel_size = 0.006
+	value_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	value_label.position = Vector3(0.055, -0.055, 0.01)
+
+	if value <= 0:
+		value_label.visible = false
+
+	icon.add_child(value_label)
+
+	var area := Area3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+
+	box.size = Vector3(0.18, 0.18, 0.02)
+	shape.shape = box
+	area.add_child(shape)
+	area.collision_layer = 4
+	area.collision_mask = 0
+	area.input_ray_pickable = true
+	area.set_meta("status_tooltip", tooltip)
+
+	icon.add_child(area)
+
+	status_icons_3d.add_child(icon)
+	active_status_icons.append(icon)
+func clear_status_icons():
+	for icon in active_status_icons:
+		if is_instance_valid(icon):
+			icon.queue_free()
+
+	active_status_icons.clear()
+	status_icon_tooltips.clear()
+	

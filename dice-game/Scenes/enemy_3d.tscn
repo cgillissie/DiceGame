@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bb6efoip4j802"]
 
 [ext_resource type="Script" uid="uid://cklfbf82v13do" path="res://Scripts/enemy_3d.gd" id="1_cgu6o"]
+[ext_resource type="PackedScene" uid="uid://b7mwi566nj7ux" path="res://Scenes/enemy_trait_icon.tscn" id="2_85npi"]
 [ext_resource type="Texture2D" uid="uid://q1dd1vb8jr1f" path="res://icon.svg" id="2_jt4kh"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="3_6q30p"]
 [ext_resource type="Texture2D" uid="uid://c6rypv0jqt1jr" path="res://Assets/Sprites/HealthBar.png" id="4_dll1a"]
@@ -29,6 +30,15 @@ animations = [{
 
 [node name="Enemy3D" type="Node3D" unique_id=1775060330]
 script = ExtResource("1_cgu6o")
+enemy_trait_icon_scene = ExtResource("2_85npi")
+exposed_icon_texture = ExtResource("9_vnddw")
+
+[node name="TraitIcons" type="Node3D" parent="." unique_id=2028826510]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15034842, 1.8876953)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TraitIcons" unique_id=2073282133]
+offset_right = 40.0
+offset_bottom = 40.0
 
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="." unique_id=1081112703]
 billboard = 1
@@ -119,6 +129,5 @@ texture = ExtResource("9_31v00")
 [node name="HealValue3D" type="Label3D" parent="IntentIcons3D" unique_id=1818928583]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42254162, -0.14602005, 1.9543457)
 
-[node name="ExposedIcon3D" type="Sprite3D" parent="." unique_id=795058966]
+[node name="StatusIcons3D" type="Node3D" parent="." unique_id=1643764828]
 transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, -0.4459865, -0.5384947, 1.8448792)
-texture = ExtResource("9_vnddw")

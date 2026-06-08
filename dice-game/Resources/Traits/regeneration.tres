@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="EnemyTrait" format=3 uid="uid://c0ojcob53cive"]
-
-[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="1_1pqv5"]
-
-[resource]
-script = ExtResource("1_1pqv5")
-trait_id = "regeneration"
-trait_name = "Regeneration"
-metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

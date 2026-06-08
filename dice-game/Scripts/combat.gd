@@ -80,6 +80,8 @@ var active_enemies: Array = []
 var defeated_enemies: Array[EnemyData]
 var selected_enemy_index: int = -1
 var assigned_enemy_containers: Array[GridContainer] = []
+@onready var status_tooltip_panel: Panel = $StatusTooltipPanel
+@onready var status_tooltip_label: Label = $StatusTooltipPanel/StatusTooltipLabel
 
 @export var damage_popup_scene: PackedScene
 
@@ -333,7 +335,7 @@ func _ready():
 func _process(delta):
 	update_assigned_dice_panel_positions()
 	update_enemy_hover_preview()
-	
+		
 func spawn_player_3d_node():
 	if player_3d_node != null and is_instance_valid(player_3d_node):
 		player_3d_node.queue_free()
@@ -375,9 +377,14 @@ func get_current_incoming_damage() -> int:
 	return incoming
 	
 func update_enemy_hover_preview():
+	var hovering_status_tooltip
 	var camera := get_viewport().get_camera_3d()
 
 	if camera == null:
+		hide_status_tooltip()
+		hide_enemy_roll_preview()
+		hovered_enemy_index = -1
+		hovering_status_tooltip = false
 		return
 
 	var mouse_pos := get_viewport().get_mouse_position()
@@ -385,31 +392,43 @@ func update_enemy_hover_preview():
 	var to := from + camera.project_ray_normal(mouse_pos) * 1000.0
 
 	var query := PhysicsRayQueryParameters3D.create(from, to)
-	query.collision_mask = 2
+	query.collision_mask = 2 | 4
 	query.collide_with_areas = true
 	query.collide_with_bodies = false
 
 	var result: Dictionary = get_viewport().world_3d.direct_space_state.intersect_ray(query)
 
 	if result.is_empty():
-		if hovered_enemy_index != -1:
-			hide_enemy_roll_preview()
-			hovered_enemy_index = -1
+		hide_status_tooltip()
+		hide_enemy_roll_preview()
+		hovered_enemy_index = -1
+		hovering_status_tooltip = false
 		return
 
 	var collider = result["collider"]
+
+	if collider.has_meta("status_tooltip"):
+		show_status_tooltip(collider.get_meta("status_tooltip"))
+		hide_enemy_roll_preview()
+		hovered_enemy_index = -1
+		hovering_status_tooltip = true
+		return
+
+	hide_status_tooltip()
+	hovering_status_tooltip = false
+
 	var enemy_node = collider.get_parent()
 
 	while enemy_node != null and !(enemy_node is Enemy3D):
 		enemy_node = enemy_node.get_parent()
 
 	if !(enemy_node is Enemy3D):
-		if hovered_enemy_index != -1:
-			hide_enemy_roll_preview()
-			hovered_enemy_index = -1
+		hide_enemy_roll_preview()
+		hovered_enemy_index = -1
 		return
 
 	if enemy_node.enemy_index != hovered_enemy_index:
+		hide_enemy_roll_preview()
 		hovered_enemy_index = enemy_node.enemy_index
 		show_enemy_roll_preview(hovered_enemy_index)
 	else:
@@ -453,7 +472,7 @@ func get_encounter_text(encounter: EncounterData) -> String:
 	return encounter.encounter_name
 	
 func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
-	var scaled_max_hp = enemy_data.max_hp + ((combat_number - 1) * 5)
+	var scaled_max_hp = enemy_data.max_hp + ((combat_number - 1) * 2)
 
 	return {
 		"data": enemy_data,
@@ -486,7 +505,8 @@ func spawn_enemy_3d_nodes():
 		enemy_node.selected.connect(select_enemy_target)
 
 		enemy_3d_nodes.append(enemy_node)
-
+		enemy_node.status_hovered.connect(show_status_tooltip)
+		enemy_node.status_unhovered.connect(hide_status_tooltip)
 func roll_enemy_intents():
 	for enemy in active_enemies:
 		var data: EnemyData = enemy["data"]
@@ -745,7 +765,11 @@ func update_enemy_3d_nodes():
 
 		if is_instance_valid(enemy_3d_nodes[i]):
 			enemy_3d_nodes[i].setup(i, active_enemies[i])
-	
+			enemy_3d_nodes[i].setup(i, active_enemies[i])
+			enemy_3d_nodes[i].update_status_icons(
+	active_enemies[i]["data"],
+	active_enemies[i]
+)
 func get_selected_offensive_dice() -> Array[DiceNode]:
 	var selected_dice: Array[DiceNode] = []
 
@@ -3213,3 +3237,14 @@ func apply_enemy_end_round_traits():
 					1.8,
 					Color.GREEN
 				)
+
+func show_status_tooltip(text: String):
+	status_tooltip_label.text = text
+	status_tooltip_panel.visible = true
+	status_tooltip_panel.global_position = get_viewport().get_mouse_position() + Vector2(16, 16)
+
+	status_tooltip_label.custom_minimum_size = Vector2(240, 0)
+	status_tooltip_panel.custom_minimum_size = Vector2(260, 0)
+
+func hide_status_tooltip():
+	status_tooltip_panel.visible = false
