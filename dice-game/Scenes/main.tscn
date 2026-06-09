@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://w73xtlec2s6a"]
 
 [ext_resource type="PackedScene" uid="uid://cdcdwe1yru18y" path="res://Scenes/EnemyPositions.tscn" id="1_8gbba"]
+[ext_resource type="Script" uid="uid://yvdvlwk5p358" path="res://Scenes/main.gd" id="1_b3802"]
 [ext_resource type="PackedScene" uid="uid://ig314vnvt0q3" path="res://Scenes/TestLevel.tscn" id="1_jjgbg"]
 [ext_resource type="PackedScene" uid="uid://bes0na0diuqsl" path="res://Scenes/player_3d.tscn" id="1_jjvhh"]
 [ext_resource type="PackedScene" uid="uid://bgsgbcu5fnjsq" path="res://Scenes/combat.tscn" id="2_bo1nx"]
@@ -26,6 +27,7 @@ sprite_offset = Vector3(0, 0.7, 0)
 metadata/_custom_type_script = "uid://rk2mjb2mygmu"
 
 [node name="Main" type="Node" unique_id=697850224]
+script = ExtResource("1_b3802")
 
 [node name="World3D" type="Node3D" parent="." unique_id=513677324]
 

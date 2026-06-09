@@ -170,6 +170,11 @@ var expedition_is_boss_fight: bool = false
 @onready var bounty_board_panel: Panel = $BountyBoardPanel
 @onready var bounty_buttons_container: VBoxContainer = $BountyBoardPanel/VBoxContainer/BountyButtonsContainer
 @onready var close_bounty_board_button: Button = $BountyBoardPanel/VBoxContainer/CloseBountyBoardButton
+@onready var final_boss_button: Button = $BountyBoardPanel/VBoxContainer/FinalBossButton
+var completed_bounties: Array[BountyData] = []
+var final_boss_unlocked: bool = false
+@export var required_bounties_for_final_boss: int = 3
+@export var final_boss_bounty: BountyData
 
 # AUDIO STUFF #################################
 @onready var dice_roll_sfx: AudioStreamPlayer = $DiceRollSFX
@@ -230,6 +235,7 @@ var merchant_food_stock: Array[ConsumableItem] = []
 
 var hovered_enemy_index: int = -1
 
+
 var gold: int = 100
 var gold_reward: int = 10
 
@@ -278,8 +284,7 @@ func _ready():
 	restart_run_button.pressed.connect(restart_run)
 	bounty_board_button.pressed.connect(open_bounty_board)
 	town_edit_dice_button.pressed.connect(open_edit_dice_panel_from_town)
-
-	trophy_button.pressed.connect(open_trophies)
+	final_boss_button.pressed.connect(select_final_boss_bounty)
 	start_expedition_button.pressed.connect(open_prepare_expedition)
 	close_bounty_board_button.pressed.connect(close_bounty_board)
 	camp_edit_dice_button.pressed.connect(open_edit_dice_panel_from_camp)
@@ -2905,9 +2910,26 @@ func rebuild_bounty_board():
 
 		var button: BountyButton = bounty_button_scene.instantiate()
 		bounty_buttons_container.add_child(button)
+
 		button.setup(bounty)
 		button.pressed.connect(select_bounty.bind(bounty))
-		
+		if final_boss_unlocked:
+			final_boss_button.text = "Final Boss"
+			final_boss_button.disabled = false
+		else:
+			final_boss_button.text = "Final Boss Locked (" + str(completed_bounties.size()) + "/" + str(required_bounties_for_final_boss) + ")"
+			final_boss_button.disabled = true
+			
+func select_final_boss_bounty():
+	if !final_boss_unlocked:
+		return
+
+	if final_boss_bounty == null:
+		print("Final boss bounty is not assigned.")
+		return
+
+	select_bounty(final_boss_bounty)
+	
 func select_bounty(bounty: BountyData):
 	current_bounty = bounty
 
@@ -2919,9 +2941,10 @@ func select_bounty(bounty: BountyData):
 	print("Selected bounty: ", bounty.bounty_name)
 
 func complete_current_bounty():
-	if current_bounty == null:
-		return
-
+	if current_bounty != null and !completed_bounties.has(current_bounty):
+		completed_bounties.append(current_bounty)
+	if completed_bounties.size() >= required_bounties_for_final_boss:
+		final_boss_unlocked = true
 	current_bounty.completed = true
 	current_bounty = null
 	expedition_is_boss_fight = false

@@ -844,7 +844,7 @@ text = "No Bounty Selected"
 
 [node name="BountyBoardPanel" type="Panel" parent="." unique_id=1948194528]
 visible = false
-custom_minimum_size = Vector2(300, 200)
+custom_minimum_size = Vector2(300, 300)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -876,6 +876,10 @@ text = "Bounty Board"
 
 [node name="BountyButtonsContainer" type="VBoxContainer" parent="BountyBoardPanel/VBoxContainer" unique_id=791632575]
 layout_mode = 2
+
+[node name="FinalBossButton" type="Button" parent="BountyBoardPanel/VBoxContainer" unique_id=1445013814]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
 
 [node name="CloseBountyBoardButton" type="Button" parent="BountyBoardPanel/VBoxContainer" unique_id=918270653]
 layout_mode = 2
