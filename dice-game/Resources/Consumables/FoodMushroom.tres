@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3 uid="uid://c3qjt52sxpug5"]
+
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="1_5jhbf"]
+[ext_resource type="Texture2D" uid="uid://ch34mbnhr1igq" path="res://Assets/Sprites/UI/Food/MushroomIcon.png" id="1_a3q5o"]
+
+[resource]
+script = ExtResource("1_5jhbf")
+item_name = "Mushroom"
+description = "Heals 5 HP"
+icon = ExtResource("1_a3q5o")
+heal_amount = 5
+metadata/_custom_type_script = "uid://cg2kq5l1graas"

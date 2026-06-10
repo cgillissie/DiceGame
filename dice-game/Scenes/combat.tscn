@@ -30,6 +30,7 @@
 [ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/VolatileCore.png" id="26_2n3pb"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="26_2r6hp"]
 [ext_resource type="Texture2D" uid="uid://bisodn2buja81" path="res://Assets/Sprites/UI/SewingNeedle.png" id="26_5g3cp"]
+[ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="26_fvi2h"]
 [ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="27_fvi2h"]
 [ext_resource type="Texture2D" uid="uid://b5ee8exgwe82a" path="res://Assets/Sprites/UI/OpenScroll.png" id="28_qwuba"]
 [ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="28_xu8d0"]
@@ -67,6 +68,7 @@ hit_damage_sound = ExtResource("17_5kjvk")
 hit_blocked_sound = ExtResource("18_3cqtn")
 enemy_death_sound = ExtResource("19_nar6d")
 item_button_scene = ExtResource("25_iv3ie")
+food_recipes = Array[ExtResource("26_fvi2h")]([null])
 merchant_food_pool = Array[ExtResource("26_2r6hp")]([ExtResource("27_fvi2h"), ExtResource("28_xu8d0"), ExtResource("29_47v24"), ExtResource("30_8is30")])
 
 [node name="StatusTooltipPanel" type="Panel" parent="." unique_id=1054450032]
@@ -406,7 +408,7 @@ theme_override_fonts/font = ExtResource("9_twsak")
 theme_override_font_sizes/font_size = 24
 
 [node name="LootContinueButton" type="Button" parent="LootPanel/LootVBox" unique_id=426157888]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -435,14 +437,6 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Fight: 1"
-
-[node name="EndRoundButton" type="Button" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=374448024]
-custom_minimum_size = Vector2(90, 60)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-theme_override_fonts/font = ExtResource("8_d53gg")
-text = "End Turn"
 
 [node name="DefeatLabel" type="Label" parent="TopMarginContainer/CenterContainer/VBoxContainer" unique_id=1238438577]
 visible = false
@@ -728,6 +722,25 @@ theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 columns = 4
 
+[node name="EndRoundButton" type="Button" parent="DiceArea" unique_id=374448024]
+custom_minimum_size = Vector2(90, 60)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -352.0
+offset_top = -320.0
+offset_right = -52.0
+offset_bottom = -120.0
+grow_horizontal = 0
+grow_vertical = 0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "End Turn"
+
 [node name="RelicLabel" type="Label" parent="." unique_id=73021013]
 layout_mode = 0
 offset_right = 40.0
@@ -802,6 +815,7 @@ theme_override_fonts/font = ExtResource("9_twsak")
 text = "Town"
 
 [node name="BountyBoardButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=1288038863]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -809,6 +823,7 @@ text = "Bounty Board"
 icon = ExtResource("28_qwuba")
 
 [node name="EditDiceButtonTown" type="Button" parent="TownPanel/VBoxContainer" unique_id=1980885128]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -816,6 +831,7 @@ text = "Graft Dice"
 icon = ExtResource("26_5g3cp")
 
 [node name="MerchantButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=1106819082]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -823,6 +839,7 @@ text = "Merchant"
 icon = ExtResource("29_qwuba")
 
 [node name="TrophyButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=2125892391]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -830,6 +847,7 @@ text = "Trophies"
 icon = ExtResource("30_iv3ie")
 
 [node name="StartExpeditionButton" type="Button" parent="TownPanel/VBoxContainer" unique_id=110454083]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -882,6 +900,7 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 
 [node name="CloseBountyBoardButton" type="Button" parent="BountyBoardPanel/VBoxContainer" unique_id=918270653]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Close"
@@ -927,18 +946,27 @@ layout_mode = 2
 size_flags_horizontal = 4
 
 [node name="CampEditDiceButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=2026622507]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Graft Dice"
 
 [node name="CampItemsButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=16657851]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Items"
 
+[node name="CraftFoodButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=520034374]
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Cook Food"
+
 [node name="CampContinueButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=1325114275]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -1027,7 +1055,15 @@ theme_override_fonts/font = ExtResource("8_d53gg")
 
 [node name="PrepareConsumablesContainer" type="GridContainer" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=9204060]
 layout_mode = 2
+size_flags_horizontal = 4
 columns = 4
+
+[node name="CookFoodButton" type="Button" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=54155083]
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Cook Food"
 
 [node name="StartExpeditionButton" type="Button" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=431989340]
 custom_minimum_size = Vector2(220, 40)
@@ -1087,6 +1123,67 @@ size_flags_horizontal = 4
 columns = 4
 
 [node name="CloseMerchantButton" type="Button" parent="MerchantPanel/VBoxContainer" unique_id=373517899]
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Close"
+
+[node name="FoodCraftPanel" type="Panel" parent="." unique_id=1489697673]
+visible = false
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="FoodCraftPanel" unique_id=830075116]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -47.0
+offset_top = -48.0
+offset_right = 47.0
+offset_bottom = 48.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="FoodCraftTitleLabel" type="Label" parent="FoodCraftPanel/VBoxContainer" unique_id=1858032832]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Cooking"
+
+[node name="FoodCraftItemsContainer" type="GridContainer" parent="FoodCraftPanel/VBoxContainer" unique_id=231411105]
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 4
+
+[node name="CraftResultLabel" type="Label" parent="FoodCraftPanel/VBoxContainer" unique_id=1358053740]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="CraftButton" type="Button" parent="FoodCraftPanel/VBoxContainer" unique_id=1923619456]
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Cook"
+
+[node name="CloseCraftButton" type="Button" parent="FoodCraftPanel/VBoxContainer" unique_id=2074226483]
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")

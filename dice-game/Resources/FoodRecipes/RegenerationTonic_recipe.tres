@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FoodRecipe" format=3 uid="uid://coeiua8kqh4r6"]
+
+[ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="1_6mcli"]
+[ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="1_4832c"]
+[ext_resource type="Resource" uid="uid://b1xfams6x6lgf" path="res://Resources/Consumables/FoodAle.tres" id="2_ajtfe"]
+[ext_resource type="Resource" uid="uid://dotp88nb0n7mo" path="res://Resources/Consumables/FoodRegenerationTonic.tres" id="3_dp7ak"]
+
+[resource]
+script = ExtResource("1_6mcli")
+ingredient_a = ExtResource("1_4832c")
+ingredient_b = ExtResource("2_ajtfe")
+result_item = ExtResource("3_dp7ak")
+metadata/_custom_type_script = "uid://bnyhau7o1nqd2"

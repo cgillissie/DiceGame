@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FoodRecipe" format=3 uid="uid://dtgk20cmtnd8t"]
+
+[ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="1_lawoh"]
+[ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="1_vn7xc"]
+[ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="2_ua30m"]
+[ext_resource type="Resource" uid="uid://b1xfams6x6lgf" path="res://Resources/Consumables/FoodAle.tres" id="3_ua30m"]
+
+[resource]
+script = ExtResource("1_lawoh")
+ingredient_a = ExtResource("1_vn7xc")
+ingredient_b = ExtResource("2_ua30m")
+result_item = ExtResource("3_ua30m")
+metadata/_custom_type_script = "uid://bnyhau7o1nqd2"

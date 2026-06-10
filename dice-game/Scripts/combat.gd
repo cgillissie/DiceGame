@@ -5,6 +5,9 @@ extends Control
 @export var starting_dice: Array[DiceData]
 @export var enemy_3d_scene: PackedScene
 @export var inventory_face_button_scene: PackedScene
+@export var miss_face_template: DiceFace
+@export var dodge_face_template: DiceFace
+@export var reversal_face_template: DiceFace
 
 var enemy_3d_nodes: Array[Enemy3D] = []
 
@@ -12,6 +15,7 @@ var reserve_slots: int = 2
 var damage_by_enemy := {}
 var crit_by_enemy := {}
 var combat_log_entries: Array[String] = []
+
 
 
 @export var player_character_data: PlayerCharacterData
@@ -36,7 +40,7 @@ var camera_original_position: Vector3
 @onready var misses_container: GridContainer = $DiceArea/CenterContainer/DiceGroupsContainer/MissesGroup/MissesDiceContainer
 @onready var defeat_label: Label = $TopMarginContainer/CenterContainer/VBoxContainer/DefeatLabel
 @onready var player_hp_label: Label = $LeftMarginContainer/VBoxContainer/PlayerHPLabel
-@onready var end_round_button: Button = $TopMarginContainer/CenterContainer/VBoxContainer/EndRoundButton
+@onready var end_round_button: Button = $DiceArea/EndRoundButton
 @export var enemy_dice: Array[DiceData]
 @onready var combat_log_label: Label = $LeftMarginContainer/VBoxContainer/CombatLogLabel
 @onready var combat_number_label: Label = $TopMarginContainer/CenterContainer/VBoxContainer/CombatNumberLabel
@@ -158,6 +162,7 @@ var last_dropped_die: DiceData = null
 @onready var camp_edit_dice_button: Button = $ExpeditionCampPanel/VBoxContainer/CampEditDiceButton
 @onready var camp_items_button: Button = $ExpeditionCampPanel/VBoxContainer/CampItemsButton
 @onready var camp_continue_button: Button = $ExpeditionCampPanel/VBoxContainer/CampContinueButton
+@onready var camp_craft_food_button: Button = $ExpeditionCampPanel/VBoxContainer/CraftFoodButton
 
 
 # Bounty Tracking #############################
@@ -220,8 +225,12 @@ var active_combat_bonus_block := 0
 var active_combat_bonus_damage := 0
 @onready var active_food_container: HBoxContainer = $TopMarginContainer/CenterContainer/VBoxContainer/ActiveFoodContainer
 var prepare_return_context: String = "town"
+var food_crafting_return_context: String = ""
 @onready var prepare_expedition_label: Label = $PrepareExpeditionPanel/VBoxContainer/PrepareExpeditionLabel
 @export var active_buff_icon_scene: PackedScene
+var unlocked_food_tier: int = 1
+@export var food_recipes: Array[FoodRecipe]
+
 
 # Merchant #####################################
 @onready var merchant_panel: Panel = $MerchantPanel
@@ -232,6 +241,16 @@ var prepare_return_context: String = "town"
 @onready var merchant_gold_label: Label = $MerchantPanel/VBoxContainer/MerchantGoldLabel
 @export var merchant_food_pool: Array[ConsumableItem]
 var merchant_food_stock: Array[ConsumableItem] = []
+
+# Food Crafting Panel ############################
+@onready var food_craft_panel: Panel = $FoodCraftPanel
+@onready var food_craft_items_container: GridContainer = $FoodCraftPanel/VBoxContainer/FoodCraftItemsContainer
+@onready var craft_result_label: Label = $FoodCraftPanel/VBoxContainer/CraftResultLabel
+@onready var craft_button: Button = $FoodCraftPanel/VBoxContainer/CraftButton
+@onready var close_craft_button: Button = $FoodCraftPanel/VBoxContainer/CloseCraftButton
+@onready var prepare_cook_food_button: Button = $PrepareExpeditionPanel/VBoxContainer/CookFoodButton
+
+var selected_food_craft_names: Array[String] = []
 
 var hovered_enemy_index: int = -1
 
@@ -297,12 +316,19 @@ func _ready():
 	merchant_button.pressed.connect(open_merchant)
 	close_merchant_button.pressed.connect(close_merchant)
 	camp_items_button.pressed.connect(open_camp_items)
+	camp_craft_food_button.pressed.connect(open_food_crafting)
+	craft_button.pressed.connect(craft_selected_food)
+	close_craft_button.pressed.connect(close_food_crafting)
+	prepare_cook_food_button.pressed.connect(open_food_crafting_from_prepare)
+	
+	
 	if current_encounter == null:
 		if encounter_pool.size() > 0:
 			current_encounter = encounter_pool.pick_random()
 	assigned_dice_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	enemy_roll_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# load_encounter(current_encounter)
+	
 	
 	roll_merchant_stock()
 	spawn_player_3d_node()
@@ -899,6 +925,7 @@ func has_visible_dice(container: GridContainer) -> bool:
 
 
 func update_group_visibility():
+	actions_container.get_parent().visible = has_visible_dice(actions_container)
 	hits_container.get_parent().visible = has_visible_dice(hits_container)
 	crits_container.get_parent().visible = has_visible_dice(crits_container)
 	blocks_container.get_parent().visible = has_visible_dice(blocks_container)
@@ -1294,7 +1321,7 @@ func end_round():
 					Color.GREEN
 				)
 
-		var max_hp = lowest_enemy["data"].max_hp + ((combat_number - 1) * 5)
+		var max_hp = lowest_enemy["max_hp"]
 
 		if lowest_enemy["hp"] > max_hp:
 			lowest_enemy["hp"] = max_hp
@@ -1956,46 +1983,71 @@ func clear_container(container: Container):
 		child.queue_free()
 		
 func fuse_selected_faces():
+	# Equipped face + inventory face.
 	if selected_edit_die != null and selected_die_face_index != -1 and selected_inventory_face_indices.size() == 1:
-		var equipped_face: DiceFace = selected_edit_die.faces[selected_die_face_index]
 		var inventory_index: int = selected_inventory_face_indices[0]
+
+		if inventory_index < 0 or inventory_index >= face_inventory.size():
+			end_fusion_mode()
+			refresh_edit_dice_panel()
+			return
+
+		var equipped_face: DiceFace = selected_edit_die.faces[selected_die_face_index]
 		var inventory_face: DiceFace = face_inventory[inventory_index]
 
 		if !can_fuse_faces(equipped_face, inventory_face):
+			end_fusion_mode()
+			refresh_edit_dice_panel()
 			return
 
 		var new_face := create_fused_face(equipped_face, inventory_face)
+		var max_allowed_value := get_max_face_value_for_die(selected_edit_die, new_face)
+
+		if new_face.value > max_allowed_value:
+			end_fusion_mode()
+			refresh_edit_dice_panel()
+			return
 
 		selected_edit_die.faces[selected_die_face_index] = new_face
 		face_inventory.remove_at(inventory_index)
 
-		selected_die_face_index = -1
-		selected_inventory_face_indices.clear()
-
+		end_fusion_mode()
 		refresh_edit_dice_panel()
 		return
 
-	if fusion_mode:
-		fuse_faces_button.text = "Fuse Selected"
-	else:
-		fuse_faces_button.text = "Fuse Faces"
-		
+	# Inventory face + inventory face.
 	if selected_inventory_face_indices.size() != 2:
+		end_fusion_mode()
+		refresh_edit_dice_panel()
 		return
 
-	var index_a = selected_inventory_face_indices[0]
-	var index_b = selected_inventory_face_indices[1]
+	var index_a: int = selected_inventory_face_indices[0]
+	var index_b: int = selected_inventory_face_indices[1]
 
 	if index_a == index_b:
+		end_fusion_mode()
+		refresh_edit_dice_panel()
+		return
+
+	if index_a < 0 or index_a >= face_inventory.size():
+		end_fusion_mode()
+		refresh_edit_dice_panel()
+		return
+
+	if index_b < 0 or index_b >= face_inventory.size():
+		end_fusion_mode()
+		refresh_edit_dice_panel()
 		return
 
 	var face_a: DiceFace = face_inventory[index_a]
 	var face_b: DiceFace = face_inventory[index_b]
 
 	if !can_fuse_faces(face_a, face_b):
+		end_fusion_mode()
+		refresh_edit_dice_panel()
 		return
 
-	var new_face = create_fused_face(face_a, face_b)
+	var new_face: DiceFace = create_fused_face(face_a, face_b)
 
 	selected_inventory_face_indices.sort()
 	selected_inventory_face_indices.reverse()
@@ -2005,8 +2057,9 @@ func fuse_selected_faces():
 
 	face_inventory.append(new_face)
 
-	selected_inventory_face_indices.clear()
-	call_deferred("refresh_edit_dice_panel")
+	end_fusion_mode()
+	refresh_edit_dice_panel()
+	
 func select_edit_die(die_data: DiceData):
 	selected_edit_die = die_data
 	AudioManager.play_ui(ui_click_sound)
@@ -2037,7 +2090,10 @@ func update_volatile_core_button():
 	apply_volatile_core_button.disabled = false
 	apply_volatile_core_button.text = "Apply Volatile Core"
 	
-func get_max_face_value_for_die(die_data: DiceData) -> int:
+func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
+	if face.result_type == "crit":
+		return die_data.sides
+
 	return int(die_data.sides / 2)
 	
 func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
@@ -2060,18 +2116,10 @@ func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 
 func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
 	if face_a.result_type == "miss" and face_b.result_type == "miss":
-		var dodge := DiceFace.new()
-		dodge.face_name = "Dodge"
-		dodge.result_type = "dodge"
-		dodge.value = 0
-		return dodge
+		return create_dodge_face()
 
 	if (face_a.result_type == "dodge" and face_b.result_type == "crit") or (face_a.result_type == "crit" and face_b.result_type == "dodge"):
-		var reversal := DiceFace.new()
-		reversal.face_name = "Reversal"
-		reversal.result_type = "reversal"
-		reversal.value = 0
-		return reversal
+		return create_reversal_face()
 
 	var new_face: DiceFace = face_a.duplicate(true)
 	new_face.value += 1
@@ -2133,8 +2181,25 @@ func select_die_face(face_index: int):
 		return
 
 	# Different equipped face selected → swap them.
+# Different equipped face selected.
 	selected_die_face_index_2 = face_index
 
+	var face_a: DiceFace = selected_edit_die.faces[selected_die_face_index]
+	var face_b: DiceFace = selected_edit_die.faces[selected_die_face_index_2]
+
+	if fusion_mode and can_fuse_faces(face_a, face_b):
+		var fused_face := create_fused_face(face_a, face_b)
+		var max_allowed_value := get_max_face_value_for_die(selected_edit_die, fused_face)
+
+		if fused_face.value <= max_allowed_value:
+			selected_edit_die.faces[selected_die_face_index] = fused_face
+			selected_edit_die.faces[selected_die_face_index_2] = create_miss_face()
+
+		end_fusion_mode()
+		refresh_edit_dice_panel()
+		return
+
+	# Normal behavior: swap equipped faces.
 	var temp_face: DiceFace = selected_edit_die.faces[selected_die_face_index]
 	selected_edit_die.faces[selected_die_face_index] = selected_edit_die.faces[selected_die_face_index_2]
 	selected_edit_die.faces[selected_die_face_index_2] = temp_face
@@ -2148,8 +2213,10 @@ func select_die_face(face_index: int):
 func install_inventory_face(inventory_index: int):
 	if selected_edit_die == null:
 		return
-	var max_allowed_value := get_max_face_value_for_die(selected_edit_die)
+		
 	var new_face: DiceFace = face_inventory[inventory_index]
+	var max_allowed_value := get_max_face_value_for_die(selected_edit_die, new_face)
+	
 	if new_face.value > max_allowed_value:
 		return
 	if selected_die_face_index == -1:
@@ -2160,7 +2227,7 @@ func install_inventory_face(inventory_index: int):
 	
 
 	if new_face.result_type == "dodge" or new_face.result_type == "reversal":
-		if selected_edit_die.sides != 8:
+		if selected_edit_die.sides <= 4:
 			return
 
 		var count := 0
@@ -2945,6 +3012,8 @@ func complete_current_bounty():
 		completed_bounties.append(current_bounty)
 	if completed_bounties.size() >= required_bounties_for_final_boss:
 		final_boss_unlocked = true
+	apply_bounty_reward(current_bounty)
+	roll_merchant_stock()
 	current_bounty.completed = true
 	current_bounty = null
 	expedition_is_boss_fight = false
@@ -2959,6 +3028,23 @@ func complete_current_bounty():
 	edit_dice_panel.visible = false
 	selected_bounty_label.text = "No Bounty Selected"
 	print("Bounty completed. Returned to town.")
+	
+func apply_bounty_reward(bounty: BountyData):
+	if bounty.reward_food_tier_unlock > unlocked_food_tier:
+		unlocked_food_tier = bounty.reward_food_tier_unlock
+		print("Food tier unlocked: ", unlocked_food_tier)
+
+	if bounty.reward_volatile_cores > 0:
+		volatile_cores += bounty.reward_volatile_cores
+		update_volatile_core_button()
+
+	if bounty.reward_gold > 0:
+		gold += bounty.reward_gold
+		update_gold_label()
+
+	if bounty.reward_reserve_slots > 0:
+		reserve_slots += bounty.reward_reserve_slots
+		update_reserve_slots_label()
 	
 func show_expedition_camp():
 	expedition_camp_panel.visible = true
@@ -3038,11 +3124,16 @@ func confirm_start_expedition():
 func roll_merchant_stock():
 	merchant_food_stock.clear()
 
-	var pool := merchant_food_pool.duplicate()
-	pool.shuffle()
+	var available_foods: Array[ConsumableItem] = []
 
-	for i in min(4, pool.size()):
-		merchant_food_stock.append(pool[i])
+	for item in merchant_food_pool:
+		if item.food_tier <= unlocked_food_tier:
+			available_foods.append(item)
+
+	available_foods.shuffle()
+
+	for i in min(4, available_foods.size()):
+		merchant_food_stock.append(available_foods[i])
 
 func open_merchant():
 	town_panel.visible = false
@@ -3194,8 +3285,7 @@ func update_active_food_icons():
 	for item in active_food_items:
 		var buff_icon = active_buff_icon_scene.instantiate()
 
-		buff_icon.setup(item.icon)
-		buff_icon.tooltip_text = item.description
+		buff_icon.setup(item.icon, item.description)
 		active_food_container.add_child(buff_icon)
 		
 func open_camp_items():
@@ -3271,3 +3361,207 @@ func show_status_tooltip(text: String):
 
 func hide_status_tooltip():
 	status_tooltip_panel.visible = false
+
+func open_food_crafting():
+	expedition_camp_panel.visible = false
+	food_craft_panel.visible = true
+	selected_food_craft_names.clear()
+	rebuild_food_crafting_grid()
+	update_craft_result_label()
+	
+func close_food_crafting():
+	food_craft_panel.visible = false
+
+	match food_crafting_return_context:
+		"prepare":
+			prepare_expedition_panel.visible = true
+
+		"camp":
+			expedition_camp_panel.visible = true
+
+		_:
+			expedition_camp_panel.visible = true
+
+	selected_food_craft_names.clear()
+	food_crafting_return_context = ""
+	
+func rebuild_food_crafting_grid():
+	clear_container(food_craft_items_container)
+
+	var item_counts := {}
+	var item_lookup := {}
+
+	for item in consumable_inventory:
+		if !item_counts.has(item.item_name):
+			item_counts[item.item_name] = 0
+			item_lookup[item.item_name] = item
+
+		item_counts[item.item_name] += 1
+
+	for item_name in item_counts.keys():
+		var item: ConsumableItem = item_lookup[item_name]
+
+		var button = item_button_scene.instantiate()
+		food_craft_items_container.add_child(button)
+
+		button.setup(item, "x" + str(item_counts[item_name]), "")
+
+		if selected_food_craft_names.has(item_name):
+			button.modulate = Color.YELLOW
+		else:
+			button.modulate = Color.WHITE
+
+		button.pressed.connect(select_food_name_for_crafting.bind(item_name))
+
+func select_food_for_crafting(index: int):
+	if selected_food_craft_names.has(index):
+		selected_food_craft_names.erase(index)
+	else:
+		if selected_food_craft_names.size() >= 2:
+			selected_food_craft_names.clear()
+
+		selected_food_craft_names.append(index)
+
+	rebuild_food_crafting_grid()
+	update_craft_result_label()
+
+func update_craft_result_label():
+	if selected_food_craft_names.size() != 2:
+		craft_result_label.text = "Select 2 food items."
+		craft_button.disabled = true
+		return
+
+	var recipe = get_matching_food_recipe()
+
+	if recipe == null:
+		craft_result_label.text = "No matching recipe."
+		craft_button.disabled = true
+		return
+
+	craft_result_label.text = "Creates: " + recipe.result_item.item_name
+
+	if recipe.result_item.description != "":
+		craft_result_label.text += "\n" + recipe.result_item.description
+
+	craft_button.disabled = false
+	
+func get_matching_food_recipe():
+	if selected_food_craft_names.size() != 2:
+		return null
+
+	var name_a := selected_food_craft_names[0]
+	var name_b := selected_food_craft_names[1]
+
+	for recipe in food_recipes:
+		if recipe == null:
+			continue
+
+		if recipe.ingredient_a == null or recipe.ingredient_b == null or recipe.result_item == null:
+			continue
+
+		var recipe_a := recipe.ingredient_a.item_name
+		var recipe_b := recipe.ingredient_b.item_name
+
+		var match_forward := recipe_a == name_a and recipe_b == name_b
+		var match_reverse := recipe_a == name_b and recipe_b == name_a
+
+		if match_forward or match_reverse:
+			return recipe
+	print("Selected:", name_a, " + ", name_b)
+
+	for recipe in food_recipes:
+		if recipe == null:
+			continue
+
+		print(
+			"Recipe:",
+			recipe.ingredient_a.item_name,
+			"+",
+			recipe.ingredient_b.item_name
+		)
+	return null
+	
+func craft_selected_food():
+	var recipe = get_matching_food_recipe()
+
+	if recipe == null:
+		return
+
+	remove_consumable_by_name(selected_food_craft_names[0])
+	remove_consumable_by_name(selected_food_craft_names[1])
+
+	consumable_inventory.append(recipe.result_item.duplicate(true))
+
+	selected_food_craft_names.clear()
+	selected_food_craft_names.clear()
+
+	rebuild_food_crafting_grid()
+	update_craft_result_label()
+	rebuild_prepare_consumables()
+	
+func open_food_crafting_from_prepare():
+	food_crafting_return_context = "camp"
+	food_crafting_return_context = "prepare"
+
+	prepare_expedition_panel.visible = false
+	food_craft_panel.visible = true
+
+	selected_food_craft_names.clear()
+
+	rebuild_food_crafting_grid()
+	update_craft_result_label()
+
+func select_food_name_for_crafting(item_name: String):
+	if selected_food_craft_names.has(item_name):
+		selected_food_craft_names.erase(item_name)
+	else:
+		if selected_food_craft_names.size() >= 2:
+			selected_food_craft_names.clear()
+
+		selected_food_craft_names.append(item_name)
+
+	rebuild_food_crafting_grid()
+	update_craft_result_label()
+	
+func remove_consumable_by_name(item_name: String):
+	for i in consumable_inventory.size():
+		if consumable_inventory[i].item_name == item_name:
+			consumable_inventory.remove_at(i)
+			return
+
+func create_miss_face() -> DiceFace:
+	if miss_face_template != null:
+		return miss_face_template.duplicate(true)
+
+	var miss := DiceFace.new()
+	miss.face_name = "Miss"
+	miss.result_type = "miss"
+	miss.value = 0
+	return miss
+	
+func create_dodge_face() -> DiceFace:
+	if dodge_face_template != null:
+		return dodge_face_template.duplicate(true)
+
+	var dodge := DiceFace.new()
+	dodge.face_name = "Dodge"
+	dodge.result_type = "dodge"
+	dodge.value = 0
+	return dodge
+	
+func create_reversal_face() -> DiceFace:
+	if reversal_face_template != null:
+		return reversal_face_template.duplicate(true)
+
+	var reversal := DiceFace.new()
+	reversal.face_name = "Reversal"
+	reversal.result_type = "reversal"
+	reversal.value = 0
+	return reversal
+
+func end_fusion_mode():
+	fusion_mode = false
+	selected_inventory_face_indices.clear()
+	selected_die_face_index = -1
+	selected_die_face_index_2 = -1
+	update_fuse_button_text()

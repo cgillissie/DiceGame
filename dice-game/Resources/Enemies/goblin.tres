@@ -11,8 +11,6 @@
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="9_nh72w"]
 [ext_resource type="SpriteFrames" uid="uid://2oesgg5ytnd7" path="res://Resources/SpriteFrames/GoblinSpriteFrames.tres" id="10_65j85"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="11_brliy"]
-[ext_resource type="Resource" uid="uid://c0ojcob53cive" path="res://Resources/Traits/regenerating_1.tres" id="12_brliy"]
-[ext_resource type="Resource" uid="uid://cs2belubiu3an" path="res://Resources/Traits/armored_1.tres" id="13_g8hdv"]
 
 [resource]
 script = ExtResource("9_nh72w")
@@ -25,5 +23,4 @@ dice_drop_chance = 0.1
 volatile_core_drop_chance = 0.05
 sprite_frames = ExtResource("10_65j85")
 sprite_scale = Vector3(4, 4, 4)
-traits = Array[ExtResource("11_brliy")]([ExtResource("12_brliy"), ExtResource("13_g8hdv")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

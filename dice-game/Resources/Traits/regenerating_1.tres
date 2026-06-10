@@ -8,5 +8,5 @@ script = ExtResource("2_sp8f6")
 trait_id = "regenerating"
 trait_name = "Regenerating"
 icon = ExtResource("1_nt8ko")
-description = "Heals 1 HP at the end of each round"
+description = "Heals 1 HP at the end of each round."
 metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyTrait" format=3 uid="uid://bfo0d3b00358m"]
+
+[ext_resource type="Texture2D" uid="uid://ddyphgqnpqk2m" path="res://Assets/Sprites/UI/Traits/RegenerationIcon.png" id="1_7y8bq"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="1_jsmfo"]
+
+[resource]
+script = ExtResource("1_jsmfo")
+trait_id = "regenerating"
+trait_name = "Regenerating"
+value = 2
+icon = ExtResource("1_7y8bq")
+description = "Heals 2 HP at the end of each round."
+metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

@@ -8,5 +8,5 @@ script = ExtResource("1_64c57")
 trait_id = "armored"
 trait_name = "Armored"
 icon = ExtResource("1_ph20h")
-description = "Applies 1 Block at the beginning of each round"
+description = "Applies 1 Block at the beginning of each round."
 metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3 uid="uid://dotp88nb0n7mo"]
+
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="1_2cqgh"]
+[ext_resource type="Resource" uid="uid://bfo0d3b00358m" path="res://Resources/Traits/regenerating_2.tres" id="1_lknxk"]
+[ext_resource type="Texture2D" uid="uid://csqpnmwhdoymi" path="res://Assets/Sprites/UI/Food/RegenerativeTonicIcon.png" id="2_qdoo3"]
+
+[resource]
+script = ExtResource("1_2cqgh")
+item_name = "Regeneration Tonic"
+description = "Gives Regeneration 2"
+icon = ExtResource("2_qdoo3")
+cost = 40
+food_tier = 3
+grants_trait = ExtResource("1_lknxk")
+metadata/_custom_type_script = "uid://cg2kq5l1graas"

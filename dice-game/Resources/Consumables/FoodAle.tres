@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3 uid="uid://b1xfams6x6lgf"]
+
+[ext_resource type="Texture2D" uid="uid://bpxybuyiyj7ik" path="res://Assets/Sprites/UI/Food/AleIcon.png" id="1_pmplw"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="1_wc3hj"]
+
+[resource]
+script = ExtResource("1_wc3hj")
+item_name = "Ale"
+description = "Heals 5 HP and +1 Damage to Hits"
+icon = ExtResource("1_pmplw")
+cost = 20
+heal_amount = 5
+next_combat_damage = 1
+food_tier = 2
+metadata/_custom_type_script = "uid://cg2kq5l1graas"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3 uid="uid://ba6g2e5kwr2m3"]
+
+[ext_resource type="Texture2D" uid="uid://ccd70kqras7ms" path="res://Assets/Sprites/UI/Food/StewIcon.png" id="1_qbppc"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="1_udpub"]
+
+[resource]
+script = ExtResource("1_udpub")
+item_name = "Stew"
+description = "+2 Block and +2 to Hits"
+icon = ExtResource("1_qbppc")
+cost = 25
+next_combat_block = 2
+next_combat_damage = 2
+food_tier = 2
+metadata/_custom_type_script = "uid://cg2kq5l1graas"

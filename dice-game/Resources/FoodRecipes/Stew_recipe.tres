@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FoodRecipe" format=3 uid="uid://bwlxju11srbd1"]
+
+[ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="1_b8wsy"]
+[ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="1_ehfv2"]
+[ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="2_ausxa"]
+[ext_resource type="Resource" uid="uid://ba6g2e5kwr2m3" path="res://Resources/Consumables/FoodStew.tres" id="3_ausxa"]
+
+[resource]
+script = ExtResource("1_b8wsy")
+ingredient_a = ExtResource("1_ehfv2")
+ingredient_b = ExtResource("2_ausxa")
+result_item = ExtResource("3_ausxa")
+metadata/_custom_type_script = "uid://bnyhau7o1nqd2"

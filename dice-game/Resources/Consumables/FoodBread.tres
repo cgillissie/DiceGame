@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("1_l4qgy")
 item_name = "Bread"
-description = "Heals 5 HP"
+description = "Heals 10 HP"
 icon = ExtResource("1_bmsmx")
-heal_amount = 10
 cost = 10
+heal_amount = 10
 metadata/_custom_type_script = "uid://cg2kq5l1graas"
