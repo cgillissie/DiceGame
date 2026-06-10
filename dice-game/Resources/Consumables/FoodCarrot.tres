@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_ia58v")
 item_name = "Carrot"
-description = "+1 to Blocks"
+description = "+1 Block"
 icon = ExtResource("1_qv8ev")
 cost = 10
 next_combat_block = 1

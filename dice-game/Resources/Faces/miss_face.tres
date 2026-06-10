@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://bwylkdosqjwv8"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_5l2w5"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="1_jcukw"]
+
+[resource]
+script = ExtResource("1_5l2w5")
+label = "Miss"
+icon = ExtResource("1_jcukw")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
