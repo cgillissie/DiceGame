@@ -1,17 +1,19 @@
 [gd_scene format=3 uid="uid://w73xtlec2s6a"]
 
-[ext_resource type="PackedScene" uid="uid://cdcdwe1yru18y" path="res://Scenes/EnemyPositions.tscn" id="1_8gbba"]
 [ext_resource type="Script" uid="uid://yvdvlwk5p358" path="res://Scenes/main.gd" id="1_b3802"]
-[ext_resource type="PackedScene" uid="uid://ig314vnvt0q3" path="res://Scenes/TestLevel.tscn" id="1_jjgbg"]
-[ext_resource type="PackedScene" uid="uid://bes0na0diuqsl" path="res://Scenes/player_3d.tscn" id="1_jjvhh"]
 [ext_resource type="PackedScene" uid="uid://bgsgbcu5fnjsq" path="res://Scenes/combat.tscn" id="2_bo1nx"]
+[ext_resource type="PackedScene" uid="uid://bn2k8y4ettc0" path="res://Scenes/Levels/town_scene.tscn" id="2_hdf80"]
+[ext_resource type="PackedScene" uid="uid://u2wd2rtxq7p2" path="res://Scenes/Levels/forest_level.tscn" id="3_jwpg7"]
 [ext_resource type="PackedScene" uid="uid://wyx6nrds81fu" path="res://Scenes/damage_popup_3d.tscn" id="5_21xkr"]
 [ext_resource type="Script" uid="uid://rk2mjb2mygmu" path="res://Scripts/PlayerCharacterData.gd" id="5_344ge"]
 [ext_resource type="AudioStream" uid="uid://bak86wjrblxki" path="res://Assets/Sounds/DiceSFX/DiceRoll02.wav" id="5_kry3j"]
 [ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="6_6vcvc"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="6_neg2b"]
 [ext_resource type="SpriteFrames" uid="uid://d3gw0dsh6yjy1" path="res://Resources/SpriteFrames/PlayerKnightSpriteFrames.tres" id="6_ynf5e"]
 [ext_resource type="Resource" uid="uid://bwg810kbjv25b" path="res://Resources/Faces/dodge_face.tres" id="7_7k868"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="7_fdnlq"]
+[ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="7_r33sp"]
+[ext_resource type="Resource" uid="uid://rbxr43hvypuo" path="res://Resources/Dice/freeze_d6.tres" id="8_hdf80"]
 [ext_resource type="Resource" uid="uid://dy3ws0w57a5eq" path="res://Resources/Faces/reversal_face.tres" id="8_hpc6h"]
 [ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/bandit_acolyte_encounter.tres" id="8_jkdf5"]
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/goblin_encounter.tres" id="9_wsu2k"]
@@ -41,37 +43,13 @@ metadata/_custom_type_script = "uid://rk2mjb2mygmu"
 
 [node name="Main" type="Node" unique_id=697850224]
 script = ExtResource("1_b3802")
+town_scene = ExtResource("2_hdf80")
+combat_scene = ExtResource("3_jwpg7")
 
-[node name="World3D" type="Node3D" parent="." unique_id=513677324]
-
-[node name="Player3D" parent="World3D" unique_id=217132671 instance=ExtResource("1_jjvhh")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2641363, 0.09720117, 0.72129273)
-
-[node name="PlayerPosition" type="Marker3D" parent="World3D/Player3D" unique_id=98935548]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.019839287, 0.0026862025, 0.007704735)
-
-[node name="EnemyPositions" parent="World3D" unique_id=445007235 instance=ExtResource("1_8gbba")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7961085, 0)
-
-[node name="EnemyPosition1" type="Marker3D" parent="World3D/EnemyPositions" unique_id=1000409359]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8548956, 0, 0)
-
-[node name="EnemyPosition2" type="Marker3D" parent="World3D/EnemyPositions" unique_id=587226504]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.43224525, 0, -0.56341934)
-
-[node name="EnemyPosition3" type="Marker3D" parent="World3D/EnemyPositions" unique_id=487043098]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.3221593, 0, 0.54769087)
-
-[node name="TestLevel" parent="World3D" unique_id=520438478 instance=ExtResource("1_jjgbg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08592129, 0, 1.4803643)
-
-[node name="Camera3D" type="Camera3D" parent="World3D" unique_id=1645960143]
-transform = Transform3D(1, 0, 0, 0, 0.9720922, 0.23459922, 0, -0.23459922, 0.9720922, 0, 1.5824606, 3.4941568)
-projection = 1
-current = true
-size = 5.673
+[node name="CurrentWorld3D" type="Node3D" parent="." unique_id=853718746]
 
 [node name="CombatUI" parent="." unique_id=1112470734 instance=ExtResource("2_bo1nx")]
+starting_dice = Array[ExtResource("6_neg2b")]([ExtResource("7_r33sp"), ExtResource("7_r33sp"), ExtResource("7_r33sp"), ExtResource("7_r33sp"), ExtResource("8_hdf80")])
 miss_face_template = ExtResource("6_6vcvc")
 dodge_face_template = ExtResource("7_7k868")
 reversal_face_template = ExtResource("8_hpc6h")

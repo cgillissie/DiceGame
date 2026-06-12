@@ -3,9 +3,9 @@
 [ext_resource type="Script" uid="uid://cir0b132xkjfv" path="res://Scripts/dice.gd" id="1_oq2hn"]
 [ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="2_7cx2c"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="3_1kcbr"]
-[ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/DieBlank.png" id="3_b27ex"]
+[ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="3_b27ex"]
 [ext_resource type="Texture2D" uid="uid://b1l3gip2gfjpp" path="res://Assets/Sprites/FaceIcons/RedCircleX.png" id="5_7wmyd"]
-[ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/VolatileCore.png" id="6_7wmyd"]
+[ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/Menus/VolatileCore.png" id="6_7wmyd"]
 [ext_resource type="Texture2D" uid="uid://durcpbpglycbs" path="res://Assets/Sprites/FaceIcons/TempDieIcon.png" id="7_jwc25"]
 
 [node name="Dice" type="Control" unique_id=869068810]

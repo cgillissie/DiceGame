@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c506jxx20y61j"]
 
 [ext_resource type="Script" uid="uid://d2otenqliojej" path="res://active_buff_icon.gd" id="1_c012t"]
-[ext_resource type="Texture2D" uid="uid://bihauefdjddfb" path="res://Assets/Sprites/UI/BuffIconFrame.png" id="2_vrsub"]
+[ext_resource type="Texture2D" uid="uid://bihauefdjddfb" path="res://Assets/Sprites/UI/Food/BuffIconFrame.png" id="2_vrsub"]
 
 [node name="ActiveBuffIcon" type="Control" unique_id=1908623877]
 custom_minimum_size = Vector2(64, 64)

@@ -1,0 +1,42 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://drkirghum0m0k"]
+
+[ext_resource type="Texture2D" uid="uid://ctec2tj3lnbll" path="res://Assets/Sprites/TownSprites/MerchantSpriteSheet.png" id="1_xr07y"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_81mex"]
+atlas = ExtResource("1_xr07y")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8f1dc"]
+atlas = ExtResource("1_xr07y")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vhjx4"]
+atlas = ExtResource("1_xr07y")
+region = Rect2(32, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_81mex")
+}],
+"loop": true,
+"name": &"hover",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8f1dc")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vhjx4")
+}],
+"loop": true,
+"name": &"selected",
+"speed": 5.0
+}]

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b33sna2hrp87g"
-path="res://.godot/imported/DebuffIconFrame.png-db5d704f6ad0aad71c418b4c96a4a9ba.ctex"
+uid="uid://cg3cloty26pox"
+path="res://.godot/imported/DiceSmithSpriteSheet.png-525fac53f1a1aec6c5febec8c20f28b7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/UI/DebuffIconFrame.png"
-dest_files=["res://.godot/imported/DebuffIconFrame.png-db5d704f6ad0aad71c418b4c96a4a9ba.ctex"]
+source_file="res://Assets/Sprites/TownSprites/DiceSmithSpriteSheet.png"
+dest_files=["res://.godot/imported/DiceSmithSpriteSheet.png-525fac53f1a1aec6c5febec8c20f28b7.ctex"]
 
 [params]
 
@@ -37,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

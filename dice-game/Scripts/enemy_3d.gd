@@ -24,6 +24,7 @@ signal selected(enemy_index)
 var active_status_icons: Array[Sprite3D] = []
 @onready var status_icons_3d: Node3D = $StatusIcons3D
 @export var exposed_icon_texture: Texture2D
+@export var freeze_icon_texture: Texture2D
 var status_icon_tooltips := {}
 var enemy_index: int = -1
 var enemy_data: EnemyData
@@ -144,10 +145,18 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 		add_status_icon(
 			exposed_icon_texture,
 			icon_index,
-			"Exposed\nThe next hit deals +1 bonus damage that ignores armor.",
+			"Exposed\nThe next hit deals +1 bonus damage.",
 			1
 		)
-
+		icon_index += 1
+	if enemy.has("freeze_stacks") and enemy["freeze_stacks"] > 0:
+		add_status_icon(
+			freeze_icon_texture,
+			icon_index,
+			"Freeze " + str(enemy["freeze_stacks"]) + "\nShatter damage if killed while frozen.",
+			enemy["freeze_stacks"]
+		)
+		icon_index += 1
 func add_status_icon(texture: Texture2D, index: int, tooltip: String, value: int = 0):
 	if texture == null:
 		return

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://5xubtmaxwycn"]
 
-[ext_resource type="PackedScene" uid="uid://ig314vnvt0q3" path="res://Scenes/TestLevel.tscn" id="1_5pobv"]
+[ext_resource type="PackedScene" uid="uid://ig314vnvt0q3" path="res://Scenes/Levels/TestLevel.tscn" id="1_5pobv"]
 
 [node name="World3D" type="Node3D" unique_id=1240263913]
 

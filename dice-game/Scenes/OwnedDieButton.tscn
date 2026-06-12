@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cxycx6mqq2suc"]
 
 [ext_resource type="Script" uid="uid://ckal2y1wxeoo7" path="res://Scripts/owned_die_button.gd" id="1_gbp4p"]
-[ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/DieBlank.png" id="2_7qjlh"]
+[ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="2_7qjlh"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="3_7qjlh"]
 
 [node name="OwnedDieButton" type="Button" unique_id=1844064812]

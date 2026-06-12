@@ -15,14 +15,17 @@ var reserve_slots: int = 2
 var damage_by_enemy := {}
 var crit_by_enemy := {}
 var combat_log_entries: Array[String] = []
+var selected_dice_order: Array[DiceNode] = []
 
-
+var combat_camera: Camera3D
+var enemy_positions: Node3D
+var player_position: Node3D
 
 @export var player_character_data: PlayerCharacterData
 
-@onready var combat_camera: Camera3D = $"../World3D/Camera3D"
+
 var camera_original_position: Vector3
-@onready var enemy_positions: Node3D = $"../World3D/EnemyPositions"
+
 
 @onready var actions_button: Button = $DiceArea/CenterContainer/DiceGroupsContainer/ActionsGroup/ActionsButton
 @onready var hits_button: Button = $DiceArea/CenterContainer/DiceGroupsContainer/HitsGroup/HitsButton
@@ -48,7 +51,7 @@ var camera_original_position: Vector3
 @onready var enemy_buttons_container: VBoxContainer = $RightMarginContainer/VBoxContainer/EnemyButtonsContainer
 
 @export var player_3d_scene: PackedScene
-@onready var player_position: Node3D = $"../World3D/Player3D/PlayerPosition"
+
 
 var player_3d_node: Player3D = null
 
@@ -74,6 +77,8 @@ var enemy_roll_preview_panel: Control = null
 var combat_max_player_hp: int = 30
 var face_inventory: Array[DiceFace] = []
 var face_cost: int = 8
+var dodge_targets: Array[int] = []
+var reversal_targets: Array[int] = []
 
 @export var basic_d6: DiceData
 
@@ -298,7 +303,6 @@ func _ready():
 	gold_button.pressed.connect(select_group.bind(gold_container))
 	healing_button.pressed.connect(select_group.bind(healing_container))
 	misses_button.pressed.connect(select_group.bind(misses_container))
-	camera_original_position = combat_camera.position
 	apply_volatile_core_button.pressed.connect(apply_volatile_core)
 	restart_run_button.pressed.connect(restart_run)
 	bounty_board_button.pressed.connect(open_bounty_board)
@@ -331,19 +335,16 @@ func _ready():
 	
 	
 	roll_merchant_stock()
-	spawn_player_3d_node()
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_player_block_label()
 	update_incoming_damage_label()
-	update_player_3d_node()
 	
 	# spawn_dice()
 	# await roll_all_dice()
 	regroup_dice()
 	update_group_visibility()
 	# roll_enemy_intents()
-	update_enemy_3d_nodes()
 	
 	# reserve_button.pressed.connect(reserve_selected_dice)
 	end_round_button.pressed.connect(_on_end_turn_pressed)
@@ -362,6 +363,7 @@ func _ready():
 	choice_button_3.pressed.connect(select_encounter.bind(2))
 	
 	update_gold_label()
+	town_panel.visible = false
 	
 func _process(delta):
 	update_assigned_dice_panel_positions()
@@ -515,6 +517,8 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 		"block": 0,
 		"heal": 0,
 		"exposed": false,
+		"frozen": false,
+		"freeze_stacks": 0,
 		"roll_text": "",
 		"rolled_faces": []
 	}
@@ -538,17 +542,23 @@ func spawn_enemy_3d_nodes():
 		enemy_3d_nodes.append(enemy_node)
 		enemy_node.status_hovered.connect(show_status_tooltip)
 		enemy_node.status_unhovered.connect(hide_status_tooltip)
+		
 func roll_enemy_intents():
 	for enemy in active_enemies:
-		var data: EnemyData = enemy["data"]
-
 		enemy["attack"] = 0
 		enemy["crit"] = 0
 		enemy["block"] = 0
 		enemy["heal"] = 0
-		enemy["roll_text"] = ""
 		enemy["crit_rolls"] = []
 		enemy["rolled_faces"] = []
+
+		if enemy["frozen"]:
+			enemy["roll_text"] = "Frozen"
+			continue
+
+		enemy["roll_text"] = ""
+
+		var data: EnemyData = enemy["data"]
 
 		for die_data in data.dice_pool:
 			var face: DiceFace = die_data.faces.pick_random()
@@ -768,7 +778,8 @@ func is_offensive_die(die: DiceNode) -> bool:
 	return die.current_face.result_type == "hit" \
 		or die.current_face.result_type == "crit" \
 		or die.current_face.result_type == "dodge" \
-		or die.current_face.result_type == "reversal"
+		or die.current_face.result_type == "reversal" \
+		or die.current_face.result_type == "freeze"
 	
 	##############################################################################
 	
@@ -804,7 +815,7 @@ func update_enemy_3d_nodes():
 func get_selected_offensive_dice() -> Array[DiceNode]:
 	var selected_dice: Array[DiceNode] = []
 
-	for die in dice_nodes:
+	for die in selected_dice_order:
 		if !is_instance_valid(die):
 			continue
 
@@ -827,10 +838,12 @@ func deselect_assigned_dice():
 		if other_die.assigned_enemy_index != -1:
 			other_die.selected = false
 			other_die.update_visual()
-
+	selected_dice_order.clear()
+	
 func debug_gold():
 	gold += 100
 	update_gold_label()
+	
 func debug_win():
 	enemy_hp = 0
 	win_combat()
@@ -893,7 +906,7 @@ func get_container_for_die(die: DiceNode) -> GridContainer:
 		"heal", "vitality":
 			return healing_container
 
-		"dodge", "reversal":
+		"dodge", "reversal", "freeze":
 			return actions_container
 
 		_:
@@ -966,9 +979,15 @@ func handle_die_click(die: DiceNode):
 		die.update_visual()
 		regroup_dice()
 		return
-	if die.assigned_enemy_index == -1:
-		deselect_assigned_dice()
+
 	die.selected = !die.selected
+
+	if die.selected:
+		selected_dice_order.erase(die)
+		selected_dice_order.append(die)
+	else:
+		selected_dice_order.erase(die)
+
 	die.reserved = false
 	die.update_visual()
 	update_enemy_button_texts()
@@ -1223,30 +1242,7 @@ func resolve_player_dice():
 				break
 
 	# Then remove defeated enemies.
-	var defeated_indices: Array[int] = []
-
-	for i in active_enemies.size():
-		if active_enemies[i]["hp"] <= 0:
-			defeated_indices.append(i)
-
-	defeated_indices.sort()
-	defeated_indices.reverse()
-
-	for index in defeated_indices:
-		var defeated_name = active_enemies[index]["data"].enemy_name
-		add_combat_log_entry(defeated_name + " defeated!")
-
-		clear_assignments_for_enemy(index)
-		defeated_enemies.append(active_enemies[index]["data"])
-
-		if index < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[index]):
-			AudioManager.play_one_shot(enemy_death_sound, 1.05, 1.4)
-			await enemy_3d_nodes[index].death_animation()
-
-		active_enemies.remove_at(index)
-		enemy_3d_nodes.remove_at(index)
-
-	selected_enemy_index = -1
+	await remove_defeated_enemies()
 
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
@@ -1335,7 +1331,21 @@ func end_round():
 			continue
 
 		var enemy = active_enemies[enemy_index]
+		if enemy["frozen"]:
+			show_popup_text(
+				enemy_3d_nodes[enemy_index],
+				"Frozen!",
+				1.2,
+				Color.CYAN
+			)
 
+			add_combat_log_entry(enemy["data"].enemy_name + " is frozen and skips their turn.")
+
+			enemy["frozen"] = false
+
+			update_enemy_3d_nodes()
+			continue
+			
 		if enemy_index >= enemy_3d_nodes.size():
 			continue
 
@@ -1352,7 +1362,35 @@ func end_round():
 			await launch_enemy_die_at_player(enemy_index, face)
 
 			var damage := face.value
+			if face.result_type == "crit":
+				if reversal_targets.has(enemy_index):
+					active_enemies[enemy_index]["hp"] -= damage
 
+					show_damage_popup(enemy_3d_nodes[enemy_index], damage)
+					add_combat_log_entry("Reversed " + str(damage) + " crit damage.")
+
+					if active_enemies[enemy_index]["hp"] < 0:
+						active_enemies[enemy_index]["hp"] = 0
+
+					update_enemy_3d_nodes()
+					await hit_stop(0.035)
+
+					if active_enemies[enemy_index]["hp"] <= 0:
+						await remove_defeated_enemies()
+
+						if active_enemies.is_empty():
+							await get_tree().create_timer(0.5).timeout
+							win_combat()
+							is_resolving_turn = false
+							return
+
+					continue
+
+				if dodge_targets.has(enemy_index):
+					add_combat_log_entry("Dodged " + str(damage) + " crit damage.")
+					show_popup_text(player_3d_node, "Dodged!", 1.0, Color.CORNFLOWER_BLUE)
+					await hit_stop(0.02)
+					continue
 			if face.result_type == "hit":
 				var blocked_amount = min(damage, player_block)
 
@@ -1397,7 +1435,8 @@ func end_round():
 				return
 
 	clear_used_assigned_dice()
-
+	dodge_targets.clear()
+	reversal_targets.clear()
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_player_block_label()
@@ -1405,9 +1444,9 @@ func end_round():
 	apply_enemy_end_round_traits()
 	update_enemy_3d_nodes()
 	apply_end_round_relics()
-
+	decay_enemy_statuses()
 	selected_enemy_index = -1
-
+	
 	await roll_all_dice()
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
@@ -1419,14 +1458,45 @@ func end_round():
 	is_resolving_turn = false
 	end_round_button.disabled = false
 	
+func remove_defeated_enemies():
+	var defeated_indices: Array[int] = []
+
+	for i in active_enemies.size():
+		if active_enemies[i]["hp"] <= 0:
+			defeated_indices.append(i)
+
+	defeated_indices.sort()
+	defeated_indices.reverse()
+
+	for index in defeated_indices:
+		apply_shatter_from_enemy(index)
+		var defeated_name = active_enemies[index]["data"].enemy_name
+		add_combat_log_entry(defeated_name + " defeated!")
+		
+		clear_assignments_for_enemy(index)
+		defeated_enemies.append(active_enemies[index]["data"])
+
+		if index < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[index]):
+			AudioManager.play_one_shot(enemy_death_sound, 1.05, 1.4)
+			await enemy_3d_nodes[index].death_animation()
+
+		active_enemies.remove_at(index)
+		enemy_3d_nodes.remove_at(index)
+
+	refresh_enemy_buttons()
+	update_enemy_3d_nodes()	
+
 func clear_used_assigned_dice():
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
 
-		if die.used and die.assigned_enemy_index != -1:
+		if die.used:
 			die.assigned_enemy_index = -1
 			die.selected = false
+			die.reserved = false
+			die.visible = false
+			die.reparent(rolling_hidden_area)
 			die.update_visual()
 			
 func get_lowest_health_enemy():
@@ -1650,7 +1720,8 @@ func start_new_combat():
 	shop_panel.visible = false
 	loot_panel.visible = false
 	encounter_panel.visible = false
-
+	dodge_targets.clear()
+	reversal_targets.clear()
 	combat_log_entries.clear()
 	combat_log_label.text = ""
 	defeated_enemies.clear()
@@ -2849,7 +2920,40 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 		return
 
 	await launch_die_at_enemy(die, enemy_index)
+	
+	if die.current_face.result_type == "dodge":
+		if !dodge_targets.has(enemy_index):
+			dodge_targets.append(enemy_index)
 
+		add_combat_log_entry("Dodging crits from " + active_enemies[enemy_index]["data"].enemy_name + ".")
+		return
+
+	if die.current_face.result_type == "reversal":
+		if !reversal_targets.has(enemy_index):
+			reversal_targets.append(enemy_index)
+
+		add_combat_log_entry("Reversing crits from " + active_enemies[enemy_index]["data"].enemy_name + ".")
+		return
+		
+	if die.current_face.result_type == "freeze":
+		active_enemies[enemy_index]["frozen"] = true
+		active_enemies[enemy_index]["freeze_stacks"] += die.current_face.value
+
+		show_popup_text(
+			enemy_3d_nodes[enemy_index],
+			"Frozen +" + str(die.current_face.value),
+			1.2,
+			Color.CYAN
+		)
+
+		add_combat_log_entry(
+			active_enemies[enemy_index]["data"].enemy_name +
+			" is frozen and gains " + str(die.current_face.value) + " Freeze stacks."
+		)
+
+		update_enemy_3d_nodes()
+		return
+		
 	match die.current_face.result_type:
 		"hit":
 			var hit_value: int = die.current_face.value + active_combat_bonus_damage
@@ -3161,7 +3265,7 @@ func rebuild_merchant():
 			"x" + str(owned_count),
 			str(item.cost) + "g"
 		)
-
+		button.tooltip_text = item.item_name + "\n" + item.description
 		button.pressed.connect(buy_consumable.bind(item))
 		
 func get_consumable_count(item: ConsumableItem) -> int:
@@ -3205,6 +3309,7 @@ func rebuild_prepare_consumables():
 		prepare_consumables_container.add_child(button)
 
 		button.setup(item, "x" + str(item_counts[item_name]), "")
+		button.tooltip_text = item.item_name + "\n" + item.description
 		button.pressed.connect(use_consumable_item.bind(item))
 		
 func use_consumable(index: int):
@@ -3378,6 +3483,9 @@ func close_food_crafting():
 
 		"camp":
 			expedition_camp_panel.visible = true
+			
+		"town":
+			food_craft_panel.visible = false
 
 		_:
 			expedition_camp_panel.visible = true
@@ -3405,7 +3513,7 @@ func rebuild_food_crafting_grid():
 		food_craft_items_container.add_child(button)
 
 		button.setup(item, "x" + str(item_counts[item_name]), "")
-
+		button.tooltip_text = item.item_name + "\n" + item.description
 		if selected_food_craft_names.has(item_name):
 			button.modulate = Color.YELLOW
 		else:
@@ -3565,3 +3673,56 @@ func end_fusion_mode():
 	selected_die_face_index = -1
 	selected_die_face_index_2 = -1
 	update_fuse_button_text()
+
+func decay_enemy_statuses():
+	for enemy in active_enemies:
+		if enemy["freeze_stacks"] > 0:
+			enemy["freeze_stacks"] -= 1
+
+			if enemy["freeze_stacks"] < 0:
+				enemy["freeze_stacks"] = 0
+				
+
+func apply_shatter_from_enemy(defeated_index: int):
+	if defeated_index < 0 or defeated_index >= active_enemies.size():
+		return
+
+	var shatter_damage: int = active_enemies[defeated_index]["freeze_stacks"]
+
+	if shatter_damage <= 0:
+		return
+
+	var defeated_name = active_enemies[defeated_index]["data"].enemy_name
+	add_combat_log_entry(defeated_name + " shattered for " + str(shatter_damage) + " damage!")
+
+	for i in active_enemies.size():
+		if i == defeated_index:
+			continue
+
+		active_enemies[i]["hp"] -= shatter_damage
+
+		if active_enemies[i]["hp"] < 0:
+			active_enemies[i]["hp"] = 0
+
+		if i < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[i]):
+			show_damage_popup(enemy_3d_nodes[i], shatter_damage)
+
+func open_food_crafting_from_town():
+	food_crafting_return_context = "town"
+
+	food_craft_panel.visible = true
+	selected_food_craft_names.clear()
+
+	rebuild_food_crafting_grid()
+	update_craft_result_label()
+
+func bind_world(world: Node3D):
+	combat_camera = world.get_node("Camera3D")
+	enemy_positions = world.get_node("EnemyPositions")
+	player_position = world.get_node("Player3D/PlayerPosition")
+	camera_original_position = combat_camera.position
+	spawn_player_3d_node()
+
+func set_combat_ui_enabled(enabled: bool):
+	end_round_button.visible = enabled
+	combat_number_label.visible = enabled

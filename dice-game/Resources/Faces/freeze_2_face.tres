@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://cn3i3xwffc2fp"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_m2pxd"]
+[ext_resource type="Texture2D" uid="uid://dxdhj8d3cf7rl" path="res://Assets/Sprites/FaceIcons/FreezeIcon.png" id="1_pfmga"]
+
+[resource]
+script = ExtResource("1_m2pxd")
+result_type = "freeze"
+value = 2
+label = "Freeze"
+icon = ExtResource("1_pfmga")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

@@ -130,6 +130,8 @@ func get_face_text(face: DiceFace) -> String:
 			return ""
 		"reversal":
 			return ""
+		"freeze":
+			return "Freeze " + str(face.value)
 		_:
 			return face.result_type
 

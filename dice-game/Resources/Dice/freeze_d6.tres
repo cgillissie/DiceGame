@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://rbxr43hvypuo"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_7ix41"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_63hlw"]
+[ext_resource type="Resource" uid="uid://d0v7trulgc1bh" path="res://Resources/Faces/freeze_1_face.tres" id="2_al2ul"]
+[ext_resource type="Resource" uid="uid://cn3i3xwffc2fp" path="res://Resources/Faces/freeze_2_face.tres" id="3_fpr8c"]
+
+[resource]
+script = ExtResource("2_63hlw")
+die_name = "Frozen D6"
+faces = Array[ExtResource("1_7ix41")]([ExtResource("2_al2ul"), ExtResource("2_al2ul"), ExtResource("2_al2ul"), ExtResource("3_fpr8c"), ExtResource("3_fpr8c"), ExtResource("3_fpr8c")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bu0l7vb0vya7w"
-path="res://.godot/imported/DieBlank.png-6fd995026e7a6474545f5d1bd0d7d763.ctex"
+uid="uid://kcr0yucpg8re"
+path="res://.godot/imported/BleedIcon.png-40cdcb72adc58a5081b22b1e094d572a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/UI/DieBlank.png"
-dest_files=["res://.godot/imported/DieBlank.png-6fd995026e7a6474545f5d1bd0d7d763.ctex"]
+source_file="res://Assets/Sprites/FaceIcons/BleedIcon.png"
+dest_files=["res://.godot/imported/BleedIcon.png-40cdcb72adc58a5081b22b1e094d572a.ctex"]
 
 [params]
 

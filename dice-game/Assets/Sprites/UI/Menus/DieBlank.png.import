@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bihauefdjddfb"
-path="res://.godot/imported/BuffIconFrame.png-49e6d047ab6bbe6db4c52da1bebd923a.ctex"
+uid="uid://bu0l7vb0vya7w"
+path="res://.godot/imported/DieBlank.png-f56b4df82125899d05b0817e0c64c3c0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/UI/BuffIconFrame.png"
-dest_files=["res://.godot/imported/BuffIconFrame.png-49e6d047ab6bbe6db4c52da1bebd923a.ctex"]
+source_file="res://Assets/Sprites/UI/Menus/DieBlank.png"
+dest_files=["res://.godot/imported/DieBlank.png-f56b4df82125899d05b0817e0c64c3c0.ctex"]
 
 [params]
 

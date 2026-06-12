@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://q1dd1vb8jr1f" path="res://icon.svg" id="2_jt4kh"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="3_6q30p"]
 [ext_resource type="Texture2D" uid="uid://c6rypv0jqt1jr" path="res://Assets/Sprites/HealthBar.png" id="4_dll1a"]
+[ext_resource type="Texture2D" uid="uid://dxdhj8d3cf7rl" path="res://Assets/Sprites/FaceIcons/FreezeIcon.png" id="4_lu3nb"]
 [ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="6_vnddw"]
 [ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="7_85npi"]
 [ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="8_lu3nb"]
@@ -32,6 +33,7 @@ animations = [{
 script = ExtResource("1_cgu6o")
 enemy_trait_icon_scene = ExtResource("2_85npi")
 exposed_icon_texture = ExtResource("9_vnddw")
+freeze_icon_texture = ExtResource("4_lu3nb")
 
 [node name="TraitIcons" type="Node3D" parent="." unique_id=2028826510]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15034842, 1.8876953)

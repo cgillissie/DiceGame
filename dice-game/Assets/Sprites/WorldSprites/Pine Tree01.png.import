@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ccmv1i0klpf41"
-path="res://.godot/imported/ClosedScroll.png-9b878bc266feb74da7e2b3ae7a22e06b.ctex"
+uid="uid://dfs0r3qo8ehm5"
+path="res://.godot/imported/Pine Tree01.png-5c0fdf7f916ab2288608c8abdd637374.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/UI/ClosedScroll.png"
-dest_files=["res://.godot/imported/ClosedScroll.png-9b878bc266feb74da7e2b3ae7a22e06b.ctex"]
+source_file="res://Assets/Sprites/WorldSprites/Pine Tree01.png"
+dest_files=["res://.godot/imported/Pine Tree01.png-5c0fdf7f916ab2288608c8abdd637374.ctex"]
 
 [params]
 
@@ -37,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

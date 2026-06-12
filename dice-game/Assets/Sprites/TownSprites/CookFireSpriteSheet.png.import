@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bt3e23o7t1maf"
-path="res://.godot/imported/VolatileCore.png-5154b1f61fa2929da17ab617713d0bc9.ctex"
+uid="uid://bpmgqslv514xe"
+path="res://.godot/imported/CookFireSpriteSheet.png-9796d3069570ec0714bc5318da2ef388.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/UI/VolatileCore.png"
-dest_files=["res://.godot/imported/VolatileCore.png-5154b1f61fa2929da17ab617713d0bc9.ctex"]
+source_file="res://Assets/Sprites/TownSprites/CookFireSpriteSheet.png"
+dest_files=["res://.godot/imported/CookFireSpriteSheet.png-9796d3069570ec0714bc5318da2ef388.ctex"]
 
 [params]
 
@@ -37,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
