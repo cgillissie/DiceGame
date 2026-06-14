@@ -21,7 +21,8 @@ func _init():
 func _ready():
 	load_town()
 	init_steam()
-
+	combat.expedition_started.connect(start_expedition_world)
+	
 func init_steam():
 	Steam.steamInit()
 	var isRunning = Steam.isSteamRunning()
@@ -69,24 +70,21 @@ func load_town():
 	
 	await get_tree().process_frame
 	combat.set_combat_ui_enabled(false)
+	
 func _on_town_building_clicked(building_id: String):
 	match building_id:
-		"merchant":
-			focus_town_camera("MerchantBuilding")
+		"MerchantBuilding", "merchant":
 			combat.open_merchant()
 
-		"cookfire":
-			focus_town_camera("CookfireBuilding")
+		"CookfireBuilding", "cookfire":
 			combat.open_food_crafting_from_town()
 
-		"dice_smith":
-			focus_town_camera("DiceSmithBuilding")
+		"DiceSmithBuilding", "dice_smith":
 			combat.open_edit_dice_panel_from_town()
 
-		"bounty_board":
-			focus_town_camera("TownHallBuilding")
+		"TownHallBuilding", "bounty_board":
 			combat.open_bounty_board()
-
+			
 func focus_town_camera(target_name: String):
 	if town_camera == null:
 		return
@@ -119,6 +117,12 @@ func focus_town_camera(target_name: String):
 	camera_tween.tween_property(town_camera, "position", target_pos, 0.45)
 	
 func check_town_hover():
+	if town_menu_is_open():
+		if hovered_building != null:
+			hovered_building.force_unhover()
+			hovered_building = null
+		return
+	
 	if town_camera == null:
 		return
 
@@ -149,9 +153,26 @@ func check_town_hover():
 		if hovered_building != null:
 			hovered_building.force_hover()
 			
-func _unhandled_input(event):
+func _input(event):
+	if town_menu_is_open():
+		return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if hovered_building != null:
+				print("Town clicked: ", hovered_building.building_id)
 				hovered_building.force_select()
 				_on_town_building_clicked(hovered_building.building_id)
+
+func town_menu_is_open() -> bool:
+	return combat.merchant_panel.visible \
+		or combat.food_craft_panel.visible \
+		or combat.edit_dice_panel.visible \
+		or combat.bounty_board_panel.visible \
+		or combat.prepare_expedition_panel.visible
+
+func start_expedition_world():
+	load_world(combat_scene)
+	combat.bind_world(active_world)
+	combat.set_combat_ui_enabled(true)
+	combat.start_new_combat()
+	

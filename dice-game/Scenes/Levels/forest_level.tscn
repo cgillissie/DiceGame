@@ -431,13 +431,29 @@ texture_filter = 0
 texture = ExtResource("6_jus2x")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=694660686]
-transform = Transform3D(1, 0, 0, 0, 0.98234606, 0.18707271, 0, -0.18707271, 0.98234606, 0, 6.0434103, 19.844292)
+transform = Transform3D(1, 0, 0, 0, 0.9716483, 0.23643118, 0, -0.23643118, 0.9716483, 0, 6.685319, 19.844292)
 projection = 1
 current = true
 size = 7.996
 
 [node name="EnemyPositions" parent="." unique_id=445007235 instance=ExtResource("7_kryb7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5198846, 0.07116616, 0.7762728)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5198846, 1.5501298, 3.7023532)
+
+[node name="EnemyPosition1" type="Marker3D" parent="EnemyPositions" unique_id=99468299]
+
+[node name="EnemyPosition2" type="Marker3D" parent="EnemyPositions" unique_id=77640834]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.4066544, 0, -0.64180183)
+
+[node name="EnemyPosition3" type="Marker3D" parent="EnemyPositions" unique_id=1618004776]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4542017, 0, 0.5074167)
 
 [node name="Player3D" parent="." unique_id=217132671 instance=ExtResource("8_ad2ga")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.6078353, -2.3841858e-07, 0.40543175)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.6078353, 0.8262055, 3.1613588)
+
+[node name="PlayerPosition" type="Marker3D" parent="Player3D" unique_id=1643269801]
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1523307192]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9891572, 5.2340336, 8.574701)
+light_energy = 3.565
+light_specular = 0.905
+omni_range = 25.125
