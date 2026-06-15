@@ -141,6 +141,8 @@ var last_dropped_die: DiceData = null
 
 # Town Screen #################################
 
+var is_in_town: bool = true
+
 @onready var town_panel: Panel = $TownPanel
 @onready var bounty_board_button: Button = $TownPanel/VBoxContainer/BountyBoardButton
 @onready var town_edit_dice_button: Button = $TownPanel/VBoxContainer/EditDiceButtonTown
@@ -195,6 +197,12 @@ var final_boss_unlocked: bool = false
 @export var hit_damage_sound: AudioStream
 @export var hit_blocked_sound: AudioStream
 @export var enemy_death_sound: AudioStream
+@export var critical_hit_sound: AudioStream
+@export var critical_roll_sound: AudioStream
+@export var food_eat_sound: AudioStream
+@export var dice_smith_crafting_sound: AudioStream
+@export var graft_face_sound: AudioStream
+@export var coin_purchase_sound: AudioStream
 
 # Encounter choice panel
 
@@ -342,6 +350,7 @@ func _ready():
 	enemy_roll_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# load_encounter(current_encounter)
 	town_panel.visible = false
+	set_combat_ui_enabled(false)
 	
 	roll_merchant_stock()
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
@@ -370,7 +379,7 @@ func _ready():
 	choice_button_1.pressed.connect(select_encounter.bind(0))
 	choice_button_2.pressed.connect(select_encounter.bind(1))
 	choice_button_3.pressed.connect(select_encounter.bind(2))
-	
+	connect_ui_click_sounds(self)
 	update_gold_label()
 	town_panel.visible = false
 	
@@ -1118,7 +1127,8 @@ func roll_all_dice():
 		dice_roll_sfx.pitch_scale = randf_range(0.9, 1.1)
 		dice_roll_sfx.play()
 		await die.roll_animated(roll_animation_area, 0, 1)
-
+		if die.current_face != null and die.current_face.result_type == "crit":
+			AudioManager.play_one_shot(critical_roll_sound)
 		var final_container := get_container_for_die(die)
 		await die.fly_to_container(final_container)
 		die.set_compact_mode(false)
@@ -1381,6 +1391,7 @@ func end_round():
 
 			var damage := face.value
 			if face.result_type == "crit":
+				AudioManager.play_one_shot(critical_hit_sound)
 				if reversal_targets.has(enemy_index):
 					active_enemies[enemy_index]["hp"] -= damage
 
@@ -1805,6 +1816,7 @@ func hide_all_groups():
 	
 func update_combat_number_label():
 	combat_number_label.text = "Fight: " + str(combat_number)
+	combat_number_label.visible = !is_in_town
 	
 
 	
@@ -1920,6 +1932,7 @@ func handle_inventory_face_click(index: int):
 
 	select_inventory_face(index)
 	refresh_edit_dice_panel()
+	
 func open_edit_dice_panel():
 	if shop_panel.visible == false:
 		return
@@ -1932,6 +1945,7 @@ func open_edit_dice_panel():
 	selected_inventory_face_indices.clear()
 	update_fuse_button_text()
 	update_volatile_core_button()
+
 
 func close_edit_dice_panel():
 	edit_dice_panel.visible = false
@@ -2151,7 +2165,7 @@ func fuse_selected_faces():
 		face_inventory.remove_at(index)
 
 	face_inventory.append(new_face)
-
+	AudioManager.play_one_shot(graft_face_sound)
 	end_fusion_mode()
 	refresh_edit_dice_panel()
 	
@@ -2337,6 +2351,7 @@ func install_inventory_face(inventory_index: int):
 
 	selected_edit_die.faces[selected_die_face_index] = new_face
 	face_inventory[inventory_index] = old_face
+	AudioManager.play_one_shot(graft_face_sound)
 
 	selected_die_face_index = -1
 
@@ -2382,7 +2397,8 @@ func clear_all_dice_groups():
 		blocks_container,
 		gold_container,
 		healing_container,
-		misses_container
+		misses_container,
+		actions_container
 	]
 
 	for container in containers:
@@ -3006,7 +3022,7 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			enemy["exposed"] = true
 			last_player_damage += die.current_face.value
 
-			AudioManager.play_one_shot(hit_damage_sound, 0.85, 1.15)
+			AudioManager.play_one_shot(critical_hit_sound, 0.85, 1.15)
 			show_popup_text(enemy_node, "-" + str(die.current_face.value), 1.7, Color.GOLD)
 			show_popup_text(enemy_node, "EXPOSED", 2.2, Color.YELLOW)
 			enemy_node.hit_flash()
@@ -3124,6 +3140,7 @@ func select_final_boss_bounty():
 		return
 
 	select_bounty(final_boss_bounty)
+	town_menu_closed.emit()
 	
 func select_bounty(bounty: BountyData):
 	current_bounty = bounty
@@ -3133,7 +3150,7 @@ func select_bounty(bounty: BountyData):
 
 	bounty_board_panel.visible = false
 	town_panel.visible = false
-
+	town_menu_closed.emit()
 	print("Selected bounty: ", bounty.bounty_name)
 
 func complete_current_bounty():
@@ -3151,7 +3168,6 @@ func complete_current_bounty():
 	player_hp = max_player_hp
 	update_player_hp_label()
 
-	town_panel.visible = true
 	shop_panel.visible = false
 	loot_panel.visible = false
 	edit_dice_panel.visible = false
@@ -3308,6 +3324,7 @@ func buy_consumable(item: ConsumableItem):
 		return
 
 	gold -= item.cost
+	play_purchase_sound()
 	consumable_inventory.append(item.duplicate(true))
 
 	AudioManager.play_ui(ui_click_sound)
@@ -3361,7 +3378,7 @@ func use_consumable_item(item: ConsumableItem):
 
 	if index == -1:
 		return
-
+	AudioManager.play_one_shot(food_eat_sound)
 	# Instant heal food: can be used multiple times, does not become an active buff.
 	if item.heal_amount > 0 and item.next_combat_block == 0 and item.next_combat_damage == 0 and item.next_combat_max_hp == 0:
 		player_hp += item.heal_amount
@@ -3761,11 +3778,28 @@ func bind_world(world: Node3D):
 	spawn_player_3d_node()
 
 func set_combat_ui_enabled(enabled: bool):
+	is_in_town = !enabled
+
 	$DiceArea.visible = enabled
 	$LeftMarginContainer.visible = enabled
 	$RightMarginContainer.visible = enabled
+
 	combat_number_label.visible = enabled
 	end_round_button.visible = enabled
 	end_round_button.disabled = !enabled
 
 	begin_expedition_button.visible = !enabled
+
+func connect_ui_click_sounds(root: Node):
+	for child in root.get_children():
+		if child is Button:
+			if !child.pressed.is_connected(_on_any_ui_button_pressed):
+				child.pressed.connect(_on_any_ui_button_pressed)
+
+		connect_ui_click_sounds(child)
+	
+func _on_any_ui_button_pressed():
+	AudioManager.play_ui(ui_click_sound)
+	
+func play_purchase_sound():
+	AudioManager.play_one_shot(coin_purchase_sound)

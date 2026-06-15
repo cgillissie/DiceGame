@@ -2,21 +2,38 @@ extends Node
 
 var AppID = "4832350"
 
+var town_camera_rig: Node3D
 var town_camera: Camera3D
+var town_camera_default_local_position: Vector3
+var town_camera_rig_default_transform: Transform3D
 var camera_tween: Tween
 var hovered_building: TownBuilding = null
 
-var town_camera_default_position: Vector3
-var town_camera_default_transform: Transform3D
+
 var town_camera_default_size: float
 var selected_building: TownBuilding = null
+var town_shake_strength := 0.015
+var town_shake_speed := 1.5
+var town_shake_time := 0.0
+
+var town_camera_is_tweening := false
+
 
 @export var town_scene: PackedScene
 @export var combat_scene: PackedScene
 
+@export var camera_zoom_sound: AudioStream
+@export var critical_hit_sound: AudioStream
+@export var critical_roll_sound: AudioStream
+@export var food_eat_sound: AudioStream
+@export var dice_smith_crafting_sound: AudioStream
+@export var graft_face_sound: AudioStream
+@export var dice_smith_anvil_sound: AudioStream
+
 @onready var current_world_3d: Node3D = $CurrentWorld3D
 @onready var combat = $CombatUI
 @onready var fade_rect: ColorRect = $FadeRect
+@onready var town_music_player: AudioStreamPlayer = $TownMusicPlayer
 
 var active_world: Node3D = null
 
@@ -48,7 +65,8 @@ func init_steam():
 
 func _process(delta):
 	check_town_hover()
-
+	apply_town_camera_shake(delta)
+	
 func load_world(scene: PackedScene):
 	if active_world != null and is_instance_valid(active_world):
 		active_world.queue_free()
@@ -56,32 +74,75 @@ func load_world(scene: PackedScene):
 	active_world = scene.instantiate()
 	current_world_3d.add_child(active_world)
 
+func apply_town_camera_shake(delta):
+	if town_camera == null:
+		return
+
+	if town_camera_is_tweening:
+		return
+
+	town_shake_time += delta * town_shake_speed
+
+	var offset := Vector3(
+		sin(town_shake_time * 1.7),
+		cos(town_shake_time * 1.3),
+		0.0
+	) * get_current_town_shake_strength()
+
+	town_camera.position = town_camera_default_local_position + offset
+	
+func get_current_town_shake_strength() -> float:
+	if town_camera == null:
+		return town_shake_strength
+
+	var zoom_ratio := town_camera.size / town_camera_default_size
+
+	return town_shake_strength * zoom_ratio * 0.5
+	
 func load_town():
 	load_world(town_scene)
-	town_camera = active_world.get_node("Camera3D")
-	town_camera_default_position = town_camera.position
+
+	town_camera_rig = active_world.find_child("TownCameraRig", true, false)
+	town_camera = active_world.find_child("Camera3D", true, false)
+
+	if town_camera_rig == null:
+		push_error("Town scene is missing TownCameraRig.")
+		return
+
+	if town_camera == null:
+		push_error("Town scene is missing Camera3D.")
+		return
+
 	town_camera.current = true
-	town_camera_default_transform = town_camera.global_transform
+
+	town_camera_default_local_position = town_camera.position
+	town_camera_rig_default_transform = town_camera_rig.global_transform
 	town_camera_default_size = town_camera.size
-	
+
 	var merchant: TownBuilding = active_world.find_child("MerchantBuilding", true, false)
 	var cookfire: TownBuilding = active_world.find_child("CookfireBuilding", true, false)
 	var dice_smith: TownBuilding = active_world.find_child("DiceSmithBuilding", true, false)
 	var bounty_board: TownBuilding = active_world.find_child("TownHallBuilding", true, false)
+
 	if merchant == null or cookfire == null or dice_smith == null or bounty_board == null:
 		print("Missing town building node.")
 		print("Merchant: ", merchant)
 		print("Cookfire: ", cookfire)
 		print("DiceSmith: ", dice_smith)
 		print("TownHall: ", bounty_board)
-	return
+		return
+
 	merchant.building_clicked.connect(_on_town_building_clicked)
 	cookfire.building_clicked.connect(_on_town_building_clicked)
 	dice_smith.building_clicked.connect(_on_town_building_clicked)
 	bounty_board.building_clicked.connect(_on_town_building_clicked)
-	
+
 	await get_tree().process_frame
+
 	combat.set_combat_ui_enabled(false)
+
+	if !town_music_player.playing:
+		await fade_audio_in(town_music_player, 0.75)
 	
 func _on_town_building_clicked(building_id: String):
 	match building_id:
@@ -108,7 +169,7 @@ func focus_town_camera(building_id: String):
 	if camera_tween != null and camera_tween.is_valid():
 		camera_tween.kill()
 
-	var target_position := town_camera_default_position
+	var target_position := town_camera_default_local_position
 
 	match building_id:
 		"MerchantBuilding":
@@ -179,10 +240,13 @@ func town_menu_is_open() -> bool:
 
 func start_expedition_world():
 	await fade_to_black()
+	await fade_audio_out(town_music_player, 0.5)
+
 	load_world(combat_scene)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(true)
 	combat.start_new_combat()
+
 	await fade_from_black()
 	
 func return_to_town():
@@ -207,6 +271,12 @@ func focus_camera_anchor(anchor_name: String):
 	if town_camera == null:
 		return
 
+	if town_camera_rig == null:
+		return
+
+	if town_camera_is_tweening:
+		return
+
 	var anchor: Node3D = active_world.find_child(anchor_name, true, false)
 
 	if anchor == null:
@@ -215,11 +285,28 @@ func focus_camera_anchor(anchor_name: String):
 	if camera_tween != null and camera_tween.is_valid():
 		camera_tween.kill()
 
+	town_camera_is_tweening = true
+	AudioManager.play_one_shot(camera_zoom_sound)
+
 	camera_tween = create_tween()
 
-	camera_tween.tween_property(town_camera, "global_position", anchor.global_position, 0.45)
-	camera_tween.parallel().tween_property(town_camera, "global_rotation", anchor.global_rotation, 0.45)
-	camera_tween.parallel().tween_property(town_camera, "size", 2.0, 0.45)
+	camera_tween.tween_property(
+		town_camera_rig,
+		"global_transform",
+		anchor.global_transform,
+		0.5
+	)
+
+	camera_tween.parallel().tween_property(
+		town_camera,
+		"size",
+		2.0,
+		0.5
+	)
+
+	await camera_tween.finished
+
+	town_camera_is_tweening = false
 	
 func reset_town_camera():
 	if town_camera == null:
@@ -228,19 +315,16 @@ func reset_town_camera():
 	if camera_tween != null and camera_tween.is_valid():
 		camera_tween.kill()
 
+	town_camera_is_tweening = true
+
+	AudioManager.play_one_shot(camera_zoom_sound)
+
 	camera_tween = create_tween()
 
 	camera_tween.tween_property(
-		town_camera,
-		"global_position",
-		town_camera_default_transform.origin,
-		0.5
-	)
-
-	camera_tween.parallel().tween_property(
-		town_camera,
-		"global_rotation",
-		town_camera_default_transform.basis.get_euler(),
+		town_camera_rig,
+		"global_transform",
+		town_camera_rig_default_transform,
 		0.5
 	)
 
@@ -251,6 +335,9 @@ func reset_town_camera():
 		0.5
 	)
 
+	await camera_tween.finished
+
+	town_camera_is_tweening = false
 
 func reset_town_interaction():
 	if selected_building != null:
@@ -263,3 +350,23 @@ func reset_town_interaction():
 
 	reset_town_camera()
 	
+func fade_audio_out(player: AudioStreamPlayer, duration: float = 0.5):
+	if player == null or !player.playing:
+		return
+
+	var tween := create_tween()
+	tween.tween_property(player, "volume_db", -40.0, duration)
+	await tween.finished
+	player.stop()
+	player.volume_db = 0.0
+	
+func fade_audio_in(player: AudioStreamPlayer, duration: float = 0.5):
+	if player == null:
+		return
+
+	player.volume_db = -40.0
+	player.play()
+
+	var tween := create_tween()
+	tween.tween_property(player, "volume_db", 0.0, duration)
+	await tween.finished

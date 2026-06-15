@@ -8,9 +8,17 @@
 [ext_resource type="Texture2D" uid="uid://dfs0r3qo8ehm5" path="res://Assets/Sprites/WorldSprites/Pine Tree01.png" id="6_c0t34"]
 [ext_resource type="PackedScene" uid="uid://cg2qfl0ux6xgj" path="res://Assets/3D Models/GrassFieldBackground.gltf" id="6_capvs"]
 [ext_resource type="Texture2D" uid="uid://c5xnnpd3o3tsb" path="res://Assets/Sprites/WorldSprites/Pine Tree02.png" id="7_k3hd8"]
+[ext_resource type="AudioStream" uid="uid://bai15i3f43ipm" path="res://Assets/Sounds/AtmosphericSounds/MerchantWakeUp.wav" id="9_2n375"]
 [ext_resource type="Script" uid="uid://bujue2tghlgvh" path="res://Scenes/Levels/town_building.gd" id="9_c0t34"]
+[ext_resource type="AudioStream" uid="uid://myfrbtrnnlwb" path="res://Assets/Sounds/AtmosphericSounds/MerchantSleeping.wav" id="9_rxeiy"]
 [ext_resource type="Texture2D" uid="uid://cbtdxa4i0s53t" path="res://Assets/Sprites/WorldSprites/GrassSprite01.png" id="10_0b3ro"]
+[ext_resource type="AudioStream" uid="uid://7k1f4pmfp31q" path="res://Assets/Sounds/AtmosphericSounds/Fire.mp3" id="10_c0t34"]
+[ext_resource type="AudioStream" uid="uid://dcwoucjwpb356" path="res://Assets/Sounds/AtmosphericSounds/MerchantSelected.wav" id="10_yfhdt"]
 [ext_resource type="Texture2D" uid="uid://dqe5hdo5rj0ds" path="res://Assets/Sprites/WorldSprites/GrassSprite02.png" id="11_ge4pm"]
+[ext_resource type="AudioStream" uid="uid://ueycg263kuoy" path="res://Assets/Sounds/AtmosphericSounds/DiceSmithHovered.wav" id="14_rxeiy"]
+[ext_resource type="AudioStream" uid="uid://bfark12vdqk0h" path="res://Assets/Sounds/Crafting/DiceSmithAnvil.wav" id="14_yfhdt"]
+[ext_resource type="AudioStream" uid="uid://byeld6w2elmgs" path="res://Assets/Sounds/AtmosphericSounds/DiceSmithSelected.wav" id="15_trvd2"]
+[ext_resource type="Texture2D" uid="uid://ck37jhmiowix" path="res://Assets/Sprites/TownSprites/BountyBoardSignPost.png" id="19_trvd2"]
 
 [sub_resource type="Sky" id="Sky_2n375"]
 
@@ -638,14 +646,14 @@ texture_filter = 0
 texture = ExtResource("11_ge4pm")
 
 [node name="Sprite3D19" type="Sprite3D" parent="grass" unique_id=2121184391]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.3107824, -0.6182215, 15.677734)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.277989, 0.15568149, 6.282825)
 billboard = 1
 shaded = true
 texture_filter = 0
 texture = ExtResource("10_0b3ro")
 
 [node name="Sprite3D20" type="Sprite3D" parent="grass" unique_id=1816835524]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.3440886, -0.62245536, 14.677734)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.1086812, 0.15144765, 5.282825)
 billboard = 1
 shaded = true
 texture_filter = 0
@@ -666,6 +674,10 @@ collision_layer = 8
 collision_mask = 0
 script = ExtResource("9_c0t34")
 building_id = "MerchantBuilding"
+idle_loop_sound = ExtResource("9_rxeiy")
+idle_loop_volume_db = -4.0
+hover_sound = ExtResource("9_2n375")
+select_sound = ExtResource("10_yfhdt")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="buildings/MerchantBuildingSprite/MerchantBuilding" unique_id=111708052]
 transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, -0.09461823, 0)
@@ -692,6 +704,12 @@ building_id = "CookfireBuilding"
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, -0.0006710053, -0.09636993, 0)
 shape = SubResource("SphereShape3D_c0t34")
 
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="buildings/CookfireBuildingSprite" unique_id=1171977644]
+stream = ExtResource("10_c0t34")
+volume_db = -10.0
+autoplay = true
+max_distance = 100.0
+
 [node name="DiceSmithBuildingSprite" type="AnimatedSprite3D" parent="buildings" unique_id=1323908407]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 3.9630494, 1.5831444, 0)
 billboard = 1
@@ -705,16 +723,20 @@ collision_layer = 8
 collision_mask = 0
 script = ExtResource("9_c0t34")
 building_id = "DiceSmithBuilding"
+selected_animation = "idle"
+anvil_sound = ExtResource("14_yfhdt")
+hover_sound = ExtResource("14_rxeiy")
+select_sound = ExtResource("15_trvd2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="buildings/DiceSmithBuildingSprite/DiceSmithBuilding" unique_id=1752517393]
 transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, -0.058640406, 0)
 shape = SubResource("SphereShape3D_k3hd8")
 
 [node name="DiceSmithCameraAnchor" type="Node3D" parent="buildings/DiceSmithBuildingSprite" unique_id=258714318]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12506935, -0.058645234, 0.14076672)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12506935, -0.04941561, 0.14076672)
 
 [node name="TownHallBuildingSprite" type="AnimatedSprite3D" parent="buildings" unique_id=706365037]
-transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 2.3243337, -7.5983872)
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 2.3243337, -8.76572)
 billboard = 1
 shaded = true
 texture_filter = 0
@@ -730,6 +752,14 @@ building_id = "TownHallBuilding"
 [node name="CollisionShape3D" type="CollisionShape3D" parent="buildings/TownHallBuildingSprite/TownHallBuilding" unique_id=421827218]
 transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0, 0.024299636, 0)
 shape = SubResource("BoxShape3D_0b3ro")
+
+[node name="BountyBoardSignPost" type="Sprite3D" parent="buildings" unique_id=1404557240]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0.115333736, 1.2109375, -6.8391705)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("19_trvd2")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1922329594]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.112330675, 1.7698412)
@@ -751,12 +781,6 @@ light_energy = 0.527
 light_size = 1.0
 shadow_enabled = true
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=990747126]
-transform = Transform3D(1, 0, 0, 0, 0.9939706, 0.10964757, 0, -0.10964757, 0.9939706, -0.038933754, 3.7744255, 17)
-projection = 1
-current = true
-size = 6.35
-
 [node name="main light" type="OmniLight3D" parent="." unique_id=1866979814]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 28.930958, 28.9412)
 visible = false
@@ -771,3 +795,26 @@ omni_attenuation = 1.169
 transform = Transform3D(1, 0, 0, 0, 0.4766218, 0.8791084, 0, -0.8791084, 0.4766218, 0, 9.154972, -3.2982323)
 light_energy = 0.189
 sky_mode = 1
+
+[node name="TownCameraRig" type="Node3D" parent="." unique_id=47863758]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.039, 3.774, 17)
+
+[node name="Camera3D" type="Camera3D" parent="TownCameraRig" unique_id=990747126]
+transform = Transform3D(1, 0, 0, 0, 0.9939706, 0.10964757, 0, -0.10964757, 0.9939706, 6.624684e-05, 0.00042557716, 0)
+projection = 1
+current = true
+size = 6.35
+
+[node name="CameraAnchors" type="Node3D" parent="." unique_id=1094039771]
+
+[node name="MerchantCameraAnchor" type="Node3D" parent="CameraAnchors" unique_id=904494204]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1376822, 1.8669178, 3.3839788)
+
+[node name="DiceSmithCameraAnchor" type="Node3D" parent="CameraAnchors" unique_id=444696630]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6325464, 2.4565275, 3.3839788)
+
+[node name="CookfireCameraAnchor" type="Node3D" parent="CameraAnchors" unique_id=2077776996]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.011257291, 1.3740292, 5.181407)
+
+[node name="TownHallCameraAnchor" type="Node3D" parent="CameraAnchors" unique_id=258395147]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11502552, 1.8239028, -3.5709245)

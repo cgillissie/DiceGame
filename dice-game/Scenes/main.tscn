@@ -4,21 +4,26 @@
 [ext_resource type="PackedScene" uid="uid://bgsgbcu5fnjsq" path="res://Scenes/combat.tscn" id="2_bo1nx"]
 [ext_resource type="PackedScene" uid="uid://bn2k8y4ettc0" path="res://Scenes/Levels/town_scene.tscn" id="2_hdf80"]
 [ext_resource type="PackedScene" uid="uid://u2wd2rtxq7p2" path="res://Scenes/Levels/forest_level.tscn" id="3_jwpg7"]
+[ext_resource type="AudioStream" uid="uid://chhkugptwmn5l" path="res://Assets/Sounds/AtmosphericSounds/CameraZoomWind.wav" id="4_r33sp"]
+[ext_resource type="AudioStream" uid="uid://cegwg2epimtwl" path="res://Assets/Sounds/AttackSFX/CriticalHit01.wav" id="5_8cuat"]
 [ext_resource type="PackedScene" uid="uid://wyx6nrds81fu" path="res://Scenes/damage_popup_3d.tscn" id="5_21xkr"]
 [ext_resource type="Script" uid="uid://rk2mjb2mygmu" path="res://Scripts/PlayerCharacterData.gd" id="5_344ge"]
 [ext_resource type="AudioStream" uid="uid://bak86wjrblxki" path="res://Assets/Sounds/DiceSFX/DiceRoll02.wav" id="5_kry3j"]
 [ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="6_6vcvc"]
-[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="6_neg2b"]
+[ext_resource type="AudioStream" uid="uid://dpmiivcqxm1nk" path="res://Assets/Sounds/AttackSFX/CriticalDieRoll.wav" id="6_o1aky"]
 [ext_resource type="SpriteFrames" uid="uid://d3gw0dsh6yjy1" path="res://Resources/SpriteFrames/PlayerKnightSpriteFrames.tres" id="6_ynf5e"]
 [ext_resource type="Resource" uid="uid://bwg810kbjv25b" path="res://Resources/Faces/dodge_face.tres" id="7_7k868"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="7_fdnlq"]
-[ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="7_r33sp"]
-[ext_resource type="Resource" uid="uid://rbxr43hvypuo" path="res://Resources/Dice/freeze_d6.tres" id="8_hdf80"]
+[ext_resource type="AudioStream" uid="uid://dr8h7a71m3sxt" path="res://Assets/Sounds/Consumables/FoodEat.wav" id="7_kwxat"]
+[ext_resource type="AudioStream" uid="uid://cl55mrxix8ta3" path="res://Assets/Sounds/Crafting/DiceSmithItemCrafting.wav" id="8_aa8k8"]
 [ext_resource type="Resource" uid="uid://dy3ws0w57a5eq" path="res://Resources/Faces/reversal_face.tres" id="8_hpc6h"]
 [ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/bandit_acolyte_encounter.tres" id="8_jkdf5"]
+[ext_resource type="AudioStream" uid="uid://bgmo0w5xr83h3" path="res://Assets/Sounds/Crafting/ClothTear.wav" id="9_kqrg6"]
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/goblin_encounter.tres" id="9_wsu2k"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/knight_priest_encounter.tres" id="10_k12tt"]
+[ext_resource type="AudioStream" uid="uid://bfark12vdqk0h" path="res://Assets/Sounds/Crafting/DiceSmithAnvil.wav" id="10_nwwfm"]
 [ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/bandit_ambush.tres" id="11_h1bgf"]
+[ext_resource type="Theme" uid="uid://m4nfa8q8nfv" path="res://Resources/Themes/GameUITheme.tres" id="12_536cc"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="13_wsu2k"]
 [ext_resource type="Resource" uid="uid://0b5u3iojqwxq" path="res://Resources/Bounties/The Congregation.tres" id="14_k12tt"]
 [ext_resource type="Resource" uid="uid://2a2hro5n2rmn" path="res://Resources/Bounties/The Chieftain.tres" id="15_h1bgf"]
@@ -33,6 +38,7 @@
 [ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="25_e08e2"]
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="26_neg2b"]
 [ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="27_r33sp"]
+[ext_resource type="AudioStream" uid="uid://ihx4cw7m2oft" path="res://Assets/Music/YouMustDieTownTheme.wav" id="34_neg2b"]
 
 [sub_resource type="Resource" id="Resource_hptm8"]
 script = ExtResource("5_344ge")
@@ -45,6 +51,13 @@ metadata/_custom_type_script = "uid://rk2mjb2mygmu"
 script = ExtResource("1_b3802")
 town_scene = ExtResource("2_hdf80")
 combat_scene = ExtResource("3_jwpg7")
+camera_zoom_sound = ExtResource("4_r33sp")
+critical_hit_sound = ExtResource("5_8cuat")
+critical_roll_sound = ExtResource("6_o1aky")
+food_eat_sound = ExtResource("7_kwxat")
+dice_smith_crafting_sound = ExtResource("8_aa8k8")
+graft_face_sound = ExtResource("9_kqrg6")
+dice_smith_anvil_sound = ExtResource("10_nwwfm")
 
 [node name="FadeRect" type="ColorRect" parent="." unique_id=1008730374]
 modulate = Color(1, 1, 1, 0)
@@ -59,7 +72,7 @@ color = Color(0, 0, 0, 1)
 [node name="CurrentWorld3D" type="Node3D" parent="." unique_id=853718746]
 
 [node name="CombatUI" parent="." unique_id=1112470734 instance=ExtResource("2_bo1nx")]
-starting_dice = Array[ExtResource("6_neg2b")]([ExtResource("7_r33sp"), ExtResource("7_r33sp"), ExtResource("7_r33sp"), ExtResource("7_r33sp"), ExtResource("8_hdf80")])
+theme = ExtResource("12_536cc")
 miss_face_template = ExtResource("6_6vcvc")
 dodge_face_template = ExtResource("7_7k868")
 reversal_face_template = ExtResource("8_hpc6h")
@@ -73,3 +86,7 @@ merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), Ex
 
 [node name="DiceRollSFX" type="AudioStreamPlayer" parent="CombatUI" unique_id=2019394322]
 stream = ExtResource("5_kry3j")
+
+[node name="TownMusicPlayer" type="AudioStreamPlayer" parent="." unique_id=1247847039]
+stream = ExtResource("34_neg2b")
+autoplay = true
