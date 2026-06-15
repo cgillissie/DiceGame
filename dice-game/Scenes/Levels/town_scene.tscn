@@ -671,6 +671,9 @@ building_id = "MerchantBuilding"
 transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, -0.09461823, 0)
 shape = SubResource("SphereShape3D_capvs")
 
+[node name="MerchantCameraAnchor" type="Node3D" parent="buildings/MerchantBuildingSprite" unique_id=1854928450]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1211679, -0.03797227, 0.077501856)
+
 [node name="CookfireBuildingSprite" type="AnimatedSprite3D" parent="buildings" unique_id=2101467301]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 1.3346267, 1.3663259)
 billboard = 1
@@ -706,6 +709,9 @@ building_id = "DiceSmithBuilding"
 [node name="CollisionShape3D" type="CollisionShape3D" parent="buildings/DiceSmithBuildingSprite/DiceSmithBuilding" unique_id=1752517393]
 transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, -0.058640406, 0)
 shape = SubResource("SphereShape3D_k3hd8")
+
+[node name="DiceSmithCameraAnchor" type="Node3D" parent="buildings/DiceSmithBuildingSprite" unique_id=258714318]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12506935, -0.058645234, 0.14076672)
 
 [node name="TownHallBuildingSprite" type="AnimatedSprite3D" parent="buildings" unique_id=706365037]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 2.3243337, -7.5983872)

@@ -6,11 +6,17 @@ var town_camera: Camera3D
 var camera_tween: Tween
 var hovered_building: TownBuilding = null
 
+var town_camera_default_position: Vector3
+var town_camera_default_transform: Transform3D
+var town_camera_default_size: float
+var selected_building: TownBuilding = null
+
 @export var town_scene: PackedScene
 @export var combat_scene: PackedScene
 
 @onready var current_world_3d: Node3D = $CurrentWorld3D
 @onready var combat = $CombatUI
+@onready var fade_rect: ColorRect = $FadeRect
 
 var active_world: Node3D = null
 
@@ -21,7 +27,10 @@ func _init():
 func _ready():
 	load_town()
 	init_steam()
+	
+	combat.town_menu_closed.connect(reset_town_interaction)
 	combat.expedition_started.connect(start_expedition_world)
+	combat.return_to_town_requested.connect(return_to_town)
 	
 func init_steam():
 	Steam.steamInit()
@@ -50,7 +59,10 @@ func load_world(scene: PackedScene):
 func load_town():
 	load_world(town_scene)
 	town_camera = active_world.get_node("Camera3D")
+	town_camera_default_position = town_camera.position
 	town_camera.current = true
+	town_camera_default_transform = town_camera.global_transform
+	town_camera_default_size = town_camera.size
 	
 	var merchant: TownBuilding = active_world.find_child("MerchantBuilding", true, false)
 	var cookfire: TownBuilding = active_world.find_child("CookfireBuilding", true, false)
@@ -74,47 +86,39 @@ func load_town():
 func _on_town_building_clicked(building_id: String):
 	match building_id:
 		"MerchantBuilding", "merchant":
+			focus_camera_anchor("MerchantCameraAnchor")
 			combat.open_merchant()
 
-		"CookfireBuilding", "cookfire":
-			combat.open_food_crafting_from_town()
-
 		"DiceSmithBuilding", "dice_smith":
+			focus_camera_anchor("DiceSmithCameraAnchor")
 			combat.open_edit_dice_panel_from_town()
 
+		"CookfireBuilding", "cookfire":
+			focus_camera_anchor("CookfireCameraAnchor")
+			combat.open_food_crafting_from_town()
+
 		"TownHallBuilding", "bounty_board":
+			focus_camera_anchor("TownHallCameraAnchor")
 			combat.open_bounty_board()
 			
-func focus_town_camera(target_name: String):
+func focus_town_camera(building_id: String):
 	if town_camera == null:
-		return
-
-	var target: Node3D = active_world.find_child(target_name, true, false)
-
-	if target == null:
 		return
 
 	if camera_tween != null and camera_tween.is_valid():
 		camera_tween.kill()
 
-	camera_tween = create_tween()
+	var target_position := town_camera_default_position
 
-	var target_pos := town_camera.position
-
-	match target_name:
+	match building_id:
 		"MerchantBuilding":
-			target_pos = Vector3(-3.0, 3.0, 6.0)
+			target_position = Vector3(-3.0, 2.5, 5.0)
 
 		"DiceSmithBuilding":
-			target_pos = Vector3(3.0, 3.0, 6.0)
+			target_position = Vector3(3.0, 2.5, 5.0)
 
-		"CookfireBuilding":
-			target_pos = Vector3(0.0, 2.5, 5.0)
-
-		"TownHallBuilding":
-			target_pos = Vector3(0.0, 4.0, 7.0)
-
-	camera_tween.tween_property(town_camera, "position", target_pos, 0.45)
+	camera_tween = create_tween()
+	camera_tween.tween_property(town_camera, "position", target_position, 0.45)
 	
 func check_town_hover():
 	if town_menu_is_open():
@@ -160,8 +164,11 @@ func _input(event):
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if hovered_building != null:
 				print("Town clicked: ", hovered_building.building_id)
-				hovered_building.force_select()
-				_on_town_building_clicked(hovered_building.building_id)
+
+				selected_building = hovered_building
+				selected_building.force_select()
+
+				_on_town_building_clicked(selected_building.building_id)
 
 func town_menu_is_open() -> bool:
 	return combat.merchant_panel.visible \
@@ -171,8 +178,88 @@ func town_menu_is_open() -> bool:
 		or combat.prepare_expedition_panel.visible
 
 func start_expedition_world():
+	await fade_to_black()
 	load_world(combat_scene)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(true)
 	combat.start_new_combat()
+	await fade_from_black()
+	
+func return_to_town():
+	await fade_to_black()
+	load_town()
+	combat.set_combat_ui_enabled(false)
+	await fade_from_black()
+
+func fade_to_black():
+	fade_rect.visible = true
+	var tween := create_tween()
+	tween.tween_property(fade_rect, "modulate:a", 1.0, 0.35)
+	await tween.finished
+
+func fade_from_black():
+	var tween := create_tween()
+	tween.tween_property(fade_rect, "modulate:a", 0.0, 0.35)
+	await tween.finished
+	fade_rect.visible = false
+
+func focus_camera_anchor(anchor_name: String):
+	if town_camera == null:
+		return
+
+	var anchor: Node3D = active_world.find_child(anchor_name, true, false)
+
+	if anchor == null:
+		return
+
+	if camera_tween != null and camera_tween.is_valid():
+		camera_tween.kill()
+
+	camera_tween = create_tween()
+
+	camera_tween.tween_property(town_camera, "global_position", anchor.global_position, 0.45)
+	camera_tween.parallel().tween_property(town_camera, "global_rotation", anchor.global_rotation, 0.45)
+	camera_tween.parallel().tween_property(town_camera, "size", 2.0, 0.45)
+	
+func reset_town_camera():
+	if town_camera == null:
+		return
+
+	if camera_tween != null and camera_tween.is_valid():
+		camera_tween.kill()
+
+	camera_tween = create_tween()
+
+	camera_tween.tween_property(
+		town_camera,
+		"global_position",
+		town_camera_default_transform.origin,
+		0.5
+	)
+
+	camera_tween.parallel().tween_property(
+		town_camera,
+		"global_rotation",
+		town_camera_default_transform.basis.get_euler(),
+		0.5
+	)
+
+	camera_tween.parallel().tween_property(
+		town_camera,
+		"size",
+		town_camera_default_size,
+		0.5
+	)
+
+
+func reset_town_interaction():
+	if selected_building != null:
+		selected_building.force_deselect()
+		selected_building = null
+
+	if hovered_building != null:
+		hovered_building.force_unhover()
+		hovered_building = null
+
+	reset_town_camera()
 	

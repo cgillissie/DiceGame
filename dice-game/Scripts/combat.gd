@@ -256,6 +256,8 @@ var merchant_food_stock: Array[ConsumableItem] = []
 @onready var prepare_cook_food_button: Button = $PrepareExpeditionPanel/VBoxContainer/CookFoodButton
 
 signal expedition_started
+signal return_to_town_requested
+signal town_menu_closed
 
 var selected_food_craft_names: Array[String] = []
 
@@ -299,6 +301,7 @@ func _ready():
 	hide_all_groups()
 	for die in starting_dice:
 		owned_dice.append(die.duplicate(true))
+		
 	fuse_faces_button.pressed.connect(toggle_fusion_mode)
 	hits_button.pressed.connect(select_group.bind(hits_container))
 	crits_button.pressed.connect(select_group.bind(crits_container))
@@ -328,7 +331,10 @@ func _ready():
 	close_craft_button.pressed.connect(close_food_crafting)
 	prepare_cook_food_button.pressed.connect(open_food_crafting_from_prepare)
 	begin_expedition_button.pressed.connect(open_prepare_expedition)
+	actions_button.pressed.connect(select_group.bind(actions_container))
+	prepare_cook_food_button.visible = false
 	
+
 	if current_encounter == null:
 		if encounter_pool.size() > 0:
 			current_encounter = encounter_pool.pick_random()
@@ -1494,7 +1500,16 @@ func remove_defeated_enemies():
 
 		active_enemies.remove_at(index)
 		enemy_3d_nodes.remove_at(index)
+	var chained_death := false
 
+	for i in active_enemies.size():
+		if active_enemies[i]["hp"] <= 0:
+			chained_death = true
+			break
+
+	if chained_death:
+		await remove_defeated_enemies()
+		return
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()	
 
@@ -1923,10 +1938,10 @@ func close_edit_dice_panel():
 
 	if edit_dice_return_context == "camp":
 		expedition_camp_panel.visible = true
-
+	else:
+		town_menu_closed.emit()
 
 	edit_dice_return_context = ""
-
 	AudioManager.play_ui(ui_click_sound)
 	selected_edit_die = null
 	selected_die_face_index = -1
@@ -3079,6 +3094,7 @@ func open_bounty_board():
 
 func close_bounty_board():
 	bounty_board_panel.visible = false
+	town_menu_closed.emit()
 	
 func rebuild_bounty_board():
 	clear_container(bounty_buttons_container)
@@ -3141,6 +3157,7 @@ func complete_current_bounty():
 	edit_dice_panel.visible = false
 	selected_bounty_label.text = "No Bounty Selected"
 	print("Bounty completed. Returned to town.")
+	return_to_town_requested.emit()
 	
 func apply_bounty_reward(bounty: BountyData):
 	if bounty.reward_food_tier_unlock > unlocked_food_tier:
@@ -3207,7 +3224,9 @@ func open_prepare_expedition():
 
 	prepare_return_context = "town"
 	town_panel.visible = false
+	prepare_selected_bounty_label.visible = true
 	prepare_expedition_panel.visible = true
+	prepare_cancel_button.visible = true
 	prepare_start_expedition_button.text = "Start Expedition"
 	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
 	prepare_expedition_label.text = "Prepare Expedition"
@@ -3254,7 +3273,7 @@ func open_merchant():
 
 func close_merchant():
 	merchant_panel.visible = false
-	town_panel.visible = false
+	town_menu_closed.emit()
 
 func rebuild_merchant():
 	clear_container(merchant_stock_container)
@@ -3402,8 +3421,10 @@ func update_active_food_icons():
 		
 func open_camp_items():
 	prepare_return_context = "camp"
+	prepare_selected_bounty_label.visible = false
 	expedition_camp_panel.visible = false
 	prepare_expedition_panel.visible = true
+	prepare_cancel_button.visible = false
 	prepare_start_expedition_button.text = "Return to Camp"
 	prepare_expedition_label.text = "Use Items"
 	if current_bounty != null:
@@ -3475,6 +3496,7 @@ func hide_status_tooltip():
 	status_tooltip_panel.visible = false
 
 func open_food_crafting():
+	food_crafting_return_context = "camp"
 	expedition_camp_panel.visible = false
 	food_craft_panel.visible = true
 	selected_food_craft_names.clear()
@@ -3483,8 +3505,18 @@ func open_food_crafting():
 	
 func close_food_crafting():
 	food_craft_panel.visible = false
-	
 	selected_food_craft_names.clear()
+
+	match food_crafting_return_context:
+		"camp":
+			expedition_camp_panel.visible = true
+
+		"town":
+			town_menu_closed.emit()
+
+		_:
+			town_menu_closed.emit()
+
 	food_crafting_return_context = ""
 	
 func rebuild_food_crafting_grid():
@@ -3703,10 +3735,8 @@ func apply_shatter_from_enemy(defeated_index: int):
 
 func open_food_crafting_from_town():
 	food_crafting_return_context = "town"
-
 	food_craft_panel.visible = true
 	selected_food_craft_names.clear()
-
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
 

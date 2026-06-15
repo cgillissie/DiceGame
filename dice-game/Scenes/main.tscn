@@ -46,6 +46,16 @@ script = ExtResource("1_b3802")
 town_scene = ExtResource("2_hdf80")
 combat_scene = ExtResource("3_jwpg7")
 
+[node name="FadeRect" type="ColorRect" parent="." unique_id=1008730374]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
 [node name="CurrentWorld3D" type="Node3D" parent="." unique_id=853718746]
 
 [node name="CombatUI" parent="." unique_id=1112470734 instance=ExtResource("2_bo1nx")]

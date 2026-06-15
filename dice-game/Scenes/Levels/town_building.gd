@@ -10,6 +10,8 @@ signal building_clicked(building_id: String)
 
 @onready var sprite: AnimatedSprite3D = get_parent() as AnimatedSprite3D
 
+var is_selected := false
+
 func _ready():
 	input_event.connect(_on_input_event)
 	mouse_entered.connect(_on_mouse_entered)
@@ -41,10 +43,21 @@ func force_hover():
 		sprite.play(hover_animation)
 
 func force_unhover():
+	if is_selected:
+		return
+
 	if sprite != null and sprite.sprite_frames.has_animation(idle_animation):
 		sprite.play(idle_animation)
 
 func force_select():
+	is_selected = true
 	print("Clicked: ", building_id)
+
 	if sprite != null and sprite.sprite_frames.has_animation(selected_animation):
 		sprite.play(selected_animation)
+
+func force_deselect():
+	is_selected = false
+
+	if sprite != null and sprite.sprite_frames.has_animation(idle_animation):
+		sprite.play(idle_animation)
