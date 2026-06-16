@@ -542,6 +542,13 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 	}
 	
 func spawn_enemy_3d_nodes():
+	if enemy_positions == null:
+		push_error("enemy_positions is null.")
+		return
+
+	if enemy_positions.get_child_count() < active_enemies.size():
+		push_error("Not enough enemy positions. Need " + str(active_enemies.size()) + ", have " + str(enemy_positions.get_child_count()))
+		return
 	for enemy_node in enemy_3d_nodes:
 		if is_instance_valid(enemy_node):
 			enemy_node.queue_free()
@@ -3089,13 +3096,15 @@ func start_expedition():
 		print("No bounty selected.")
 		return
 
-	
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 
 	expedition_progress = 0
 	expedition_is_boss_fight = false
 	expedition_required_encounters = current_bounty.required_encounters_before_boss
+
+	print("Starting bounty: ", current_bounty.bounty_name)
+	print("Required encounters before boss: ", expedition_required_encounters)
 
 	town_panel.visible = false
 	bounty_board_panel.visible = false
@@ -3207,14 +3216,16 @@ func continue_expedition():
 
 	expedition_progress += 1
 
-	if expedition_progress >= expedition_required_encounters:
+	print("Expedition progress: ", expedition_progress, "/", expedition_required_encounters)
+
+	if expedition_progress < expedition_required_encounters:
+		current_encounter = current_bounty.expedition_encounter_pool.pick_random()
+	else:
 		expedition_is_boss_fight = true
 		current_encounter = current_bounty.boss_encounter
-	else:
-		current_encounter = current_bounty.expedition_encounter_pool.pick_random()
 
 	start_new_combat()
-
+	
 func open_trophies():
 	town_panel.visible = false
 	trophy_panel.visible = true
@@ -3265,6 +3276,7 @@ func confirm_start_expedition():
 		return
 
 	prepare_return_context = "town"
+	start_expedition()
 	expedition_started.emit()
 	
 func roll_merchant_stock():
@@ -3761,7 +3773,8 @@ func bind_world(world: Node3D):
 	combat_camera = world.find_child("Camera3D", true, false)
 	enemy_positions = world.find_child("EnemyPositions", true, false)
 	player_position = world.find_child("PlayerPosition", true, false)
-
+	print("World: ", world.name)
+	print("EnemyPositions: ", enemy_positions)
 	if combat_camera == null:
 		push_error("Combat world is missing Camera3D.")
 		return
@@ -3774,6 +3787,7 @@ func bind_world(world: Node3D):
 		push_error("Combat world is missing PlayerPosition.")
 		return
 
+	combat_camera.current = true
 	camera_original_position = combat_camera.position
 	spawn_player_3d_node()
 

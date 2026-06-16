@@ -12,6 +12,8 @@
 [ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="8_panp2"]
 [ext_resource type="Resource" uid="uid://d1ycpernyllfk" path="res://Resources/Faces/hit_3_face.tres" id="9_h5hr5"]
 [ext_resource type="SpriteFrames" uid="uid://b4e625c1ifwdt" path="res://Resources/SpriteFrames/GoblinChieftainSpriteFrames.tres" id="11_rw0gg"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="13_rw0gg"]
+[ext_resource type="Resource" uid="uid://cs2belubiu3an" path="res://Resources/Traits/armored_1.tres" id="14_pn832"]
 
 [resource]
 script = ExtResource("3_lnw71")
@@ -25,4 +27,5 @@ gold_reward = 50
 volatile_core_drop_chance = 1.0
 sprite_frames = ExtResource("11_rw0gg")
 sprite_scale = Vector3(6, 6, 6)
+traits = Array[ExtResource("13_rw0gg")]([ExtResource("14_pn832")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

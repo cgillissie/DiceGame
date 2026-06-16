@@ -11,11 +11,12 @@
 [ext_resource type="Resource" uid="uid://dj6p82bkcskuk" path="res://Resources/Faces/heal_3_face.tres" id="7_uo67f"]
 [ext_resource type="Resource" uid="uid://qpb2dk6lssnc" path="res://Resources/Faces/vitality_face.tres" id="8_lut8i"]
 [ext_resource type="SpriteFrames" uid="uid://cbl1o38c3eud6" path="res://Resources/SpriteFrames/PriestSpriteFrames.tres" id="11_rvi0j"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="12_iaovh"]
 
 [resource]
 script = ExtResource("3_ive2j")
 enemy_name = "Priest"
-max_hp = 3
+max_hp = 4
 dice_pool = Array[ExtResource("1_twtam")]([ExtResource("2_hbgdn"), ExtResource("3_wuu4g")])
 face_drop_pool = Array[ExtResource("2_os3lu")]([ExtResource("5_rvi0j"), ExtResource("5_rvi0j"), ExtResource("6_iaovh"), ExtResource("6_iaovh"), ExtResource("7_uo67f"), ExtResource("8_lut8i")])
 dice_drop_pool = Array[ExtResource("1_twtam")]([ExtResource("2_wuu4g")])

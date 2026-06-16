@@ -10,12 +10,14 @@
 [ext_resource type="Resource" uid="uid://dj6p82bkcskuk" path="res://Resources/Faces/heal_3_face.tres" id="6_gy4j3"]
 [ext_resource type="Resource" uid="uid://qpb2dk6lssnc" path="res://Resources/Faces/vitality_face.tres" id="7_ld44i"]
 [ext_resource type="SpriteFrames" uid="uid://cbl1o38c3eud6" path="res://Resources/SpriteFrames/PriestSpriteFrames.tres" id="9_d0o08"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="11_gy4j3"]
+[ext_resource type="Resource" uid="uid://c0ojcob53cive" path="res://Resources/Traits/regenerating_1.tres" id="12_ld44i"]
 
 [resource]
 script = ExtResource("3_gaggj")
 enemy_name = "High Priest"
 max_hp = 10
-dice_pool = Array[ExtResource("1_01s3f")]([ExtResource("4_ltocn"), ExtResource("4_ltocn"), ExtResource("5_78asy")])
+dice_pool = Array[ExtResource("1_01s3f")]([ExtResource("4_ltocn"), ExtResource("5_78asy"), ExtResource("5_78asy")])
 face_drop_pool = Array[ExtResource("2_vnol4")]([ExtResource("6_gy4j3"), ExtResource("7_ld44i"), ExtResource("6_gy4j3")])
 dice_drop_pool = Array[ExtResource("1_01s3f")]([ExtResource("2_8pmig"), ExtResource("3_78asy")])
 dice_drop_chance = 1.0
@@ -23,4 +25,5 @@ gold_reward = 50
 volatile_core_drop_chance = 1.0
 sprite_frames = ExtResource("9_d0o08")
 sprite_scale = Vector3(6, 6, 6)
+traits = Array[ExtResource("11_gy4j3")]([ExtResource("12_ld44i")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

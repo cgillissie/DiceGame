@@ -8,11 +8,12 @@
 [ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="3_dvjqi"]
 [ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="5_m0xso"]
 [ext_resource type="SpriteFrames" uid="uid://cc4neuin2qp6k" path="res://Resources/SpriteFrames/AcolyteSpriteFrames.tres" id="8_m0xso"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="9_62f34"]
 
 [resource]
 script = ExtResource("3_2qdje")
 enemy_name = "Acolyte"
-max_hp = 3
+max_hp = 5
 dice_pool = Array[ExtResource("1_t7c7u")]([ExtResource("2_rkmco"), ExtResource("3_dvjqi")])
 face_drop_pool = Array[ExtResource("2_dn2q0")]([ExtResource("5_m0xso")])
 dice_drop_pool = Array[ExtResource("1_t7c7u")]([ExtResource("2_62f34")])

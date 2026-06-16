@@ -10,11 +10,12 @@
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="8_wahoo"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="9_gei1o"]
 [ext_resource type="SpriteFrames" uid="uid://b18wn4grfop71" path="res://Resources/SpriteFrames/KnightSpriteSheet.tres" id="10_yusvf"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="11_wtf8f"]
 
 [resource]
 script = ExtResource("9_gei1o")
 enemy_name = "Knight"
-max_hp = 5
+max_hp = 8
 dice_pool = Array[ExtResource("1_w8iod")]([ExtResource("3_wtf8f"), ExtResource("4_od7d8")])
 face_drop_pool = Array[ExtResource("5_cgnl8")]([ExtResource("6_d2vjs"), ExtResource("7_b6shd"), ExtResource("8_wahoo")])
 dice_drop_pool = Array[ExtResource("1_w8iod")]([ExtResource("2_yusvf")])
