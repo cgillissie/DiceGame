@@ -113,13 +113,25 @@ var dropped_face: DiceFace
 @onready var edit_dice_button: Button = $ShopPanel/VBoxContainer/EditDiceButton
 @onready var edit_dice_panel: Panel = $EditDicePanel
 @onready var die_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox/DieFacesContainer
-@onready var close_edit_button: Button = $EditDicePanel/MarginContainer/MainVBox/CloseEditButton
-@onready var fuse_faces_button: Button = $EditDicePanel/MarginContainer/MainVBox/FuseFacesButton
+@onready var close_edit_button: Button = $EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox/CloseEditButton
+@onready var fuse_faces_button: Button = $EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox/FuseFacesButton
 @onready var apply_volatile_core_button = $EditDicePanel/MarginContainer/MainVBox/ApplyVolatileCoreButton
 @onready var owned_dice_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer/OwnedDiceContainer
 @export var owned_die_button_scene: PackedScene
 @export var equipped_face_button_scene: PackedScene
 @onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer/InventoryFacesContainer
+@onready var die_crafting_panel: Panel = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel
+@onready var fragment_label: Label = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/FragmentLabel
+
+var die_fragments: int = 0
+var last_die_fragments_gained: int = 0
+
+@onready var d4_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D4Button
+@onready var d6_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D6Button
+@onready var d8_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D8Button
+@onready var d10_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D10Button
+@onready var d12_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D12Button
+@onready var d20_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D20Button
 
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
@@ -253,6 +265,7 @@ var unlocked_food_tier: int = 1
 @onready var merchant_gold_label: Label = $MerchantPanel/MarginContainer/VBoxContainer/MerchantGoldLabel
 @export var merchant_food_pool: Array[ConsumableItem]
 var merchant_food_stock: Array[ConsumableItem] = []
+var unlocked_merchant_faces: Array[DiceFace] = []
 
 # Food Crafting Panel ############################
 @onready var food_craft_panel: Panel = $FoodCraftPanel
@@ -344,7 +357,12 @@ func _ready():
 	close_craft_button.pressed.connect(close_food_crafting)
 	begin_expedition_button.pressed.connect(open_prepare_expedition)
 	actions_button.pressed.connect(select_group.bind(actions_container))
-
+	d4_craft_button.pressed.connect(craft_empty_die.bind(4))
+	d6_craft_button.pressed.connect(craft_empty_die.bind(6))
+	d8_craft_button.pressed.connect(craft_empty_die.bind(8))
+	d10_craft_button.pressed.connect(craft_empty_die.bind(10))
+	d12_craft_button.pressed.connect(craft_empty_die.bind(12))
+	d20_craft_button.pressed.connect(craft_empty_die.bind(20))
 	if current_encounter == null:
 		if encounter_pool.size() > 0:
 			current_encounter = encounter_pool.pick_random()
@@ -548,6 +566,7 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 		"exposed": false,
 		"frozen": false,
 		"freeze_stacks": 0,
+		"bleed": 0,
 		"roll_text": "",
 		"rolled_faces": []
 	}
@@ -820,7 +839,9 @@ func is_offensive_die(die: DiceNode) -> bool:
 		or die.current_face.result_type == "crit" \
 		or die.current_face.result_type == "dodge" \
 		or die.current_face.result_type == "reversal" \
-		or die.current_face.result_type == "freeze"
+		or die.current_face.result_type == "freeze" \
+		or die.current_face.result_type == "bleed" \
+		or die.current_face.result_type == "twist_knife"
 	
 	##############################################################################
 	
@@ -951,7 +972,7 @@ func get_container_for_die(die: DiceNode) -> GridContainer:
 		"heal", "vitality":
 			return healing_container
 
-		"dodge", "reversal", "freeze":
+		"dodge", "reversal", "freeze", "bleed", "twist_knife":
 			return actions_container
 
 		_:
@@ -1489,7 +1510,14 @@ func end_round():
 				lose_combat()
 				is_resolving_turn = false
 				return
+	apply_enemy_bleed()
+	await remove_defeated_enemies()
 
+	if active_enemies.is_empty():
+		await get_tree().create_timer(0.5).timeout
+		win_combat()
+		is_resolving_turn = false
+		return
 	clear_used_assigned_dice()
 	dodge_targets.clear()
 	reversal_targets.clear()
@@ -1663,7 +1691,9 @@ func win_combat():
 	last_dropped_faces.clear()
 	last_dropped_face = null
 	last_dropped_die = null
-
+	last_die_fragments_gained = randi_range(1, 3)
+	die_fragments += last_die_fragments_gained
+	
 	for enemy_data in defeated_enemies:
 		total_gold_reward += enemy_data.gold_reward
 		if randf() <= enemy_data.volatile_core_drop_chance:
@@ -1737,7 +1767,8 @@ func show_loot_panel():
 		loot_volatile_core_label.text = "Volatile Cores: +" + str(last_volatile_cores_gained)
 	else:
 		loot_volatile_core_label.visible = false
-
+	loot_bonus_drop_label.visible = true
+	loot_bonus_drop_label.text += "\nDie Fragments: +" + str(last_die_fragments_gained)
 	combat_log_label.text = "Enemy defeated!"
 	
 func open_shop_after_loot():
@@ -1988,7 +2019,16 @@ func handle_inventory_face_click(index: int):
 func open_edit_dice_panel():
 	if shop_panel.visible == false:
 		return
-
+	edit_dice_panel.set_anchors_preset(Control.PRESET_CENTER)
+	edit_dice_panel.position = Vector2.ZERO
+	edit_dice_panel.anchor_left = 0.5
+	edit_dice_panel.anchor_top = 0.5
+	edit_dice_panel.anchor_right = 0.5
+	edit_dice_panel.anchor_bottom = 0.5
+	edit_dice_panel.offset_left = -550
+	edit_dice_panel.offset_top = -350
+	edit_dice_panel.offset_right = 550
+	edit_dice_panel.offset_bottom = 350
 	shop_panel.visible = false
 	edit_dice_panel.visible = true
 	AudioManager.play_ui(ui_click_sound)
@@ -2272,6 +2312,10 @@ func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 
 	if face_a.result_type == "miss" or face_b.result_type == "miss":
 		return false
+		
+	if (face_a.result_type == "crit" and face_b.result_type == "bleed") \
+		or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
+			return true
 
 	if face_a.result_type != face_b.result_type:
 		return false
@@ -2287,6 +2331,10 @@ func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
 
 	if (face_a.result_type == "dodge" and face_b.result_type == "crit") or (face_a.result_type == "crit" and face_b.result_type == "dodge"):
 		return create_reversal_face()
+		
+	if (face_a.result_type == "crit" and face_b.result_type == "bleed") \
+		or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
+			return create_twist_knife_face()
 
 	var new_face: DiceFace = face_a.duplicate(true)
 	new_face.value += 1
@@ -2305,6 +2353,44 @@ func create_upgraded_face(face: DiceFace) -> DiceFace:
 	new_face.value += 1
 	new_face.face_name = "Face"
 	return new_face
+	
+func refresh_die_crafting_panel():
+	if die_crafting_panel == null:
+		return
+
+	fragment_label.text = "Die Fragments: " + str(die_fragments)
+
+	d4_craft_button.disabled = die_fragments < 4
+	d6_craft_button.disabled = die_fragments < 6
+	d8_craft_button.disabled = die_fragments < 8
+	d10_craft_button.disabled = die_fragments < 10
+	d12_craft_button.disabled = die_fragments < 12
+	d20_craft_button.disabled = die_fragments < 20
+	
+func craft_empty_die(sides: int):
+	if die_fragments < sides:
+		return
+
+	die_fragments -= sides
+
+	var new_die := DiceData.new()
+	new_die.die_name = "Empty D" + str(sides)
+	new_die.sides = sides
+
+	for i in sides:
+		new_die.faces.append(miss_face_template.duplicate(true))
+
+	owned_dice.append(new_die)
+
+	refresh_die_crafting_panel()
+	refresh_edit_dice_panel()
+	
+func create_twist_knife_face() -> DiceFace:
+	var face := DiceFace.new()
+	face.face_name = "Twist Knife"
+	face.result_type = "twist_knife"
+	face.value = 0
+	return face
 	
 func update_fuse_button_text():
 	if fusion_mode:
@@ -3034,7 +3120,21 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 		add_combat_log_entry("Reversing crits from " + active_enemies[enemy_index]["data"].enemy_name + ".")
 		return
-		
+	if die.current_face.result_type == "twist_knife":
+		var bleed_value: int = enemy.get("bleed", 0)
+
+		if bleed_value <= 0:
+			show_popup_text(enemy_3d_nodes[enemy_index], "No Bleed", 1.0, Color.GRAY)
+			return
+
+		enemy["bleed"] = 0
+		enemy["hp"] -= bleed_value
+
+		show_damage_popup(enemy_3d_nodes[enemy_index], bleed_value)
+		add_combat_log_entry("Twist Knife consumed " + str(bleed_value) + " bleed.")
+
+		update_enemy_3d_nodes()
+	
 	if die.current_face.result_type == "freeze":
 		active_enemies[enemy_index]["frozen"] = true
 		active_enemies[enemy_index]["freeze_stacks"] += die.current_face.value
@@ -3089,9 +3189,36 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			enemy_node.hurt_bump()
 			screen_shake(0.07, 0.1)
 			await hit_stop(0.03)
-
+		"bleed":
+			enemy["bleed"] += die.current_face.value
+			show_popup_text(enemy_3d_nodes[enemy_index], "Bleed +" + str(die.current_face.value), 1.2, Color.RED)
+			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " bleed.")
+			
 	update_enemy_3d_nodes()
+	
+func apply_enemy_bleed():
+	for i in active_enemies.size():
+		var enemy = active_enemies[i]
 
+		if enemy["bleed"] <= 0:
+			continue
+
+		var bleed_damage: int = enemy["bleed"]
+		enemy["hp"] -= bleed_damage
+
+		if enemy["hp"] < 0:
+			enemy["hp"] = 0
+
+		if i < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[i]):
+			show_damage_popup(enemy_3d_nodes[i], bleed_damage)
+
+		add_combat_log_entry(enemy["data"].enemy_name + " takes " + str(bleed_damage) + " bleed damage.")
+
+		enemy["bleed"] -= 1
+
+		if enemy["bleed"] < 0:
+			enemy["bleed"] = 0
+			
 func launch_enemy_die_at_player(enemy_index: int, face: DiceFace):
 	if enemy_index < 0 or enemy_index >= enemy_3d_nodes.size():
 		return
@@ -3137,6 +3264,8 @@ func open_edit_dice_panel_from_town():
 	edit_dice_return_context = "town"
 	town_panel.visible = false
 	edit_dice_panel.visible = true
+	die_crafting_panel.visible = true
+	refresh_die_crafting_panel()
 	update_begin_expedition_button_visibility()
 	refresh_edit_dice_panel()
 
@@ -3252,11 +3381,20 @@ func apply_bounty_reward(bounty: BountyData):
 func show_expedition_camp():
 	expedition_camp_panel.visible = true
 	camp_status_label.text = "Encounter " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
+	hide_combat_dice()
+	
+func hide_combat_dice():
+	for die in dice_nodes:
+		if is_instance_valid(die):
+			die.visible = false
 
+	hide_all_groups()
+	
 func open_edit_dice_panel_from_camp():
 	edit_dice_return_context = "camp"
 	expedition_camp_panel.visible = false
 	edit_dice_panel.visible = true
+	die_crafting_panel.visible = false
 	refresh_edit_dice_panel()
 	
 func continue_expedition():

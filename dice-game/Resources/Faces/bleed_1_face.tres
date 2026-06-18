@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://c4priatr1lxxg"]
+
+[ext_resource type="Texture2D" uid="uid://kcr0yucpg8re" path="res://Assets/Sprites/FaceIcons/BleedIcon.png" id="1_wapp0"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_8mt3u"]
+
+[resource]
+script = ExtResource("2_8mt3u")
+face_name = "Bleed"
+result_type = "bleed"
+value = 1
+icon = ExtResource("1_wapp0")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

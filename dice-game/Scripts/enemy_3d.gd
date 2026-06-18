@@ -25,6 +25,7 @@ var active_status_icons: Array[Sprite3D] = []
 @onready var status_icons_3d: Node3D = $StatusIcons3D
 @export var exposed_icon_texture: Texture2D
 @export var freeze_icon_texture: Texture2D
+@export var bleed_icon_texture: Texture2D
 var status_icon_tooltips := {}
 var enemy_index: int = -1
 var enemy_data: EnemyData
@@ -156,6 +157,15 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 			"Freeze " + str(enemy["freeze_stacks"]) + "\nShatter damage if killed while frozen.",
 			enemy["freeze_stacks"]
 		)
+		icon_index += 1
+	if enemy.has("bleed") and enemy["bleed"] > 0:
+		add_status_icon(
+			bleed_icon_texture,
+			icon_index,
+			"Bleed " + str(enemy["bleed"]) + "\nTakes damage at end of turn, then reduces by 1.",
+			enemy["bleed"]
+		)
+
 		icon_index += 1
 func add_status_icon(texture: Texture2D, index: int, tooltip: String, value: int = 0):
 	if texture == null:

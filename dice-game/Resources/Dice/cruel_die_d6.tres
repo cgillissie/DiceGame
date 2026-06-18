@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://4pifpbdehhh1"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_yvf5d"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_ltomt"]
+[ext_resource type="Resource" uid="uid://crlf7hdas1kqh" path="res://Resources/Faces/twist_knife_face.tres" id="2_snr4r"]
+[ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="2_t6ujk"]
+
+[resource]
+script = ExtResource("2_ltomt")
+faces = Array[ExtResource("1_yvf5d")]([ExtResource("2_t6ujk"), ExtResource("2_snr4r"), ExtResource("2_snr4r"), ExtResource("2_snr4r"), ExtResource("2_snr4r"), ExtResource("2_snr4r")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

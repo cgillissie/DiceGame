@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://crlf7hdas1kqh"]
+
+[ext_resource type="Texture2D" uid="uid://dnj0j27svby5s" path="res://Assets/Sprites/FaceIcons/TwistKnifeIcon.png" id="1_c7xim"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_gcblg"]
+
+[resource]
+script = ExtResource("2_gcblg")
+face_name = "Twist Knife"
+result_type = "twist_knife"
+icon = ExtResource("1_c7xim")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://bbtyddmucdaw2"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_g5ym3"]
+[ext_resource type="Texture2D" uid="uid://kcr0yucpg8re" path="res://Assets/Sprites/FaceIcons/BleedIcon.png" id="2_8jtoa"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_hbhyp"]
+[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_nf0na"]
+
+[sub_resource type="Resource" id="Resource_nf0na"]
+script = ExtResource("1_g5ym3")
+icon = ExtResource("2_nf0na")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_dk7kp"]
+script = ExtResource("1_g5ym3")
+result_type = "bleed"
+value = 3
+icon = ExtResource("2_8jtoa")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_84mv3"]
+script = ExtResource("1_g5ym3")
+result_type = "bleed"
+value = 3
+icon = ExtResource("2_8jtoa")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_gm8u4"]
+script = ExtResource("1_g5ym3")
+result_type = "bleed"
+value = 3
+icon = ExtResource("2_8jtoa")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_8asqu"]
+script = ExtResource("1_g5ym3")
+result_type = "bleed"
+value = 3
+icon = ExtResource("2_8jtoa")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[sub_resource type="Resource" id="Resource_r5tge"]
+script = ExtResource("1_g5ym3")
+result_type = "bleed"
+value = 6
+icon = ExtResource("2_8jtoa")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
+
+[resource]
+script = ExtResource("2_hbhyp")
+faces = Array[ExtResource("1_g5ym3")]([SubResource("Resource_nf0na"), SubResource("Resource_dk7kp"), SubResource("Resource_84mv3"), SubResource("Resource_gm8u4"), SubResource("Resource_8asqu"), SubResource("Resource_r5tge")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

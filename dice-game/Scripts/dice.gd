@@ -87,6 +87,12 @@ func update_visual():
 	
 	face_index_label.text = str(current_face_index + 1) + "/" + str(dice_data.faces.size())
 	reserve_lock_icon.visible = came_from_reserve
+	if face_should_show_value(current_face):
+		result_label.text = str(current_face.value)
+		result_label.visible = true
+	else:
+		result_label.text = ""
+		result_label.visible = false
 	if used:
 		panel.modulate = Color(0.4, 0.4, 0.4)
 	else:
@@ -109,7 +115,21 @@ func update_visual():
 	if dice_data != null and dice_data.can_explode:
 		if current_face_index == dice_data.faces.size() - 1:
 			exploding_icon.visible = true
+			
+func face_should_show_value(face: DiceFace) -> bool:
+	if face == null:
+		return false
 
+	return face.result_type in [
+		"hit",
+		"crit",
+		"block",
+		"gold",
+		"heal",
+		"vitality",
+		"bleed"
+	]
+	
 func get_face_text(face: DiceFace) -> String:
 	match face.result_type:
 		"miss":
@@ -132,6 +152,10 @@ func get_face_text(face: DiceFace) -> String:
 			return ""
 		"freeze":
 			return "Freeze " + str(face.value)
+		"bleed":
+			return "Bleed " + str(face.value)
+		"twist_knife":
+			return ""
 		_:
 			return face.result_type
 

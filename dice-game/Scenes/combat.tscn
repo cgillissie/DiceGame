@@ -39,6 +39,67 @@
 [ext_resource type="AudioStream" uid="uid://br27q3k8wlv82" path="res://Assets/Sounds/Merchant/CoinGrab01.wav" id="30_1e1l8"]
 [ext_resource type="Texture2D" uid="uid://cta4b83gkfkx8" path="res://Assets/Sprites/UI/LootPopupGoblinFace.png" id="30_iv3ie"]
 [ext_resource type="Texture2D" uid="uid://dswjln01xa1b8" path="res://Assets/Sprites/UI/Player.png" id="31_1rebt"]
+[ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="36_xu8d0"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_47v24"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8is30"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2520b"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r4oui"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1e1l8"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_uip5d"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7qqpw"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_j6ndf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hy4eo"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_o5j5i"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_j0btd"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b4fdd"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y3gh1"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8w1g6"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g5yct"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_iyk1o"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y1f24"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ggrls"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ul71a"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6seoa"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_pqkue"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gib6t"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h6x2e"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2rvx2"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vqjug"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tqjuo"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_fx8i1"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_fu7uk"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jsnfd"]
 
 [node name="Combat" type="Control" unique_id=1112470734]
 layout_mode = 3
@@ -255,14 +316,16 @@ offset_right = 351.0
 offset_bottom = 204.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+mouse_filter = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
 [node name="MainVBox" type="VBoxContainer" parent="EditDicePanel/MarginContainer" unique_id=1695636420]
 layout_mode = 2
-alignment = 1
+mouse_filter = 2
+theme_override_constants/separation = 18
 
 [node name="EditTitleLabel" type="Label" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=682851975]
 layout_mode = 2
@@ -281,13 +344,15 @@ icon = ExtResource("26_2n3pb")
 [node name="ColumnsHBox" type="HBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=794230346]
 layout_mode = 2
 size_flags_horizontal = 4
+mouse_filter = 2
 theme_override_constants/separation = 40
 alignment = 1
 
 [node name="OwnedDiceVbox" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox" unique_id=1315731784]
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
-size_flags_horizontal = 6
+size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="OwnedDiceTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=901338589]
 layout_mode = 2
@@ -299,17 +364,20 @@ text = "Owned Dice"
 custom_minimum_size = Vector2(260, 300)
 layout_mode = 2
 size_flags_vertical = 3
+mouse_filter = 2
 horizontal_scroll_mode = 0
 
 [node name="OwnedDiceContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer" unique_id=41111104]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 6
+mouse_filter = 2
 
 [node name="DiceFacesVBox" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox" unique_id=1510403255]
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
-size_flags_horizontal = 6
+size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="DiceFacesTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=1247270624]
 layout_mode = 2
@@ -320,11 +388,13 @@ text = "Die Faces"
 [node name="DieFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=807091473]
 layout_mode = 2
 size_flags_horizontal = 4
+mouse_filter = 2
 
 [node name="InventoryFacesVBox" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox" unique_id=219320983]
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
-size_flags_horizontal = 6
+size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="InventoryFacesTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=827871074]
 layout_mode = 2
@@ -335,13 +405,144 @@ text = "Face Inventory"
 [node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1493564940]
 custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
+mouse_filter = 2
 horizontal_scroll_mode = 0
 
 [node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer" unique_id=1050298506]
 layout_mode = 2
 size_flags_horizontal = 4
+mouse_filter = 2
 
-[node name="FuseFacesButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=1559103172]
+[node name="DieCraftingPanel" type="Panel" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=479855391]
+custom_minimum_size = Vector2(425, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_xu8d0")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel" unique_id=1611760063]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="FragmentLabel" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer" unique_id=1560625805]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Die Fragments"
+
+[node name="CraftButtonsHBox" type="HBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer" unique_id=131929156]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="D4Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=293405091]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_47v24")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_8is30")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_2520b")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_r4oui")
+text = "D4"
+icon = ExtResource("36_xu8d0")
+icon_alignment = 1
+expand_icon = true
+
+[node name="D6Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1961687079]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_1e1l8")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_uip5d")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_7qqpw")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_j6ndf")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_hy4eo")
+text = "D6"
+icon = ExtResource("36_xu8d0")
+icon_alignment = 1
+expand_icon = true
+
+[node name="D8Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1313870785]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_o5j5i")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_j0btd")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_b4fdd")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_y3gh1")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_8w1g6")
+text = "D8"
+icon = ExtResource("36_xu8d0")
+icon_alignment = 1
+expand_icon = true
+
+[node name="D10Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1632868674]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_g5yct")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_iyk1o")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_y1f24")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_ggrls")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ul71a")
+text = "D10"
+icon = ExtResource("36_xu8d0")
+icon_alignment = 1
+expand_icon = true
+
+[node name="D12Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1050528804]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_6seoa")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_pqkue")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_gib6t")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_h6x2e")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_2rvx2")
+text = "D12"
+icon = ExtResource("36_xu8d0")
+icon_alignment = 1
+expand_icon = true
+
+[node name="D20Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=679704694]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vqjug")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_tqjuo")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_fx8i1")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_fu7uk")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_jsnfd")
+text = "D20"
+icon = ExtResource("36_xu8d0")
+icon_alignment = 1
+expand_icon = true
+
+[node name="MarginContainer" type="MarginContainer" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=855685828]
+layout_mode = 2
+
+[node name="BottomButtonsHBox" type="HBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=312870981]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="FuseFacesButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox" unique_id=1559103172]
 custom_minimum_size = Vector2(180, 40)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -350,7 +551,7 @@ theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Fuse Faces"
 icon = ExtResource("26_5g3cp")
 
-[node name="CloseEditButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=1863397998]
+[node name="CloseEditButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox" unique_id=1863397998]
 custom_minimum_size = Vector2(90, 35)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -787,6 +988,7 @@ offset_bottom = 40.0
 mouse_filter = 2
 
 [node name="TownPanel" type="Panel" parent="." unique_id=1273314795]
+visible = false
 custom_minimum_size = Vector2(300, 350)
 layout_mode = 1
 anchors_preset = 8
