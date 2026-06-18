@@ -428,7 +428,7 @@ current = true
 size = 7.996
 
 [node name="EnemyPositions" parent="." unique_id=445007235 instance=ExtResource("7_kryb7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5198846, 1.5501298, 3.7023532)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5198846, 1.3040096, 0.2812307)
 
 [node name="EnemyPosition1" type="Marker3D" parent="EnemyPositions" unique_id=99468299]
 

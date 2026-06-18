@@ -112,14 +112,14 @@ var dropped_face: DiceFace
 # Dice Editing panel
 @onready var edit_dice_button: Button = $ShopPanel/VBoxContainer/EditDiceButton
 @onready var edit_dice_panel: Panel = $EditDicePanel
-@onready var die_faces_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox/DieFacesContainer
-@onready var close_edit_button: Button = $EditDicePanel/CloseEditButton
-@onready var fuse_faces_button: Button = $EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox/FuseFacesButton
-@onready var apply_volatile_core_button = $EditDicePanel/MainVBox/ApplyVolatileCoreButton
-@onready var owned_dice_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer/OwnedDiceContainer
+@onready var die_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox/DieFacesContainer
+@onready var close_edit_button: Button = $EditDicePanel/MarginContainer/MainVBox/CloseEditButton
+@onready var fuse_faces_button: Button = $EditDicePanel/MarginContainer/MainVBox/FuseFacesButton
+@onready var apply_volatile_core_button = $EditDicePanel/MarginContainer/MainVBox/ApplyVolatileCoreButton
+@onready var owned_dice_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer/OwnedDiceContainer
 @export var owned_die_button_scene: PackedScene
 @export var equipped_face_button_scene: PackedScene
-@onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer/InventoryFacesContainer
+@onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer/InventoryFacesContainer
 
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
@@ -156,20 +156,20 @@ var is_in_town: bool = true
 
 # Prepare Expedition ##########################
 @onready var prepare_expedition_panel: Panel = $PrepareExpeditionPanel
-@onready var prepare_selected_bounty_label: Label = $PrepareExpeditionPanel/VBoxContainer/SelectedBountyLabel
-@onready var prepare_start_expedition_button: Button = $PrepareExpeditionPanel/VBoxContainer/StartExpeditionButton
-@onready var prepare_cancel_button: Button = $PrepareExpeditionPanel/VBoxContainer/CancelButton
+@onready var prepare_selected_bounty_label: Label = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/SelectedBountyLabel
+@onready var prepare_start_expedition_button: Button = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/CookFoodButton
+@onready var prepare_cancel_button: Button = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/CancelButton
 @onready var begin_expedition_button: Button = $BeginExpeditionButton
-@onready var selected_bounty_label: Label = $BeginExpeditionButton/SelectedBountyLabel
-
+@onready var selected_bounty_label: Label = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/SelectedBountyLabel
+@onready var prepare_expedition_label: Label = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/PrepareExpeditionLabel
 # Camp Screen #################################
 
 @onready var expedition_camp_panel: Panel = $ExpeditionCampPanel
-@onready var camp_status_label: Label = $ExpeditionCampPanel/VBoxContainer/CampStatusLabel
-@onready var camp_edit_dice_button: Button = $ExpeditionCampPanel/VBoxContainer/CampEditDiceButton
-@onready var camp_items_button: Button = $ExpeditionCampPanel/VBoxContainer/CampItemsButton
-@onready var camp_continue_button: Button = $ExpeditionCampPanel/VBoxContainer/CampContinueButton
-@onready var camp_craft_food_button: Button = $ExpeditionCampPanel/VBoxContainer/CraftFoodButton
+@onready var camp_status_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampStatusLabel
+@onready var camp_edit_dice_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampEditDiceButton
+@onready var camp_items_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampItemsButton
+@onready var camp_continue_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampContinueButton
+@onready var camp_craft_food_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CraftFoodButton
 
 
 # Bounty Tracking #############################
@@ -180,9 +180,9 @@ var expedition_progress: int = 0
 var expedition_required_encounters: int = 0
 var expedition_is_boss_fight: bool = false
 @onready var bounty_board_panel: Panel = $BountyBoardPanel
-@onready var bounty_buttons_container: VBoxContainer = $BountyBoardPanel/VBoxContainer/BountyButtonsContainer
-@onready var close_bounty_board_button: Button = $BountyBoardPanel/VBoxContainer/CloseBountyBoardButton
-@onready var final_boss_button: Button = $BountyBoardPanel/VBoxContainer/FinalBossButton
+@onready var bounty_buttons_container: VBoxContainer = $BountyBoardPanel/MarginContainer/VBoxContainer/BountyButtonsContainer
+@onready var close_bounty_board_button: Button = $BountyBoardPanel/MarginContainer/VBoxContainer/CloseBountyBoardButton
+@onready var final_boss_button: Button = $BountyBoardPanel/MarginContainer/VBoxContainer/FinalBossButton
 var completed_bounties: Array[BountyData] = []
 var final_boss_unlocked: bool = false
 @export var required_bounties_for_final_boss: int = 3
@@ -239,7 +239,6 @@ var active_combat_bonus_damage := 0
 @onready var active_food_container: HBoxContainer = $TopMarginContainer/CenterContainer/VBoxContainer/ActiveFoodContainer
 var prepare_return_context: String = "town"
 var food_crafting_return_context: String = ""
-@onready var prepare_expedition_label: Label = $PrepareExpeditionPanel/VBoxContainer/PrepareExpeditionLabel
 @export var active_buff_icon_scene: PackedScene
 var unlocked_food_tier: int = 1
 @export var food_recipes: Array[FoodRecipe]
@@ -247,21 +246,20 @@ var unlocked_food_tier: int = 1
 
 # Merchant #####################################
 @onready var merchant_panel: Panel = $MerchantPanel
-@onready var close_merchant_button: Button = $MerchantPanel/VBoxContainer/CloseMerchantButton
+@onready var close_merchant_button: Button = $MerchantPanel/MarginContainer/VBoxContainer/CloseMerchantButton
 @onready var merchant_button: Button = $TownPanel/VBoxContainer/MerchantButton
-@onready var merchant_stock_container: GridContainer = $MerchantPanel/VBoxContainer/MerchantStockContainer
-@onready var prepare_consumables_container: GridContainer = $PrepareExpeditionPanel/VBoxContainer/PrepareConsumablesContainer
-@onready var merchant_gold_label: Label = $MerchantPanel/VBoxContainer/MerchantGoldLabel
+@onready var merchant_stock_container: GridContainer = $MerchantPanel/MarginContainer/VBoxContainer/MerchantStockContainer
+@onready var prepare_consumables_container: GridContainer = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/PrepareConsumablesContainer
+@onready var merchant_gold_label: Label = $MerchantPanel/MarginContainer/VBoxContainer/MerchantGoldLabel
 @export var merchant_food_pool: Array[ConsumableItem]
 var merchant_food_stock: Array[ConsumableItem] = []
 
 # Food Crafting Panel ############################
 @onready var food_craft_panel: Panel = $FoodCraftPanel
-@onready var food_craft_items_container: GridContainer = $FoodCraftPanel/VBoxContainer/FoodCraftItemsContainer
-@onready var craft_result_label: Label = $FoodCraftPanel/VBoxContainer/CraftResultLabel
-@onready var craft_button: Button = $FoodCraftPanel/VBoxContainer/CraftButton
-@onready var close_craft_button: Button = $FoodCraftPanel/VBoxContainer/CloseCraftButton
-@onready var prepare_cook_food_button: Button = $PrepareExpeditionPanel/VBoxContainer/CookFoodButton
+@onready var food_craft_items_container: GridContainer = $FoodCraftPanel/MarginContainer/VBoxContainer/FoodCraftItemsContainer
+@onready var craft_result_label: Label = $FoodCraftPanel/MarginContainer/VBoxContainer/CraftResultLabel
+@onready var craft_button: Button = $FoodCraftPanel/MarginContainer/VBoxContainer/CraftButton
+@onready var close_craft_button: Button = $FoodCraftPanel/MarginContainer/VBoxContainer/CloseCraftButton
 
 signal expedition_started
 signal return_to_town_requested
@@ -307,8 +305,15 @@ func _ready():
 	
 	end_round_button.visible = false
 	hide_all_groups()
+	owned_dice.clear()
+
+	print("Starting dice count: ", starting_dice.size())
+
 	for die in starting_dice:
+		print("Starting die: ", die.die_name)
 		owned_dice.append(die.duplicate(true))
+
+	print("Owned dice after setup: ", owned_dice.size())
 		
 	fuse_faces_button.pressed.connect(toggle_fusion_mode)
 	hits_button.pressed.connect(select_group.bind(hits_container))
@@ -337,11 +342,8 @@ func _ready():
 	camp_craft_food_button.pressed.connect(open_food_crafting)
 	craft_button.pressed.connect(craft_selected_food)
 	close_craft_button.pressed.connect(close_food_crafting)
-	prepare_cook_food_button.pressed.connect(open_food_crafting_from_prepare)
 	begin_expedition_button.pressed.connect(open_prepare_expedition)
 	actions_button.pressed.connect(select_group.bind(actions_container))
-	prepare_cook_food_button.visible = false
-	
 
 	if current_encounter == null:
 		if encounter_pool.size() > 0:
@@ -426,7 +428,16 @@ func get_current_incoming_damage() -> int:
 		incoming += total_crit
 
 	return incoming
-	
+
+func update_begin_expedition_button_visibility():
+	begin_expedition_button.visible = is_in_town \
+		and !merchant_panel.visible \
+		and !food_craft_panel.visible \
+		and !edit_dice_panel.visible \
+		and !bounty_board_panel.visible \
+		and !prepare_expedition_panel.visible \
+		and !expedition_camp_panel.visible
+
 func update_enemy_hover_preview():
 	var hovering_status_tooltip
 	var camera := get_viewport().get_camera_3d()
@@ -982,8 +993,10 @@ func update_group_visibility():
 	
 ################################################################
 func spawn_dice():
+	print("Spawning dice count: ", owned_dice.size())
 
 	for die_data in owned_dice:
+		print("Spawning die: ", die_data.die_name)
 		var die_node: DiceNode = dice_scene.instantiate()
 		if !die_node.clicked.is_connected(handle_die_click):
 			die_node.clicked.connect(handle_die_click)
@@ -993,6 +1006,7 @@ func spawn_dice():
 		die_node.setup(die_data)
 		dice_nodes.append(die_node)
 	update_group_visibility()
+	
 func handle_die_click(die: DiceNode):
 	print("Individual die clicked")
 	AudioManager.play_ui(dice_select_sound)
@@ -1121,6 +1135,11 @@ func roll_all_dice():
 		if !is_instance_valid(die):
 			continue
 
+		die.used = false
+		die.selected = false
+		die.assigned_enemy_index = -1
+		die.update_visual()
+
 		die.visible = false
 		die.reparent(rolling_hidden_area)
 
@@ -1226,10 +1245,11 @@ func resolve_player_dice():
 			_:
 				pass
 
-		die.reserved = false
-		die.used = true
-		die.selected = false
-		die.update_visual()
+		if die.current_face.result_type in ["block", "gold", "heal", "vitality", "dodge"]:
+			die.reserved = false
+			die.used = true
+			die.selected = false
+			die.update_visual()
 
 	gold += gold_gained_this_turn
 	update_gold_label()
@@ -1482,7 +1502,7 @@ func end_round():
 	apply_end_round_relics()
 	decay_enemy_statuses()
 	selected_enemy_index = -1
-	
+	reset_dice_for_next_roll()
 	await roll_all_dice()
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
@@ -1494,6 +1514,20 @@ func end_round():
 	is_resolving_turn = false
 	end_round_button.disabled = false
 	
+func reset_dice_for_next_roll():
+	for die in dice_nodes:
+		if !is_instance_valid(die):
+			continue
+
+		die.used = false
+		die.selected = false
+		die.assigned_enemy_index = -1
+
+		if !die.reserved:
+			die.visible = true
+
+		die.update_visual()
+		
 func remove_defeated_enemies():
 	var defeated_indices: Array[int] = []
 
@@ -1540,8 +1574,7 @@ func clear_used_assigned_dice():
 			die.assigned_enemy_index = -1
 			die.selected = false
 			die.reserved = false
-			die.visible = false
-			die.reparent(rolling_hidden_area)
+			die.visible = true
 			die.update_visual()
 			
 func get_lowest_health_enemy():
@@ -1762,56 +1795,68 @@ func clear_food_buffs():
 	
 func start_new_combat():
 	combat_over = false
+	is_resolving_turn = false
+	is_in_town = false
+
 	shop_panel.visible = false
 	loot_panel.visible = false
 	encounter_panel.visible = false
+	expedition_camp_panel.visible = false
+	prepare_expedition_panel.visible = false
+	town_panel.visible = false
+
 	dodge_targets.clear()
 	reversal_targets.clear()
 	combat_log_entries.clear()
 	combat_log_label.text = ""
 	defeated_enemies.clear()
 	active_enemies.clear()
-	
-	combat_number += 1
+	selected_enemy_index = -1
+	selected_dice_order.clear()
 
-	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
-
-	player_hp += next_combat_heal
-
-	if player_hp > combat_max_player_hp:
-		player_hp = combat_max_player_hp
-
-	active_combat_bonus_block = next_combat_bonus_block
-	active_combat_bonus_damage = next_combat_bonus_damage
-	player_block = next_combat_bonus_block
-	update_player_block_label()
 	last_player_damage = 0
 	last_damage_taken = 0
 
-	hide_all_groups()
-	clear_all_dice_groups()
+	for die in dice_nodes:
+		if is_instance_valid(die):
+			die.queue_free()
+
 	dice_nodes.clear()
+	clear_all_dice_groups()
+	hide_all_groups()
 
 	await get_tree().process_frame
 
+	combat_number += 1
+	update_combat_number_label()
+
+	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+	player_hp = min(player_hp + next_combat_heal, combat_max_player_hp)
+
+	active_combat_bonus_block = next_combat_bonus_block
+	active_combat_bonus_damage = next_combat_bonus_damage
+	player_block = active_combat_bonus_block
+
+	update_player_block_label()
+	update_player_hp_label()
+
 	load_encounter(current_encounter)
-	selected_enemy_index = -1
+
 	spawn_dice()
 	await roll_all_dice()
+
 	apply_damage_bonus_to_dice_visuals()
-	calculate_auto_block()
 	calculate_auto_block()
 	regroup_dice()
 	update_group_visibility()
 
-	end_round_button.disabled = false
-
-	update_combat_number_label()
-	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
-	update_player_hp_label()
+	update_incoming_damage_label()
 	update_reserve_slots_label()
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
+	update_player_3d_node()
+
+	end_round_button.disabled = false
 	
 func hide_all_groups():
 	hits_container.get_parent().visible = false
@@ -1950,6 +1995,7 @@ func open_edit_dice_panel():
 	refresh_edit_dice_panel()
 	fusion_mode = false
 	selected_inventory_face_indices.clear()
+	update_begin_expedition_button_visibility()
 	update_fuse_button_text()
 	update_volatile_core_button()
 
@@ -1968,6 +2014,7 @@ func close_edit_dice_panel():
 	selected_die_face_index = -1
 	selected_inventory_face_indices.clear()
 	fusion_mode = false
+	update_begin_expedition_button_visibility()
 	update_fuse_button_text()
 	
 func refresh_edit_dice_panel():
@@ -2093,7 +2140,11 @@ func update_inventory_face_buttons():
 				button.text = "> " + button.text + " <"
 
 	
-func clear_container(container: Container):
+func clear_container(container: Control):
+	if container == null:
+		push_error("clear_container received null.")
+		return
+
 	for child in container.get_children():
 		container.remove_child(child)
 		child.queue_free()
@@ -2719,7 +2770,9 @@ func update_assigned_dice_panel_positions():
 		var container := assigned_enemy_containers[i]
 		var panel := container.get_parent().get_parent()
 
-		panel.global_position = screen_pos + Vector2(-80, 210)
+		var offset := Vector2(-85, 140)
+		panel.global_position = screen_pos + offset
+		
 
 func update_assigned_panel_visibility():
 	for container in assigned_enemy_containers:
@@ -3084,6 +3137,7 @@ func open_edit_dice_panel_from_town():
 	edit_dice_return_context = "town"
 	town_panel.visible = false
 	edit_dice_panel.visible = true
+	update_begin_expedition_button_visibility()
 	refresh_edit_dice_panel()
 
 func rest_at_town():
@@ -3093,21 +3147,12 @@ func rest_at_town():
 
 func start_expedition():
 	if current_bounty == null:
-		print("No bounty selected.")
 		return
 
-	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
-	update_player_hp_label()
-
+	combat_number = 0
 	expedition_progress = 0
 	expedition_is_boss_fight = false
 	expedition_required_encounters = current_bounty.required_encounters_before_boss
-
-	print("Starting bounty: ", current_bounty.bounty_name)
-	print("Required encounters before boss: ", expedition_required_encounters)
-
-	town_panel.visible = false
-	bounty_board_panel.visible = false
 
 	current_encounter = current_bounty.expedition_encounter_pool.pick_random()
 	start_new_combat()
@@ -3116,10 +3161,12 @@ func open_bounty_board():
 	town_panel.visible = false
 	bounty_board_panel.visible = true
 	rebuild_bounty_board()
-
+	update_begin_expedition_button_visibility()
+	
 func close_bounty_board():
 	bounty_board_panel.visible = false
 	town_menu_closed.emit()
+	update_begin_expedition_button_visibility()
 	
 func rebuild_bounty_board():
 	clear_container(bounty_buttons_container)
@@ -3161,7 +3208,8 @@ func select_bounty(bounty: BountyData):
 	town_panel.visible = false
 	town_menu_closed.emit()
 	print("Selected bounty: ", bounty.bounty_name)
-
+	update_begin_expedition_button_visibility()
+	
 func complete_current_bounty():
 	if current_bounty != null and !completed_bounties.has(current_bounty):
 		completed_bounties.append(current_bounty)
@@ -3239,11 +3287,12 @@ func open_trophies():
 			text += "✗ " + bounty.bounty_name + "\n"
 
 	trophy_list_label.text = text
-
+	update_begin_expedition_button_visibility()
 func close_trophies():
 	trophy_panel.visible = false
 	town_panel.visible = true
-
+	update_begin_expedition_button_visibility()
+	
 func open_prepare_expedition():
 	if current_bounty == null:
 		print("No bounty selected.")
@@ -3258,7 +3307,8 @@ func open_prepare_expedition():
 	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
 	prepare_expedition_label.text = "Prepare Expedition"
 	rebuild_prepare_consumables()
-
+	update_begin_expedition_button_visibility()
+	
 func cancel_prepare_expedition():
 	prepare_expedition_panel.visible = false
 
@@ -3266,6 +3316,7 @@ func cancel_prepare_expedition():
 		expedition_camp_panel.visible = true
 
 	prepare_return_context = "town"
+	update_begin_expedition_button_visibility()
 	
 func confirm_start_expedition():
 	prepare_expedition_panel.visible = false
@@ -3276,7 +3327,6 @@ func confirm_start_expedition():
 		return
 
 	prepare_return_context = "town"
-	start_expedition()
 	expedition_started.emit()
 	
 func roll_merchant_stock():
@@ -3297,10 +3347,12 @@ func open_merchant():
 	town_panel.visible = false
 	merchant_panel.visible = true
 	merchant_gold_label.text = "Gold: " + str(gold)
+	update_begin_expedition_button_visibility()
 	rebuild_merchant()
 
 func close_merchant():
 	merchant_panel.visible = false
+	update_begin_expedition_button_visibility()
 	town_menu_closed.emit()
 
 func rebuild_merchant():
@@ -3529,6 +3581,7 @@ func open_food_crafting():
 	expedition_camp_panel.visible = false
 	food_craft_panel.visible = true
 	selected_food_craft_names.clear()
+	update_begin_expedition_button_visibility()
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
 	
@@ -3547,6 +3600,7 @@ func close_food_crafting():
 			town_menu_closed.emit()
 
 	food_crafting_return_context = ""
+	update_begin_expedition_button_visibility()
 	
 func rebuild_food_crafting_grid():
 	clear_container(food_craft_items_container)
@@ -3670,7 +3724,7 @@ func open_food_crafting_from_prepare():
 	food_craft_panel.visible = true
 
 	selected_food_craft_names.clear()
-
+	update_begin_expedition_button_visibility()
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
 
@@ -3766,6 +3820,7 @@ func open_food_crafting_from_town():
 	food_crafting_return_context = "town"
 	food_craft_panel.visible = true
 	selected_food_craft_names.clear()
+	update_begin_expedition_button_visibility()
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
 

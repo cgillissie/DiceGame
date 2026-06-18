@@ -231,7 +231,7 @@ text = "DEBUG: GOLD +100"
 
 [node name="EditDicePanel" type="Panel" parent="." unique_id=2114238137]
 visible = false
-custom_minimum_size = Vector2(700, 400)
+custom_minimum_size = Vector2(1100, 700)
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -242,23 +242,35 @@ offset_right = 1000.0
 offset_bottom = 251.0
 grow_vertical = 2
 
-[node name="MainVBox" type="VBoxContainer" parent="EditDicePanel" unique_id=1695636420]
+[node name="MarginContainer" type="MarginContainer" parent="EditDicePanel" unique_id=72223077]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 6.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -351.0
+offset_top = -204.0
+offset_right = 351.0
+offset_bottom = 204.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(0, -50)
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="EditTitleLabel" type="Label" parent="EditDicePanel/MainVBox" unique_id=682851975]
+[node name="MainVBox" type="VBoxContainer" parent="EditDicePanel/MarginContainer" unique_id=1695636420]
+layout_mode = 2
+alignment = 1
+
+[node name="EditTitleLabel" type="Label" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=682851975]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Edit Faces"
 
-[node name="ApplyVolatileCoreButton" type="Button" parent="EditDicePanel/MainVBox" unique_id=271405246]
+[node name="ApplyVolatileCoreButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=271405246]
 custom_minimum_size = Vector2(60, 40)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -266,87 +278,82 @@ theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Apply Volatile Core"
 icon = ExtResource("26_2n3pb")
 
-[node name="ColumnsHBox" type="HBoxContainer" parent="EditDicePanel/MainVBox" unique_id=794230346]
+[node name="ColumnsHBox" type="HBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=794230346]
 layout_mode = 2
-theme_override_constants/separation = 4
+size_flags_horizontal = 4
+theme_override_constants/separation = 40
+alignment = 1
 
-[node name="OwnedDiceVbox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=1315731784]
-custom_minimum_size = Vector2(260, 0)
+[node name="OwnedDiceVbox" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox" unique_id=1315731784]
+custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 6
 
-[node name="OwnedDiceTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=901338589]
+[node name="OwnedDiceTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=901338589]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Owned Dice"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=1355921481]
+[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=1355921481]
 custom_minimum_size = Vector2(260, 300)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="OwnedDiceContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer" unique_id=41111104]
+[node name="OwnedDiceContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer" unique_id=41111104]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 6
 
-[node name="DiceFacesVBox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=1510403255]
-custom_minimum_size = Vector2(200, 0)
+[node name="DiceFacesVBox" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox" unique_id=1510403255]
+custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 6
 
-[node name="DiceFacesTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=1247270624]
+[node name="DiceFacesTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=1247270624]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Die Faces"
 
-[node name="DieFacesContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=807091473]
+[node name="DieFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=807091473]
 layout_mode = 2
+size_flags_horizontal = 4
 
-[node name="InventoryFacesVBox" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox" unique_id=219320983]
-custom_minimum_size = Vector2(200, 0)
+[node name="InventoryFacesVBox" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox" unique_id=219320983]
+custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 6
 
-[node name="InventoryFacesTitle" type="Label" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=827871074]
+[node name="InventoryFacesTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=827871074]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Face Inventory"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1493564940]
+[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1493564940]
 custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer" unique_id=1050298506]
-layout_mode = 2
-
-[node name="FuseFacesButton" type="Button" parent="EditDicePanel/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1559103172]
-custom_minimum_size = Vector2(200, 40)
+[node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer" unique_id=1050298506]
 layout_mode = 2
 size_flags_horizontal = 4
+
+[node name="FuseFacesButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=1559103172]
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Fuse Faces"
 icon = ExtResource("26_5g3cp")
 
-[node name="CloseEditButton" type="Button" parent="EditDicePanel" unique_id=1863397998]
+[node name="CloseEditButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=1863397998]
 custom_minimum_size = Vector2(90, 35)
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -30.0
-offset_top = -38.0
-offset_right = 30.0
-offset_bottom = -7.0
-grow_horizontal = 2
-grow_vertical = 0
+layout_mode = 2
+size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Close"
 
@@ -877,30 +884,41 @@ offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BountyBoardPanel" unique_id=794327171]
+[node name="MarginContainer" type="MarginContainer" parent="BountyBoardPanel" unique_id=471068582]
 layout_mode = 1
-anchors_preset = 5
+anchors_preset = 8
 anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 0.5
-offset_left = -91.0
-offset_right = 91.0
-offset_bottom = 40.0
+anchor_bottom = 0.5
+offset_left = -122.0
+offset_top = -50.0
+offset_right = 122.0
+offset_bottom = 50.0
 grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="BountyBoardTitle" type="Label" parent="BountyBoardPanel/VBoxContainer" unique_id=1388181154]
+[node name="VBoxContainer" type="VBoxContainer" parent="BountyBoardPanel/MarginContainer" unique_id=794327171]
+layout_mode = 2
+
+[node name="BountyBoardTitle" type="Label" parent="BountyBoardPanel/MarginContainer/VBoxContainer" unique_id=1388181154]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Bounty Board"
 
-[node name="BountyButtonsContainer" type="VBoxContainer" parent="BountyBoardPanel/VBoxContainer" unique_id=791632575]
+[node name="BountyButtonsContainer" type="VBoxContainer" parent="BountyBoardPanel/MarginContainer/VBoxContainer" unique_id=791632575]
 layout_mode = 2
 
-[node name="FinalBossButton" type="Button" parent="BountyBoardPanel/VBoxContainer" unique_id=1445013814]
+[node name="FinalBossButton" type="Button" parent="BountyBoardPanel/MarginContainer/VBoxContainer" unique_id=1445013814]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 
-[node name="CloseBountyBoardButton" type="Button" parent="BountyBoardPanel/VBoxContainer" unique_id=918270653]
+[node name="CloseBountyBoardButton" type="Button" parent="BountyBoardPanel/MarginContainer/VBoxContainer" unique_id=918270653]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -908,7 +926,7 @@ text = "Close"
 
 [node name="ExpeditionCampPanel" type="Panel" parent="." unique_id=1317433623]
 visible = false
-custom_minimum_size = Vector2(300, 200)
+custom_minimum_size = Vector2(460, 300)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -922,54 +940,69 @@ offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ExpeditionCampPanel" unique_id=1134211875]
+[node name="MarginContainer" type="MarginContainer" parent="ExpeditionCampPanel" unique_id=185205647]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -43.0
-offset_right = 20.0
-offset_bottom = 43.0
+offset_left = -142.0
+offset_top = -153.5
+offset_right = 142.0
+offset_bottom = 153.5
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
 
-[node name="CampTitleLabel" type="Label" parent="ExpeditionCampPanel/VBoxContainer" unique_id=90890587]
+[node name="VBoxContainer" type="VBoxContainer" parent="ExpeditionCampPanel/MarginContainer" unique_id=1134211875]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="CampTitleLabel" type="Label" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=90890587]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Camp"
 
-[node name="CampStatusLabel" type="Label" parent="ExpeditionCampPanel/VBoxContainer" unique_id=1961535326]
+[node name="CampStatusLabel" type="Label" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=1961535326]
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="CampEditDiceButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=2026622507]
+[node name="CampEditDiceButton" type="Button" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=2026622507]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Graft Dice"
 
-[node name="CampItemsButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=16657851]
+[node name="CampItemsButton" type="Button" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=16657851]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Items"
 
-[node name="CraftFoodButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=520034374]
-custom_minimum_size = Vector2(220, 40)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("8_d53gg")
-text = "Cook Food"
-
-[node name="CampContinueButton" type="Button" parent="ExpeditionCampPanel/VBoxContainer" unique_id=1325114275]
+[node name="CraftFoodButton" type="Button" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=520034374]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Cook Food"
+
+[node name="CampContinueButton" type="Button" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=1325114275]
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Continue"
 
@@ -1034,46 +1067,59 @@ offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PrepareExpeditionPanel" unique_id=1600757295]
+[node name="MarginContainer" type="MarginContainer" parent="PrepareExpeditionPanel" unique_id=1791874493]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -147.0
+offset_top = -118.0
+offset_right = 147.0
+offset_bottom = 118.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PrepareExpeditionPanel/MarginContainer" unique_id=1600757295]
+layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="PrepareExpeditionLabel" type="Label" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=683000401]
+[node name="PrepareExpeditionLabel" type="Label" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=683000401]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Prepare Expedition"
 
-[node name="SelectedBountyLabel" type="Label" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=239376296]
+[node name="SelectedBountyLabel" type="Label" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=239376296]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 
-[node name="PrepareConsumablesContainer" type="GridContainer" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=9204060]
+[node name="PrepareConsumablesContainer" type="GridContainer" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=9204060]
 layout_mode = 2
 size_flags_horizontal = 4
 columns = 4
 
-[node name="CookFoodButton" type="Button" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=54155083]
+[node name="CookFoodButton" type="Button" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=54155083]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Cook Food"
 
-[node name="StartExpeditionButton" type="Button" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=431989340]
+[node name="StartExpeditionButton" type="Button" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=431989340]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Begin"
 
-[node name="CancelButton" type="Button" parent="PrepareExpeditionPanel/VBoxContainer" unique_id=1729419594]
+[node name="CancelButton" type="Button" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=1729419594]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -1096,34 +1142,44 @@ offset_bottom = 150.0
 grow_horizontal = 0
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MerchantPanel" unique_id=1223079417]
+[node name="MarginContainer" type="MarginContainer" parent="MerchantPanel" unique_id=2134889761]
 layout_mode = 1
-anchors_preset = 5
+anchors_preset = 8
 anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 0.5
-offset_left = -64.0
-offset_top = 8.0
-offset_right = 64.0
-offset_bottom = 56.0
+anchor_bottom = 0.5
+offset_left = -122.0
+offset_top = -54.0
+offset_right = 122.0
+offset_bottom = 54.0
 grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="MerchantTitleLabel" type="Label" parent="MerchantPanel/VBoxContainer" unique_id=245209774]
+[node name="VBoxContainer" type="VBoxContainer" parent="MerchantPanel/MarginContainer" unique_id=1223079417]
+layout_mode = 2
+
+[node name="MerchantTitleLabel" type="Label" parent="MerchantPanel/MarginContainer/VBoxContainer" unique_id=245209774]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Merchant"
 
-[node name="MerchantGoldLabel" type="Label" parent="MerchantPanel/VBoxContainer" unique_id=171989071]
+[node name="MerchantGoldLabel" type="Label" parent="MerchantPanel/MarginContainer/VBoxContainer" unique_id=171989071]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 
-[node name="MerchantStockContainer" type="GridContainer" parent="MerchantPanel/VBoxContainer" unique_id=1179601818]
+[node name="MerchantStockContainer" type="GridContainer" parent="MerchantPanel/MarginContainer/VBoxContainer" unique_id=1179601818]
 layout_mode = 2
 size_flags_horizontal = 4
 columns = 4
 
-[node name="CloseMerchantButton" type="Button" parent="MerchantPanel/VBoxContainer" unique_id=373517899]
+[node name="CloseMerchantButton" type="Button" parent="MerchantPanel/MarginContainer/VBoxContainer" unique_id=373517899]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -1146,44 +1202,51 @@ offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="FoodCraftPanel" unique_id=830075116]
+[node name="MarginContainer" type="MarginContainer" parent="FoodCraftPanel" unique_id=1237609518]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -47.0
-offset_top = -48.0
-offset_right = 47.0
-offset_bottom = 48.0
+offset_left = -122.0
+offset_top = -76.0
+offset_right = 122.0
+offset_bottom = 76.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="FoodCraftTitleLabel" type="Label" parent="FoodCraftPanel/VBoxContainer" unique_id=1858032832]
+[node name="VBoxContainer" type="VBoxContainer" parent="FoodCraftPanel/MarginContainer" unique_id=830075116]
+layout_mode = 2
+
+[node name="FoodCraftTitleLabel" type="Label" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=1858032832]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Cooking"
 
-[node name="FoodCraftItemsContainer" type="GridContainer" parent="FoodCraftPanel/VBoxContainer" unique_id=231411105]
+[node name="FoodCraftItemsContainer" type="GridContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=231411105]
 layout_mode = 2
 size_flags_horizontal = 4
 columns = 4
 
-[node name="CraftResultLabel" type="Label" parent="FoodCraftPanel/VBoxContainer" unique_id=1358053740]
+[node name="CraftResultLabel" type="Label" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=1358053740]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 
-[node name="CraftButton" type="Button" parent="FoodCraftPanel/VBoxContainer" unique_id=1923619456]
+[node name="CraftButton" type="Button" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=1923619456]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Cook"
 
-[node name="CloseCraftButton" type="Button" parent="FoodCraftPanel/VBoxContainer" unique_id=2074226483]
+[node name="CloseCraftButton" type="Button" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=2074226483]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4

@@ -245,7 +245,7 @@ func start_expedition_world():
 	load_world(combat_scene)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(true)
-	combat.start_new_combat()
+	combat.start_expedition()
 
 	await fade_from_black()
 	
