@@ -552,7 +552,7 @@ func get_encounter_text(encounter: EncounterData) -> String:
 	return encounter.encounter_name
 	
 func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
-	var scaled_max_hp = enemy_data.max_hp + ((combat_number - 1) * 2)
+	var scaled_max_hp = enemy_data.max_hp + (expedition_progress * 2)
 
 	return {
 		"data": enemy_data,
@@ -1767,9 +1767,16 @@ func show_loot_panel():
 		loot_volatile_core_label.text = "Volatile Cores: +" + str(last_volatile_cores_gained)
 	else:
 		loot_volatile_core_label.visible = false
-	loot_bonus_drop_label.visible = true
-	loot_bonus_drop_label.text += "\nDie Fragments: +" + str(last_die_fragments_gained)
-	combat_log_label.text = "Enemy defeated!"
+	var bonus_text := ""
+
+	if last_dropped_die != null:
+		bonus_text += "BONUS DROP!\n" + last_dropped_die.die_name + "\n"
+
+	if last_die_fragments_gained > 0:
+		bonus_text += "Die Fragments: +" + str(last_die_fragments_gained)
+
+	loot_bonus_drop_label.visible = bonus_text != ""
+	loot_bonus_drop_label.text = bonus_text
 	
 func open_shop_after_loot():
 	loot_panel.visible = false
@@ -1898,7 +1905,7 @@ func hide_all_groups():
 	misses_container.get_parent().visible = false
 	
 func update_combat_number_label():
-	combat_number_label.text = "Fight: " + str(combat_number)
+	combat_number_label.text = "Encounter: " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
 	combat_number_label.visible = !is_in_town
 	
 
@@ -3281,8 +3288,11 @@ func start_expedition():
 	combat_number = 0
 	expedition_progress = 0
 	expedition_is_boss_fight = false
-	expedition_required_encounters = current_bounty.required_encounters_before_boss
-
+	expedition_required_encounters = randi_range(
+		current_bounty.min_encounters_before_boss,
+		current_bounty.max_encounters_before_boss
+	)
+	print("Rolled required encounters: ", expedition_required_encounters)
 	current_encounter = current_bounty.expedition_encounter_pool.pick_random()
 	start_new_combat()
 
@@ -3399,10 +3409,7 @@ func open_edit_dice_panel_from_camp():
 	
 func continue_expedition():
 	expedition_camp_panel.visible = false
-
 	expedition_progress += 1
-
-	print("Expedition progress: ", expedition_progress, "/", expedition_required_encounters)
 
 	if expedition_progress < expedition_required_encounters:
 		current_encounter = current_bounty.expedition_encounter_pool.pick_random()
@@ -3444,6 +3451,9 @@ func open_prepare_expedition():
 	prepare_start_expedition_button.text = "Start Expedition"
 	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
 	prepare_expedition_label.text = "Prepare Expedition"
+	prepare_selected_bounty_label.text = \
+		"Bounty: " + current_bounty.bounty_name + \
+		"\nEncounters: " + str(current_bounty.min_encounters_before_boss) + "-" + str(current_bounty.max_encounters_before_boss)
 	rebuild_prepare_consumables()
 	update_begin_expedition_button_visibility()
 	

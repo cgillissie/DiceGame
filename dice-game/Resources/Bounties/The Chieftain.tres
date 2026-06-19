@@ -12,5 +12,6 @@ script = ExtResource("2_8417e")
 bounty_name = "The Chieftain"
 boss_encounter = ExtResource("1_0ials")
 expedition_encounter_pool = Array[ExtResource("1_4cakj")]([ExtResource("2_7eg0c"), ExtResource("3_0ials"), ExtResource("4_jgeje")])
-required_encounters_before_boss = 5
+min_encounters_before_boss = 6
+max_encounters_before_boss = 9
 metadata/_custom_type_script = "uid://cj0xiilvtky86"
