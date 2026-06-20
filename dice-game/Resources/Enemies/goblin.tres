@@ -8,9 +8,13 @@
 [ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="6_a11xo"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="7_5qokg"]
 [ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="8_peuxe"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="9_5qokg"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="9_nh72w"]
 [ext_resource type="SpriteFrames" uid="uid://2oesgg5ytnd7" path="res://Resources/SpriteFrames/GoblinSpriteFrames.tres" id="10_65j85"]
+[ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="10_peuxe"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="11_brliy"]
+[ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="11_nh72w"]
+[ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="12_yvlty"]
 
 [resource]
 script = ExtResource("9_nh72w")
@@ -23,4 +27,5 @@ dice_drop_chance = 0.1
 volatile_core_drop_chance = 0.05
 sprite_frames = ExtResource("10_65j85")
 sprite_scale = Vector3(4, 4, 4)
+food_drop_pool = Array[ExtResource("9_5qokg")]([ExtResource("10_peuxe"), ExtResource("11_nh72w"), ExtResource("12_yvlty")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

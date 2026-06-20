@@ -10,7 +10,9 @@
 [ext_resource type="Resource" uid="uid://20jefl0dm5v2" path="res://Resources/Faces/heal_2_face.tres" id="6_iaovh"]
 [ext_resource type="Resource" uid="uid://dj6p82bkcskuk" path="res://Resources/Faces/heal_3_face.tres" id="7_uo67f"]
 [ext_resource type="Resource" uid="uid://qpb2dk6lssnc" path="res://Resources/Faces/vitality_face.tres" id="8_lut8i"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="10_lut8i"]
 [ext_resource type="SpriteFrames" uid="uid://cbl1o38c3eud6" path="res://Resources/SpriteFrames/PriestSpriteFrames.tres" id="11_rvi0j"]
+[ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="11_w4y3r"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="12_iaovh"]
 
 [resource]
@@ -25,4 +27,5 @@ gold_reward = 12
 volatile_core_drop_chance = 0.05
 sprite_frames = ExtResource("11_rvi0j")
 sprite_scale = Vector3(4, 4, 4)
+food_drop_pool = Array[ExtResource("10_lut8i")]([ExtResource("11_w4y3r")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

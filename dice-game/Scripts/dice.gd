@@ -33,7 +33,7 @@ var assigned_enemy_index: int = -1
 var temporary: bool = false
 var has_exploded: bool = false
 var temporary_value_bonus: int = 0
-
+var display_value_override: int = -1
 
 	
 func _ready():
@@ -80,19 +80,30 @@ func _gui_input(event):
 
 
 func update_visual():
-	var face = dice_data.faces[current_face_index]
+	if dice_data == null:
+		return
+
+	if current_face == null:
+		return
+
+	var face = current_face
 
 	face_icon.texture = face.icon
-	result_label.text = str(get_display_value())
-	
 	face_index_label.text = str(current_face_index + 1) + "/" + str(dice_data.faces.size())
 	reserve_lock_icon.visible = came_from_reserve
-	if face_should_show_value(current_face):
-		result_label.text = str(current_face.value)
+
+	if face_should_show_value(face):
+		var value_to_show: int = face.value
+
+		if face.result_type == "hit":
+			value_to_show += temporary_value_bonus
+
+		result_label.text = str(value_to_show)
 		result_label.visible = true
 	else:
 		result_label.text = ""
 		result_label.visible = false
+
 	if used:
 		panel.modulate = Color(0.4, 0.4, 0.4)
 	else:
@@ -100,18 +111,16 @@ func update_visual():
 
 	if selected:
 		border_panel.modulate = Color.YELLOW
-
 	elif reserved:
 		border_panel.modulate = Color.CYAN
-
 	elif came_from_reserve:
 		border_panel.modulate = Color.RED
-
 	else:
 		border_panel.modulate = Color.WHITE
-		
+
 	exploding_icon.visible = false
 	temporary_icon.visible = temporary
+
 	if dice_data != null and dice_data.can_explode:
 		if current_face_index == dice_data.faces.size() - 1:
 			exploding_icon.visible = true

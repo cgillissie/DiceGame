@@ -126,12 +126,12 @@ var dropped_face: DiceFace
 var die_fragments: int = 0
 var last_die_fragments_gained: int = 0
 
-@onready var d4_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D4Button
-@onready var d6_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D6Button
-@onready var d8_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D8Button
-@onready var d10_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D10Button
-@onready var d12_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D12Button
-@onready var d20_craft_button: Button = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D20Button
+@onready var d4_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D4Button
+@onready var d6_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D6Button
+@onready var d8_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D8Button
+@onready var d10_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D10Button
+@onready var d12_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D12Button
+@onready var d20_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D20Button
 
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
@@ -150,6 +150,7 @@ var edit_dice_return_context: String = ""
 var last_dropped_faces: Array[DiceFace] = []
 var last_dropped_face: DiceFace = null
 var last_dropped_die: DiceData = null
+var last_dropped_foods: Array[ConsumableItem] = []
 
 # Town Screen #################################
 
@@ -265,7 +266,8 @@ var unlocked_food_tier: int = 1
 @onready var merchant_gold_label: Label = $MerchantPanel/MarginContainer/VBoxContainer/MerchantGoldLabel
 @export var merchant_food_pool: Array[ConsumableItem]
 var merchant_food_stock: Array[ConsumableItem] = []
-var unlocked_merchant_faces: Array[DiceFace] = []
+var merchant_unlocked_faces: Array[DiceFace] = []
+var merchant_face_cost: int = 12
 
 # Food Crafting Panel ############################
 @onready var food_craft_panel: Panel = $FoodCraftPanel
@@ -357,12 +359,12 @@ func _ready():
 	close_craft_button.pressed.connect(close_food_crafting)
 	begin_expedition_button.pressed.connect(open_prepare_expedition)
 	actions_button.pressed.connect(select_group.bind(actions_container))
-	d4_craft_button.pressed.connect(craft_empty_die.bind(4))
-	d6_craft_button.pressed.connect(craft_empty_die.bind(6))
-	d8_craft_button.pressed.connect(craft_empty_die.bind(8))
-	d10_craft_button.pressed.connect(craft_empty_die.bind(10))
-	d12_craft_button.pressed.connect(craft_empty_die.bind(12))
-	d20_craft_button.pressed.connect(craft_empty_die.bind(20))
+	d4_button.pressed.connect(craft_empty_die.bind(4))
+	d6_button.pressed.connect(craft_empty_die.bind(6))
+	d8_button.pressed.connect(craft_empty_die.bind(8))
+	d10_button.pressed.connect(craft_empty_die.bind(10))
+	d12_button.pressed.connect(craft_empty_die.bind(12))
+	d20_button.pressed.connect(craft_empty_die.bind(20))
 	if current_encounter == null:
 		if encounter_pool.size() > 0:
 			current_encounter = encounter_pool.pick_random()
@@ -1712,13 +1714,20 @@ func win_combat():
 				if last_dropped_die == null:
 					last_dropped_die = enemy_data.dice_drop_pool.pick_random()
 					owned_dice.append(last_dropped_die.duplicate(true))
+		if randf() <= enemy_data.food_drop_chance:
+			if enemy_data.food_drop_pool.size() > 0:
+				var food_drop: ConsumableItem = enemy_data.food_drop_pool.pick_random()
+				consumable_inventory.append(food_drop)
+				last_dropped_foods.append(food_drop)
 	clear_food_buffs()
-
+	last_dropped_foods.clear()
 	gold += total_gold_reward
 	gold_reward = total_gold_reward
 
 	if last_dropped_faces.size() > 0:
 		last_dropped_face = last_dropped_faces[0]
+	
+	
 	next_combat_bonus_damage = 0
 	next_combat_bonus_block = 0
 	next_combat_heal = 0
@@ -1768,16 +1777,22 @@ func show_loot_panel():
 	else:
 		loot_volatile_core_label.visible = false
 	var bonus_text := ""
-
+	if last_dropped_foods.size() > 0:
+		loot_face_label.text += "\n\nFood:"
+		for food in last_dropped_foods:
+			loot_face_label.text += "\n" + food.item_name
 	if last_dropped_die != null:
-		bonus_text += "BONUS DROP!\n" + last_dropped_die.die_name + "\n"
-
+		bonus_text += last_dropped_die.die_name + "\n"
+	
 	if last_die_fragments_gained > 0:
 		bonus_text += "Die Fragments: +" + str(last_die_fragments_gained)
 
 	loot_bonus_drop_label.visible = bonus_text != ""
 	loot_bonus_drop_label.text = bonus_text
-	
+	if last_dropped_foods.size() > 0:
+		loot_face_label.text += "\n\nFood:"
+		for food in last_dropped_foods:
+			loot_face_label.text += "\n" + food.item_name
 func open_shop_after_loot():
 	loot_panel.visible = false
 
@@ -2362,18 +2377,26 @@ func create_upgraded_face(face: DiceFace) -> DiceFace:
 	return new_face
 	
 func refresh_die_crafting_panel():
-	if die_crafting_panel == null:
-		return
-
 	fragment_label.text = "Die Fragments: " + str(die_fragments)
 
-	d4_craft_button.disabled = die_fragments < 4
-	d6_craft_button.disabled = die_fragments < 6
-	d8_craft_button.disabled = die_fragments < 8
-	d10_craft_button.disabled = die_fragments < 10
-	d12_craft_button.disabled = die_fragments < 12
-	d20_craft_button.disabled = die_fragments < 20
+	update_craft_button(d4_button, 4)
+	update_craft_button(d6_button, 6)
+	update_craft_button(d8_button, 8)
+	update_craft_button(d10_button, 10)
+	update_craft_button(d12_button, 12)
+	update_craft_button(d20_button, 20)
 	
+func update_craft_button(button: TextureButton, cost: int):
+	var affordable := die_fragments >= cost
+
+	button.disabled = !affordable
+
+	if affordable:
+		button.modulate = Color(1, 1, 1)
+	else:
+		button.modulate = Color(0.35, 0.35, 0.35)
+		
+		
 func craft_empty_die(sides: int):
 	if die_fragments < sides:
 		return
@@ -3357,6 +3380,9 @@ func complete_current_bounty():
 	apply_bounty_reward(current_bounty)
 	roll_merchant_stock()
 	current_bounty.completed = true
+	for face in current_bounty.unlocked_merchant_faces:
+		if !merchant_unlocked_faces.has(face):
+			merchant_unlocked_faces.append(face)
 	current_bounty = null
 	expedition_is_boss_fight = false
 	expedition_progress = 0
@@ -3521,7 +3547,32 @@ func rebuild_merchant():
 		)
 		button.tooltip_text = item.item_name + "\n" + item.description
 		button.pressed.connect(buy_consumable.bind(item))
+	for face in merchant_unlocked_faces:
+		var button = inventory_face_button_scene.instantiate()
+		merchant_stock_container.add_child(button)
+
+		button.setup(face, false)
+
+		var price_label := button.get_node_or_null("PriceLabel")
+		print("Price label found: ", price_label)
+		if price_label != null:
+			price_label.text = str(merchant_face_cost) + "g"
 		
+
+		button.tooltip_text = get_face_display_name(face) + "\nCost: " + str(merchant_face_cost) + "g"
+		button.pressed.connect(buy_merchant_face.bind(face))
+		
+func buy_merchant_face(face: DiceFace):
+	if gold < merchant_face_cost:
+		return
+	
+	gold -= merchant_face_cost
+	face_inventory.append(face.duplicate(true))
+
+	AudioManager.play_ui(coin_purchase_sound)
+	update_gold_label()
+	rebuild_merchant()
+	
 func get_consumable_count(item: ConsumableItem) -> int:
 	var count := 0
 

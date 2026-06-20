@@ -12,3 +12,4 @@ class_name BountyData
 @export var reward_volatile_cores: int = 0
 @export var reward_gold: int = 0
 @export var reward_reserve_slots: int = 0
+@export var unlocked_merchant_faces: Array[DiceFace]

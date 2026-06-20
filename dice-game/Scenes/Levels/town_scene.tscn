@@ -27,6 +27,7 @@ background_mode = 2
 background_energy_multiplier = 0.11
 sky = SubResource("Sky_2n375")
 volumetric_fog_enabled = true
+volumetric_fog_density = 0.0081
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_capvs"]
 

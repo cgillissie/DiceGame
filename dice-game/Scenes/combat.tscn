@@ -39,67 +39,10 @@
 [ext_resource type="AudioStream" uid="uid://br27q3k8wlv82" path="res://Assets/Sounds/Merchant/CoinGrab01.wav" id="30_1e1l8"]
 [ext_resource type="Texture2D" uid="uid://cta4b83gkfkx8" path="res://Assets/Sprites/UI/LootPopupGoblinFace.png" id="30_iv3ie"]
 [ext_resource type="Texture2D" uid="uid://dswjln01xa1b8" path="res://Assets/Sprites/UI/Player.png" id="31_1rebt"]
+[ext_resource type="Theme" uid="uid://m4nfa8q8nfv" path="res://Resources/Themes/GameUITheme.tres" id="36_47v24"]
 [ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="36_xu8d0"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_47v24"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8is30"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2520b"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r4oui"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1e1l8"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_uip5d"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7qqpw"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_j6ndf"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hy4eo"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_o5j5i"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_j0btd"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b4fdd"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y3gh1"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8w1g6"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g5yct"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_iyk1o"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y1f24"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ggrls"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ul71a"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6seoa"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_pqkue"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gib6t"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h6x2e"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2rvx2"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vqjug"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tqjuo"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_fx8i1"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_fu7uk"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jsnfd"]
 
 [node name="Combat" type="Control" unique_id=1112470734]
 layout_mode = 3
@@ -441,100 +384,150 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="D4Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=293405091]
+[node name="D4Button" type="TextureButton" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=839720889]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
+theme = ExtResource("36_47v24")
+texture_normal = ExtResource("36_xu8d0")
+texture_pressed = ExtResource("36_xu8d0")
+texture_hover = ExtResource("36_xu8d0")
+texture_disabled = ExtResource("36_xu8d0")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="D4Label" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D4Button" unique_id=232870229]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("8_d53gg")
-theme_override_styles/normal = SubResource("StyleBoxEmpty_47v24")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_8is30")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_2520b")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_r4oui")
 text = "D4"
-icon = ExtResource("36_xu8d0")
-icon_alignment = 1
-expand_icon = true
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="D6Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1961687079]
+[node name="D6Button" type="TextureButton" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=231949704]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 6
+texture_normal = ExtResource("36_xu8d0")
+texture_pressed = ExtResource("36_xu8d0")
+texture_hover = ExtResource("36_xu8d0")
+texture_disabled = ExtResource("36_xu8d0")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="D6Label" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D6Button" unique_id=1539816265]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.5
+offset_top = -11.5
+offset_right = 10.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("8_d53gg")
-theme_override_styles/normal = SubResource("StyleBoxEmpty_1e1l8")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_uip5d")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_7qqpw")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_j6ndf")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_hy4eo")
 text = "D6"
-icon = ExtResource("36_xu8d0")
-icon_alignment = 1
-expand_icon = true
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="D8Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1313870785]
+[node name="D8Button" type="TextureButton" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1487965852]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
+texture_normal = ExtResource("36_xu8d0")
+texture_pressed = ExtResource("36_xu8d0")
+texture_hover = ExtResource("36_xu8d0")
+texture_disabled = ExtResource("36_xu8d0")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="D8Label" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D8Button" unique_id=758738525]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("8_d53gg")
-theme_override_styles/normal = SubResource("StyleBoxEmpty_o5j5i")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_j0btd")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_b4fdd")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_y3gh1")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_8w1g6")
 text = "D8"
-icon = ExtResource("36_xu8d0")
-icon_alignment = 1
-expand_icon = true
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="D10Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1632868674]
+[node name="D10Button" type="TextureButton" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1624347043]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
+texture_normal = ExtResource("36_xu8d0")
+texture_pressed = ExtResource("36_xu8d0")
+texture_hover = ExtResource("36_xu8d0")
+texture_disabled = ExtResource("36_xu8d0")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="D10Label" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D10Button" unique_id=1998365476]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("8_d53gg")
-theme_override_styles/normal = SubResource("StyleBoxEmpty_g5yct")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_iyk1o")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_y1f24")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_ggrls")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_ul71a")
 text = "D10"
-icon = ExtResource("36_xu8d0")
-icon_alignment = 1
-expand_icon = true
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="D12Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1050528804]
+[node name="D12Button" type="TextureButton" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=1342793367]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
+texture_normal = ExtResource("36_xu8d0")
+texture_pressed = ExtResource("36_xu8d0")
+texture_hover = ExtResource("36_xu8d0")
+texture_disabled = ExtResource("36_xu8d0")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="D12Label" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D12Button" unique_id=1760650012]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("8_d53gg")
-theme_override_styles/normal = SubResource("StyleBoxEmpty_6seoa")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_pqkue")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_gib6t")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_h6x2e")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_2rvx2")
 text = "D12"
-icon = ExtResource("36_xu8d0")
-icon_alignment = 1
-expand_icon = true
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="D20Button" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=679704694]
+[node name="D20Button" type="TextureButton" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=446851013]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
+texture_normal = ExtResource("36_xu8d0")
+texture_pressed = ExtResource("36_xu8d0")
+texture_hover = ExtResource("36_xu8d0")
+texture_disabled = ExtResource("36_xu8d0")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="D20Label" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D20Button" unique_id=2014663239]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("8_d53gg")
-theme_override_styles/normal = SubResource("StyleBoxEmpty_vqjug")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_tqjuo")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_fx8i1")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_fu7uk")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_jsnfd")
 text = "D20"
-icon = ExtResource("36_xu8d0")
-icon_alignment = 1
-expand_icon = true
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=855685828]
 layout_mode = 2

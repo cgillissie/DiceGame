@@ -6,6 +6,8 @@
 [ext_resource type="Resource" uid="uid://dq0i40tubry03" path="res://Resources/Encounters/lone_acolyte.tres" id="3_bkxrh"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/knight_priest_encounter.tres" id="4_w1n20"]
 [ext_resource type="Resource" uid="uid://dcran6njk6egl" path="res://Resources/Encounters/knight2_encounter.tres" id="5_nbqgd"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="7_w1n20"]
+[ext_resource type="Resource" uid="uid://qbtg018y6l3c" path="res://Resources/Faces/heal_1_face.tres" id="8_waqwh"]
 
 [resource]
 script = ExtResource("2_61cr2")
@@ -14,4 +16,6 @@ boss_encounter = ExtResource("1_nbqgd")
 expedition_encounter_pool = Array[ExtResource("1_dtjmy")]([ExtResource("3_bkxrh"), ExtResource("4_w1n20"), ExtResource("5_nbqgd")])
 min_encounters_before_boss = 5
 max_encounters_before_boss = 7
+reward_reserve_slots = 1
+unlocked_merchant_faces = Array[ExtResource("7_w1n20")]([ExtResource("8_waqwh")])
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

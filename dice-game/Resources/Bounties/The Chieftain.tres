@@ -6,6 +6,8 @@
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_8417e"]
 [ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/bandit_ambush.tres" id="3_0ials"]
 [ext_resource type="Resource" uid="uid://bsbwvg4keah8q" path="res://Resources/Encounters/lone_goblin.tres" id="4_jgeje"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="7_luwip"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="8_ilsuq"]
 
 [resource]
 script = ExtResource("2_8417e")
@@ -14,4 +16,6 @@ boss_encounter = ExtResource("1_0ials")
 expedition_encounter_pool = Array[ExtResource("1_4cakj")]([ExtResource("2_7eg0c"), ExtResource("3_0ials"), ExtResource("4_jgeje")])
 min_encounters_before_boss = 6
 max_encounters_before_boss = 9
+reward_reserve_slots = 1
+unlocked_merchant_faces = Array[ExtResource("7_luwip")]([ExtResource("8_ilsuq")])
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

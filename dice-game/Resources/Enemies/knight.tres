@@ -8,8 +8,11 @@
 [ext_resource type="Resource" uid="uid://d26iud6qeexv5" path="res://Resources/Faces/block_1_face.tres" id="6_d2vjs"]
 [ext_resource type="Resource" uid="uid://sqmtv632iip5" path="res://Resources/Faces/block_2_face.tres" id="7_b6shd"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="8_wahoo"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="9_d2vjs"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="9_gei1o"]
+[ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="10_b6shd"]
 [ext_resource type="SpriteFrames" uid="uid://b18wn4grfop71" path="res://Resources/SpriteFrames/KnightSpriteSheet.tres" id="10_yusvf"]
+[ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="11_wahoo"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="11_wtf8f"]
 
 [resource]
@@ -24,4 +27,5 @@ volatile_core_drop_chance = 0.05
 sprite_frames = ExtResource("10_yusvf")
 sprite_scale = Vector3(4, 4, 4)
 sprite_offset = Vector3(0, 0.1, 0)
+food_drop_pool = Array[ExtResource("9_d2vjs")]([ExtResource("10_b6shd"), ExtResource("11_wahoo")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

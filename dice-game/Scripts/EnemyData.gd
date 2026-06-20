@@ -17,3 +17,5 @@ class_name EnemyData
 @export var idle_animation: String = "idle"
 @export var attack_animation: String = "attack"
 @export var traits: Array[EnemyTrait]
+@export var food_drop_chance: float = 0.15
+@export var food_drop_pool: Array[ConsumableItem]
