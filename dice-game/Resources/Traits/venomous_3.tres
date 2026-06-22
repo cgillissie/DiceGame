@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyTrait" format=3 uid="uid://ye7ajta4ldxx"]
+
+[ext_resource type="Texture2D" uid="uid://bjf03a4ekj4yd" path="res://Assets/Sprites/UI/Traits/VenomousIcon.png" id="1_5rjd6"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="1_inpwd"]
+
+[resource]
+script = ExtResource("1_inpwd")
+trait_id = "venomous"
+trait_name = "Venomous"
+value = 3
+icon = ExtResource("1_5rjd6")
+description = "Hits that damage the player apply bleed."
+metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

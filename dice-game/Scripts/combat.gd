@@ -136,6 +136,9 @@ var last_die_fragments_gained: int = 0
 @onready var d12_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D12Button
 @onready var d20_button: TextureButton = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D20Button
 
+@export var bleed_icon_texture: Texture2D
+@export var status_icon_scene: PackedScene
+
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
 var selected_die_face_index: int = -1
@@ -230,7 +233,6 @@ var encounter_choices: Array[EncounterData] = []
 @onready var enemies_label: Label = $RightMarginContainer/VBoxContainer/EnemiesLabel
 
 # RELICS ##############################################################
-@onready var loot_volatile_core_label: Label = $LootPanel/LootVBox/LootVolatileCoreLabel
 @onready var relic_label: Label = $RelicLabel
 var has_meditation_charm: bool = false
 
@@ -291,7 +293,6 @@ var gold_reward: int = 10
 
 var last_player_damage: int = 0
 var last_damage_taken: int = 0
-var player_bleed: int = 0
 
 var enemy_roll_text: String = ""
 var enemy_attack: int = 0
@@ -304,6 +305,15 @@ var base_enemy_hp: int = 20
 
 var max_player_hp: int = 30
 var player_hp: int = 30
+
+var player_statuses := {
+	"bleed": 0,
+	"regenerating": 0
+}
+
+@onready var player_status_container: HBoxContainer = $LeftMarginContainer/VBoxContainer/PlayerHPLabel/PlayerStatusContainer
+@onready var player_bleed_label: Label = $LeftMarginContainer/VBoxContainer/PlayerHPLabel/PlayerStatusContainer/PlayerBleedLabel
+
 var dice_nodes: Array[DiceNode] = []
 var enemy_hp: int = 20
 
@@ -390,7 +400,7 @@ func _ready():
 	update_player_hp_label()
 	update_player_block_label()
 	update_incoming_damage_label()
-	
+	update_player_status_icons()
 	# spawn_dice()
 	# await roll_all_dice()
 	regroup_dice()
@@ -1614,7 +1624,16 @@ func end_round():
 
 			if damage > 0:
 				player_hp -= damage
+				if face.result_type == "hit":
+					var venom_value := get_enemy_trait_value(enemy, "venomous")
+					print("VENOM CHECK: ", enemy["data"].enemy_name, " value=", venom_value)
 
+					if venom_value > 0:
+						player_statuses["bleed"] += venom_value
+						show_popup_text(player_3d_node, "Bleed +" + str(venom_value), 1.2, Color.RED)
+						add_combat_log_entry(enemy["data"].enemy_name + " applied Bleed " + str(venom_value) + ".")
+						update_player_status_icons()
+												
 				if player_hp < 0:
 					player_hp = 0
 
@@ -1648,6 +1667,7 @@ func end_round():
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_player_block_label()
+	apply_player_bleed()
 	update_combat_log()
 	apply_enemy_end_round_traits()
 	update_enemy_3d_nodes()
@@ -1666,6 +1686,28 @@ func end_round():
 	is_resolving_turn = false
 	end_round_button.disabled = false
 	
+func apply_player_bleed():
+	var bleed_value: int = player_statuses.get("bleed", 0)
+
+	if bleed_value <= 0:
+		return
+
+	player_hp -= bleed_value
+
+	if player_hp < 0:
+		player_hp = 0
+
+	show_damage_popup(player_3d_node, bleed_value)
+	add_combat_log_entry("Bleed dealt " + str(bleed_value) + " damage.")
+
+	player_statuses["bleed"] = max(bleed_value - 1, 0)
+
+	update_player_hp_label()
+	update_player_status_icons()
+
+	if player_hp <= 0:
+		lose_combat()
+		
 func get_active_berserker_bonus(enemy: Dictionary) -> int:
 	var value := get_enemy_trait_value(enemy, "berserker")
 
@@ -2055,7 +2097,7 @@ func start_new_combat():
 	calculate_auto_block()
 	regroup_dice()
 	update_group_visibility()
-
+	update_player_status_icons()
 	update_incoming_damage_label()
 	update_reserve_slots_label()
 	refresh_enemy_buttons()
@@ -3509,9 +3551,12 @@ func open_edit_dice_panel_from_town():
 	refresh_edit_dice_panel()
 
 func rest_at_town():
+	player_statuses["bleed"] = 0
+	update_player_status_icons()
+
 	player_hp = max_player_hp
 	update_player_hp_label()
-
+	
 
 func start_expedition():
 	if current_bounty == null:
@@ -4276,3 +4321,19 @@ func add_mulligems(amount: int):
 	mulligems = min(mulligems + amount, MAX_MULLIGEMS)
 	update_mulligem_button()
 	
+
+func add_player_status_icon(texture: Texture2D, value: int, tooltip: String):
+	var icon = status_icon_scene.instantiate()
+	player_status_container.add_child(icon)
+
+	icon.setup(texture, value, tooltip)
+
+func update_player_status_icons():
+	var bleed_value: int = player_statuses.get("bleed", 0)
+
+	player_status_container.visible = bleed_value > 0
+	player_bleed_label.visible = bleed_value > 0
+	player_bleed_label.text = "Bleed " + str(bleed_value)
+
+	if player_3d_node != null and is_instance_valid(player_3d_node):
+		player_3d_node.set_bleeding(bleed_value > 0)

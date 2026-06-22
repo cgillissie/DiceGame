@@ -73,3 +73,12 @@ func hurt_bump():
 
 	var tween := create_tween()
 	tween.tween_property(self, "position", start_pos, 0.08)
+	
+func set_bleeding(active: bool):
+	if sprite == null:
+		return
+
+	if active:
+		sprite.modulate = Color(1.0, 0.3, 0.3)
+	else:
+		sprite.modulate = Color.WHITE

@@ -14,6 +14,7 @@
 [ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="9_yocf7"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="10_ccvhs"]
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="10_y2o13"]
+[ext_resource type="Resource" uid="uid://d2sd5swvjv0m5" path="res://Resources/Traits/venomous_1.tres" id="15_y2o13"]
 
 [resource]
 script = ExtResource("3_1h330")
@@ -27,5 +28,6 @@ gold_reward = 20
 volatile_core_drop_chance = 0.1
 sprite_frames = ExtResource("9_5cxva")
 sprite_scale = Vector3(4, 4, 4)
+traits = Array[ExtResource("10_ccvhs")]([ExtResource("15_y2o13")])
 food_drop_pool = Array[ExtResource("8_y3o3f")]([ExtResource("9_yocf7"), ExtResource("10_y2o13")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

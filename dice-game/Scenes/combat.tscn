@@ -684,6 +684,14 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "player_hp_label.text = \"Player HP: \" + str(player_hp) + \"/\" + str(max_player_hp)"
 
+[node name="PlayerStatusContainer" type="HBoxContainer" parent="LeftMarginContainer/VBoxContainer/PlayerHPLabel" unique_id=463288000]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PlayerBleedLabel" type="Label" parent="LeftMarginContainer/VBoxContainer/PlayerHPLabel/PlayerStatusContainer" unique_id=1704677475]
+layout_mode = 2
+
 [node name="ReserveSlotsLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=180732504]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")

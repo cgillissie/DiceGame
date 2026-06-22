@@ -141,12 +141,18 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 		sprite.modulate = Color(0.55, 0.85, 1.0)
 
 	for enemy_trait in data.traits:
+		var display_name := enemy_trait.trait_name
+
+		if display_name == "":
+			display_name = enemy_trait.trait_id.capitalize()
+
 		add_status_icon(
 			enemy_trait.icon,
 			icon_index,
-			enemy_trait.trait_name + " " + str(enemy_trait.value) + "\n" + enemy_trait.description,
+			display_name + " " + str(enemy_trait.value) + "\n" + enemy_trait.description,
 			enemy_trait.value
 		)
+
 		icon_index += 1
 
 	if enemy.has("exposed") and enemy["exposed"]:
