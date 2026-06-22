@@ -130,16 +130,23 @@ func clear_trait_icons():
 		
 func update_status_icons(data: EnemyData, enemy: Dictionary):
 	clear_status_icons()
-	
+	sprite.modulate = Color.WHITE
+
 	var icon_index := 0
+
+	if enemy.has("bleed") and enemy["bleed"] > 0:
+		sprite.modulate = Color(1.0, 0.3, 0.3)
+
+	if enemy.has("freeze_stacks") and enemy["freeze_stacks"] > 0:
+		sprite.modulate = Color(0.55, 0.85, 1.0)
 
 	for enemy_trait in data.traits:
 		add_status_icon(
-		enemy_trait.icon,
-		icon_index,
-		enemy_trait.trait_name + " " + str(enemy_trait.value) + "\n" + enemy_trait.description,
-		enemy_trait.value
-	)
+			enemy_trait.icon,
+			icon_index,
+			enemy_trait.trait_name + " " + str(enemy_trait.value) + "\n" + enemy_trait.description,
+			enemy_trait.value
+		)
 		icon_index += 1
 
 	if enemy.has("exposed") and enemy["exposed"]:
@@ -150,6 +157,7 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 			1
 		)
 		icon_index += 1
+
 	if enemy.has("freeze_stacks") and enemy["freeze_stacks"] > 0:
 		add_status_icon(
 			freeze_icon_texture,
@@ -158,6 +166,7 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 			enemy["freeze_stacks"]
 		)
 		icon_index += 1
+
 	if enemy.has("bleed") and enemy["bleed"] > 0:
 		add_status_icon(
 			bleed_icon_texture,
@@ -165,8 +174,8 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 			"Bleed " + str(enemy["bleed"]) + "\nTakes damage at end of turn, then reduces by 1.",
 			enemy["bleed"]
 		)
-
 		icon_index += 1
+		
 func add_status_icon(texture: Texture2D, index: int, tooltip: String, value: int = 0):
 	if texture == null:
 		return

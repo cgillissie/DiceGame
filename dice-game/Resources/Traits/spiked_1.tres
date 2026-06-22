@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyTrait" format=3 uid="uid://ce4jsrai1w2sf"]
+
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="1_76okv"]
+[ext_resource type="Texture2D" uid="uid://snx5klmll3b0" path="res://Assets/Sprites/UI/Traits/SpikedIcon.png" id="1_hui8n"]
+
+[resource]
+script = ExtResource("1_76okv")
+trait_id = "spiked"
+trait_name = "Spiked"
+icon = ExtResource("1_hui8n")
+description = "Deals 1 damage back when damaged by a die."
+metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

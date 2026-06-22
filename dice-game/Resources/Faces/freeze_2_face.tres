@@ -7,6 +7,6 @@
 script = ExtResource("1_m2pxd")
 result_type = "freeze"
 value = 2
-label = "Freeze"
+label = "Freeze 2"
 icon = ExtResource("1_pfmga")
 metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

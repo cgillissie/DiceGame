@@ -8,6 +8,7 @@ extends Control
 @export var miss_face_template: DiceFace
 @export var dodge_face_template: DiceFace
 @export var reversal_face_template: DiceFace
+@export var break_focus_face_template: DiceFace
 
 var enemy_3d_nodes: Array[Enemy3D] = []
 
@@ -79,6 +80,7 @@ var face_inventory: Array[DiceFace] = []
 var face_cost: int = 8
 var dodge_targets: Array[int] = []
 var reversal_targets: Array[int] = []
+var break_focus_targets: Array[int] = []
 
 @export var basic_d6: DiceData
 
@@ -98,6 +100,7 @@ var assigned_enemy_containers: Array[GridContainer] = []
 @export var enemy_face_drop_pool: Array[DiceFace]
 var dropped_face: DiceFace
 
+
 # Reward panel and choices
 @onready var shop_panel: Panel = $ShopPanel
 @onready var buy_random_die_button: Button = $ShopPanel/VBoxContainer/ItemGrid/BuyD6Button
@@ -112,7 +115,7 @@ var dropped_face: DiceFace
 # Dice Editing panel
 @onready var edit_dice_button: Button = $ShopPanel/VBoxContainer/EditDiceButton
 @onready var edit_dice_panel: Panel = $EditDicePanel
-@onready var die_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox/DieFacesContainer
+@onready var die_faces_container: GridContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox/DieFacesContainer
 @onready var close_edit_button: Button = $EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox/CloseEditButton
 @onready var fuse_faces_button: Button = $EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox/FuseFacesButton
 @onready var apply_volatile_core_button = $EditDicePanel/MarginContainer/MainVBox/ApplyVolatileCoreButton
@@ -142,10 +145,8 @@ var edit_dice_return_context: String = ""
 
 # Loot panel
 @onready var loot_panel: Panel = $LootPanel
-@onready var loot_gold_label: Label = $LootPanel/LootVBox/LootGoldLabel
-@onready var loot_face_label: Label = $LootPanel/LootVBox/LootFaceLabel
 @onready var loot_continue_button: Button = $LootPanel/LootVBox/LootContinueButton
-@onready var loot_bonus_drop_label: Label = $LootPanel/LootVBox/LootBonusDropLabel
+@onready var loot_rich_text_label: RichTextLabel = $LootPanel/LootVBox/RichTextLabel
 
 var last_dropped_faces: Array[DiceFace] = []
 var last_dropped_face: DiceFace = null
@@ -268,6 +269,7 @@ var unlocked_food_tier: int = 1
 var merchant_food_stock: Array[ConsumableItem] = []
 var merchant_unlocked_faces: Array[DiceFace] = []
 var merchant_face_cost: int = 12
+var last_unlocked_merchant_faces: Array[DiceFace] = []
 
 # Food Crafting Panel ############################
 @onready var food_craft_panel: Panel = $FoodCraftPanel
@@ -284,12 +286,12 @@ var selected_food_craft_names: Array[String] = []
 
 var hovered_enemy_index: int = -1
 
-
 var gold: int = 100
 var gold_reward: int = 10
 
 var last_player_damage: int = 0
 var last_damage_taken: int = 0
+var player_bleed: int = 0
 
 var enemy_roll_text: String = ""
 var enemy_attack: int = 0
@@ -308,6 +310,13 @@ var enemy_hp: int = 20
 var player_block: int = 0
 var dodged_enemy_crits := false
 var combat_over: bool = false
+
+var mulligems: int = 0
+const MAX_MULLIGEMS := 3
+var mulligem_used_this_turn: bool = false
+var last_mulligems_gained: int = 0
+
+@onready var mulligem_button: Button = $DiceArea/MulligemButton
 
 var random_die_cost: int = 40
 var reserve_slot_cost: int = 20
@@ -359,6 +368,8 @@ func _ready():
 	close_craft_button.pressed.connect(close_food_crafting)
 	begin_expedition_button.pressed.connect(open_prepare_expedition)
 	actions_button.pressed.connect(select_group.bind(actions_container))
+	mulligem_button.pressed.connect(use_mulligem)
+	update_mulligem_button()
 	d4_button.pressed.connect(craft_empty_die.bind(4))
 	d6_button.pressed.connect(craft_empty_die.bind(6))
 	d8_button.pressed.connect(craft_empty_die.bind(8))
@@ -430,6 +441,75 @@ func update_player_3d_node():
 
 	var incoming := get_current_incoming_damage()
 	player_3d_node.setup(player_hp, combat_max_player_hp, player_block, incoming)
+	
+func update_mulligem_button():
+	mulligem_button.text = "Mulligem (" + str(mulligems) + ")"
+
+	mulligem_button.disabled = mulligems <= 0 \
+		or mulligem_used_this_turn \
+		or combat_over \
+		or is_rolling_dice \
+		or is_resolving_turn
+		
+func use_mulligem():
+	if mulligems <= 0:
+		return
+
+	if mulligem_used_this_turn:
+		return
+
+	if is_rolling_dice or is_resolving_turn:
+		return
+
+	mulligems -= 1
+	mulligem_used_this_turn = true
+
+	await reroll_available_dice()
+
+	update_mulligem_button()
+	
+func reroll_available_dice():
+	var dice_to_reroll: Array[DiceNode] = []
+
+	for die in dice_nodes:
+		if !is_instance_valid(die):
+			continue
+
+		if die.used:
+			continue
+
+		if die.reserved:
+			continue
+
+		if die.assigned_enemy_index != -1:
+			continue
+
+		dice_to_reroll.append(die)
+
+	if dice_to_reroll.is_empty():
+		return
+
+	for die in dice_to_reroll:
+		die.selected = false
+		selected_dice_order.erase(die)
+		die.visible = false
+		die.reparent(rolling_hidden_area)
+
+	update_group_visibility()
+
+	for die in dice_to_reroll:
+		die.visible = true
+		dice_roll_sfx.pitch_scale = randf_range(0.9, 1.1)
+		dice_roll_sfx.play()
+		await die.roll_animated(roll_animation_area, 0, 1)
+		var final_container := get_container_for_die(die)
+		await die.fly_to_container(final_container)
+		die.set_compact_mode(false)
+
+	apply_damage_bonus_to_dice_visuals()
+	calculate_auto_block()
+	update_incoming_damage_label()
+	update_group_visibility()
 	
 func get_current_incoming_damage() -> int:
 	var total_attack := 0
@@ -601,6 +681,7 @@ func spawn_enemy_3d_nodes():
 		enemy_node.status_unhovered.connect(hide_status_tooltip)
 		
 func roll_enemy_intents():
+	var rolled_hit := false
 	for enemy in active_enemies:
 		enemy["attack"] = 0
 		enemy["crit"] = 0
@@ -608,13 +689,13 @@ func roll_enemy_intents():
 		enemy["heal"] = 0
 		enemy["crit_rolls"] = []
 		enemy["rolled_faces"] = []
-
+	
 		if enemy["frozen"]:
 			enemy["roll_text"] = "Frozen"
 			continue
 
 		enemy["roll_text"] = ""
-
+		
 		var data: EnemyData = enemy["data"]
 
 		for die_data in data.dice_pool:
@@ -632,6 +713,8 @@ func roll_enemy_intents():
 			match face.result_type:
 				"hit":
 					enemy["attack"] += face.value
+					rolled_hit = true
+					
 				"crit":
 					enemy["crit"] += face.value
 					enemy["crit_rolls"].append(face.value)
@@ -639,7 +722,11 @@ func roll_enemy_intents():
 					enemy["block"] += face.value
 				"heal":
 					enemy["heal"] += face.value
+		var berserker_value := get_active_berserker_bonus(enemy)
 
+		if berserker_value > 0 and rolled_hit:
+			enemy["attack"] += berserker_value
+			enemy["roll_text"] += "Berserker +" + str(berserker_value) + " "
 		var armored_value := get_enemy_trait_value(enemy, "armored")
 
 		if armored_value > 0:
@@ -722,6 +809,15 @@ func rescue_assigned_dice():
 				child.visible = false
 				child.reparent(rolling_hidden_area)
 
+func get_enemy_trait_value(enemy: Dictionary, trait_name: String) -> int:
+	var traits = enemy["data"].traits
+
+	for enemy_trait in traits:
+		if enemy_trait.trait_name == trait_name:
+			return enemy_trait.value
+
+	return 0
+	
 func populate_enemy_roll_popup(enemy_index: int, roll_container: HBoxContainer):
 	for child in roll_container.get_children():
 		roll_container.remove_child(child)
@@ -843,7 +939,8 @@ func is_offensive_die(die: DiceNode) -> bool:
 		or die.current_face.result_type == "reversal" \
 		or die.current_face.result_type == "freeze" \
 		or die.current_face.result_type == "bleed" \
-		or die.current_face.result_type == "twist_knife"
+		or die.current_face.result_type == "twist_knife" \
+		or die.current_face.result_type == "break_focus"
 	
 	##############################################################################
 	
@@ -974,8 +1071,10 @@ func get_container_for_die(die: DiceNode) -> GridContainer:
 		"heal", "vitality":
 			return healing_container
 
-		"dodge", "reversal", "freeze", "bleed", "twist_knife":
+		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus":
 			return actions_container
+			
+		
 
 		_:
 			return misses_container
@@ -1366,15 +1465,25 @@ func end_round():
 	end_round_button.disabled = true
 
 	await resolve_player_dice()
-
+	
+	mulligem_used_this_turn = false
+	update_mulligem_button()
+	
 	if active_enemies.is_empty():
 		await get_tree().create_timer(0.5).timeout
 		win_combat()
 		is_resolving_turn = false
 		return
 
-	for healer in active_enemies:
+	for healer_index in active_enemies.size():
+		var healer = active_enemies[healer_index]
+
 		if healer["heal"] <= 0:
+			continue
+
+		if break_focus_targets.has(healer_index):
+			add_combat_log_entry(healer["data"].enemy_name + "'s healing was broken.")
+			show_popup_text(enemy_3d_nodes[healer_index], "Healing Broken!", 1.2, Color.PURPLE)
 			continue
 
 		var lowest_enemy = get_lowest_health_enemy()
@@ -1410,19 +1519,29 @@ func end_round():
 
 		var enemy = active_enemies[enemy_index]
 		if enemy["frozen"]:
-			show_popup_text(
-				enemy_3d_nodes[enemy_index],
-				"Frozen!",
-				1.2,
-				Color.CYAN
-			)
+			if enemy["data"].immune_to_freeze_skip:
+				show_popup_text(
+					enemy_3d_nodes[enemy_index],
+					"Chilled!",
+					1.2,
+					Color.CYAN
+				)
 
-			add_combat_log_entry(enemy["data"].enemy_name + " is frozen and skips their turn.")
+				add_combat_log_entry(enemy["data"].enemy_name + " resists being frozen.")
+				enemy["frozen"] = false
+			else:
+				show_popup_text(
+					enemy_3d_nodes[enemy_index],
+					"Frozen!",
+					1.2,
+					Color.CYAN
+				)
 
-			enemy["frozen"] = false
+				add_combat_log_entry(enemy["data"].enemy_name + " is frozen and skips their turn.")
+				enemy["frozen"] = false
 
-			update_enemy_3d_nodes()
-			continue
+				update_enemy_3d_nodes()
+				continue
 			
 		if enemy_index >= enemy_3d_nodes.size():
 			continue
@@ -1440,6 +1559,7 @@ func end_round():
 			await launch_enemy_die_at_player(enemy_index, face)
 
 			var damage := face.value
+			
 			if face.result_type == "crit":
 				AudioManager.play_one_shot(critical_hit_sound)
 				if reversal_targets.has(enemy_index):
@@ -1471,6 +1591,7 @@ func end_round():
 					await hit_stop(0.02)
 					continue
 			if face.result_type == "hit":
+				damage += get_active_berserker_bonus(enemy)
 				var blocked_amount = min(damage, player_block)
 
 				if blocked_amount > 0:
@@ -1523,6 +1644,7 @@ func end_round():
 	clear_used_assigned_dice()
 	dodge_targets.clear()
 	reversal_targets.clear()
+	break_focus_targets.clear()
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_player_block_label()
@@ -1543,6 +1665,17 @@ func end_round():
 
 	is_resolving_turn = false
 	end_round_button.disabled = false
+	
+func get_active_berserker_bonus(enemy: Dictionary) -> int:
+	var value := get_enemy_trait_value(enemy, "berserker")
+
+	if value <= 0:
+		return 0
+
+	if enemy["hp"] > enemy["max_hp"] / 2:
+		return 0
+
+	return value
 	
 func reset_dice_for_next_roll():
 	for die in dice_nodes:
@@ -1693,9 +1826,10 @@ func win_combat():
 	last_dropped_faces.clear()
 	last_dropped_face = null
 	last_dropped_die = null
+	last_dropped_foods.clear()
 	last_die_fragments_gained = randi_range(1, 3)
 	die_fragments += last_die_fragments_gained
-	
+	last_mulligems_gained = 0
 	for enemy_data in defeated_enemies:
 		total_gold_reward += enemy_data.gold_reward
 		if randf() <= enemy_data.volatile_core_drop_chance:
@@ -1720,13 +1854,19 @@ func win_combat():
 				consumable_inventory.append(food_drop)
 				last_dropped_foods.append(food_drop)
 	clear_food_buffs()
-	last_dropped_foods.clear()
+	
 	gold += total_gold_reward
 	gold_reward = total_gold_reward
-
+	if mulligems < MAX_MULLIGEMS:
+		if randf() <= 0.05:
+			add_mulligems(1)
+			last_mulligems_gained += 1
 	if last_dropped_faces.size() > 0:
 		last_dropped_face = last_dropped_faces[0]
-	
+	if expedition_is_boss_fight:
+		if mulligems < MAX_MULLIGEMS:
+			add_mulligems(1)
+			last_mulligems_gained += 1
 	
 	next_combat_bonus_damage = 0
 	next_combat_bonus_block = 0
@@ -1737,6 +1877,7 @@ func win_combat():
 	if player_hp > max_player_hp:
 		player_hp = max_player_hp
 	update_gold_label()
+	print("Dropped foods: ", last_dropped_foods.size())
 	show_loot_panel()
 	update_volatile_core_button()
 	
@@ -1756,43 +1897,52 @@ func show_loot_panel():
 	loot_panel.visible = true
 	shop_panel.visible = false
 
-	loot_gold_label.text = "Gold: +" + str(gold_reward)
+	var loot_text := ""
 
+	loot_text += "[center][b]Loot Claimed![/b][/center]\n\n"
+	loot_text += "[center]Gold: +" + str(gold_reward) + "[/center]\n\n"
+
+	# Faces
 	if last_dropped_faces.size() > 0:
-		loot_face_label.text = "Faces:"
+		loot_text += "[center][color=gold]Faces[/color]\n"
 
 		for face in last_dropped_faces:
-			loot_face_label.text += "\n" + get_face_display_name(face)
-	else:
-		loot_face_label.text = "Faces: None"
-	if last_dropped_die != null:
-		loot_bonus_drop_label.visible = true
-		loot_bonus_drop_label.text = "BONUS DROP!\n" + last_dropped_die.die_name
-	else:
-		loot_bonus_drop_label.visible = false
-		
-	if last_volatile_cores_gained > 0:
-		loot_volatile_core_label.visible = true
-		loot_volatile_core_label.text = "Volatile Cores: +" + str(last_volatile_cores_gained)
-	else:
-		loot_volatile_core_label.visible = false
-	var bonus_text := ""
-	if last_dropped_foods.size() > 0:
-		loot_face_label.text += "\n\nFood:"
-		for food in last_dropped_foods:
-			loot_face_label.text += "\n" + food.item_name
-	if last_dropped_die != null:
-		bonus_text += last_dropped_die.die_name + "\n"
-	
-	if last_die_fragments_gained > 0:
-		bonus_text += "Die Fragments: +" + str(last_die_fragments_gained)
+			loot_text += get_face_display_name(face) + "\n"
 
-	loot_bonus_drop_label.visible = bonus_text != ""
-	loot_bonus_drop_label.text = bonus_text
+		loot_text += "\n"
+
+	# Food
 	if last_dropped_foods.size() > 0:
-		loot_face_label.text += "\n\nFood:"
+		loot_text += "[color=green]Food[/color]\n"
+
 		for food in last_dropped_foods:
-			loot_face_label.text += "\n" + food.item_name
+			loot_text += food.item_name + "\n"
+
+		loot_text += "\n"
+
+	# Volatile Cores
+	if last_volatile_cores_gained > 0:
+		loot_text += "[center][color=orange]Volatile Cores: +" + str(last_volatile_cores_gained) + "[/color]\n\n"
+
+	# Die Fragments
+	if last_die_fragments_gained > 0:
+		loot_text += "[center][color=cyan]Die Fragments: +" + str(last_die_fragments_gained) + "[/color]\n\n"
+
+	# Bonus Dice
+	if last_dropped_die != null:
+		loot_text += "[center][color=lightblue]BONUS DROP![/color][/center]\n"
+		loot_text += "[center]" + last_dropped_die.die_name + "[/center]\n"
+		
+	if last_unlocked_merchant_faces.size() > 0:
+		loot_text += "\n[center][color=yellow]New Merchant Stock![/color][/center]\n"
+
+		for face in last_unlocked_merchant_faces:
+			loot_text += "[center]" + get_face_display_name(face) + "[/center]\n"
+	if last_mulligems_gained > 0:
+		loot_text += "[center][color=violet]Mulligems: +" + str(last_mulligems_gained) + "[/color]\n\n"
+	loot_rich_text_label.clear()
+	loot_rich_text_label.append_text(loot_text)
+			
 func open_shop_after_loot():
 	loot_panel.visible = false
 
@@ -1866,7 +2016,8 @@ func start_new_combat():
 	active_enemies.clear()
 	selected_enemy_index = -1
 	selected_dice_order.clear()
-
+	break_focus_targets.clear()
+	
 	last_player_damage = 0
 	last_damage_taken = 0
 
@@ -1897,7 +2048,9 @@ func start_new_combat():
 
 	spawn_dice()
 	await roll_all_dice()
-
+	
+	mulligem_used_this_turn = false
+	update_mulligem_button()
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
 	regroup_dice()
@@ -2084,18 +2237,28 @@ func refresh_edit_dice_panel():
 
 	clear_container(die_faces_container)
 	clear_container(inventory_faces_container)
+
 	update_volatile_core_button()
 	rebuild_face_inventory_grid()
 
-	if selected_edit_die != null:
-		for i in selected_edit_die.faces.size():
-			var face := selected_edit_die.faces[i]
+	if selected_edit_die == null:
+		return
 
-			var face_button = equipped_face_button_scene.instantiate()
-			die_faces_container.add_child(face_button)
+	if selected_edit_die.sides >= 20:
+		die_faces_container.columns = 3
+	elif selected_edit_die.sides >= 10:
+		die_faces_container.columns = 2
+	else:
+		die_faces_container.columns = 1
 
-			face_button.setup(face, i, i == selected_die_face_index)
-			face_button.pressed.connect(select_die_face.bind(i))
+	for i in selected_edit_die.faces.size():
+		var face := selected_edit_die.faces[i]
+
+		var face_button = equipped_face_button_scene.instantiate()
+		die_faces_container.add_child(face_button)
+
+		face_button.setup(face, i, i == selected_die_face_index)
+		face_button.pressed.connect(select_die_face.bind(i))
 	
 func rebuild_face_inventory_grid():
 	clear_container(inventory_faces_container)
@@ -2296,28 +2459,28 @@ func select_edit_die(die_data: DiceData):
 	update_volatile_core_button()
 	
 func update_volatile_core_button():
+	var base_text := "Apply Volatile Core (" + str(volatile_cores) + ")"
+	apply_volatile_core_button.text = base_text
+
 	if selected_edit_die == null:
 		apply_volatile_core_button.disabled = true
-		apply_volatile_core_button.text = "Apply Volatile Core"
 		return
 
 	if selected_edit_die.sides <= 4:
 		apply_volatile_core_button.disabled = true
-		apply_volatile_core_button.text = "D4 Cannot Explode"
+		apply_volatile_core_button.text = "D4 Cannot Explode (" + str(volatile_cores) + ")"
 		return
 
 	if selected_edit_die.can_explode:
 		apply_volatile_core_button.disabled = true
-		apply_volatile_core_button.text = "Already Exploding"
+		apply_volatile_core_button.text = "Already Exploding (" + str(volatile_cores) + ")"
 		return
 
 	if volatile_cores <= 0:
 		apply_volatile_core_button.disabled = true
-		apply_volatile_core_button.text = "No Volatile Core"
 		return
 
 	apply_volatile_core_button.disabled = false
-	apply_volatile_core_button.text = "Apply Volatile Core"
 	
 func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
 	if face.result_type == "crit":
@@ -2326,6 +2489,16 @@ func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
 	return int(die_data.sides / 2)
 	
 func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
+	if face_a.result_type == "dodge" and face_b.result_type == "dodge":
+		return false
+	
+	
+	if face_a.result_type == "reversal" and face_b.result_type == "reversal":
+		return false
+		
+	if face_a.result_type == "twist_knife" and face_b.result_type == "twist_knife":
+		return false	
+		
 	if face_a.result_type == "miss" and face_b.result_type == "miss":
 		return true
 
@@ -2338,13 +2511,17 @@ func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 	if (face_a.result_type == "crit" and face_b.result_type == "bleed") \
 		or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
 			return true
-
+	
+	if (face_a.result_type == "crit" and face_b.result_type == "heal") \
+		or (face_a.result_type == "heal" and face_b.result_type == "crit"):
+			return true
+			
 	if face_a.result_type != face_b.result_type:
 		return false
 
 	if face_a.value != face_b.value:
 		return false
-
+	
 	return true
 
 func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
@@ -2496,42 +2673,41 @@ func select_die_face(face_index: int):
 func install_inventory_face(inventory_index: int):
 	if selected_edit_die == null:
 		return
-		
-	var new_face: DiceFace = face_inventory[inventory_index]
-	var max_allowed_value := get_max_face_value_for_die(selected_edit_die, new_face)
-	
-	if new_face.value > max_allowed_value:
-		return
+
 	if selected_die_face_index == -1:
 		return
 
 	if inventory_index < 0 or inventory_index >= face_inventory.size():
 		return
-	
 
-	if new_face.result_type == "dodge" or new_face.result_type == "reversal":
-		if selected_edit_die.sides <= 4:
+	var new_face: DiceFace = face_inventory[inventory_index]
+
+	if new_face.result_type == "dodge":
+		if die_has_dodge(selected_edit_die):
 			return
 
-		var count := 0
+	var max_allowed_value := get_max_face_value_for_die(selected_edit_die, new_face)
 
-		for face in selected_edit_die.faces:
-			if face.result_type == "dodge" or face.result_type == "reversal":
-				count += 1
+	if new_face.value > max_allowed_value:
+		return
 
-		if count >= 1:
-			return
 	var old_face: DiceFace = selected_edit_die.faces[selected_die_face_index]
 
 	selected_edit_die.faces[selected_die_face_index] = new_face
 	face_inventory[inventory_index] = old_face
+
 	AudioManager.play_one_shot(graft_face_sound)
 
 	selected_die_face_index = -1
 
 	call_deferred("refresh_edit_dice_panel")
 	
+func die_has_dodge(die: DiceData) -> bool:
+	for face in die.faces:
+		if face.result_type == "dodge":
+			return true
 
+	return false
 	
 #######################################################################
 
@@ -3189,6 +3365,32 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			var hit_value: int = die.current_face.value + active_combat_bonus_damage
 			var blocked_amount: int = min(hit_value, enemy["block"])
 			var damage_after_block: int = hit_value - blocked_amount
+			
+
+			if damage_after_block > 0:
+				enemy["hp"] -= damage_after_block
+
+				var spiked_value := get_enemy_trait_value(enemy, "spiked")
+
+				if spiked_value > 0:
+					player_hp -= spiked_value
+
+					show_damage_popup(
+						player_3d_node,
+						spiked_value
+					)
+
+					add_combat_log_entry(
+						enemy["data"].enemy_name +
+						"'s spikes dealt " +
+						str(spiked_value) +
+						" damage."
+					)
+
+					update_player_hp_label()
+					if player_hp <= 0:
+						lose_combat()
+						return
 			hit_value += next_combat_bonus_damage
 			if enemy["exposed"]:
 				damage_after_block += 1
@@ -3223,6 +3425,13 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			enemy["bleed"] += die.current_face.value
 			show_popup_text(enemy_3d_nodes[enemy_index], "Bleed +" + str(die.current_face.value), 1.2, Color.RED)
 			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " bleed.")
+			
+		"break_focus":
+			if !break_focus_targets.has(enemy_index):
+				break_focus_targets.append(enemy_index)
+
+			show_popup_text(enemy_3d_nodes[enemy_index], "Break Focus", 1.2, Color.PURPLE)
+			add_combat_log_entry("Break Focus will cancel " + enemy["data"].enemy_name + "'s healing.")
 			
 	update_enemy_3d_nodes()
 	
@@ -3722,15 +3931,6 @@ func apply_damage_bonus_to_dice_visuals():
 		die.temporary_value_bonus = active_combat_bonus_damage
 		die.update_visual()
 
-func get_enemy_trait_value(enemy: Dictionary, trait_id: String) -> int:
-	var data: EnemyData = enemy["data"]
-
-	for enemy_trait in data.traits:
-		if enemy_trait.trait_id == trait_id:
-			return enemy_trait.value
-
-	return 0
-
 
 func get_enemy_trait_text(enemy: Dictionary) -> String:
 	var data: EnemyData = enemy["data"]
@@ -4071,3 +4271,8 @@ func _on_any_ui_button_pressed():
 	
 func play_purchase_sound():
 	AudioManager.play_one_shot(coin_purchase_sound)
+
+func add_mulligems(amount: int):
+	mulligems = min(mulligems + amount, MAX_MULLIGEMS)
+	update_mulligem_button()
+	

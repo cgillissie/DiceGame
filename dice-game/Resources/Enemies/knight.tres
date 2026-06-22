@@ -27,5 +27,6 @@ volatile_core_drop_chance = 0.05
 sprite_frames = ExtResource("10_yusvf")
 sprite_scale = Vector3(4, 4, 4)
 sprite_offset = Vector3(0, 0.1, 0)
+food_drop_chance = 0.1
 food_drop_pool = Array[ExtResource("9_d2vjs")]([ExtResource("10_b6shd"), ExtResource("11_wahoo")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

@@ -28,5 +28,6 @@ gold_reward = 20
 volatile_core_drop_chance = 0.15
 sprite_frames = ExtResource("8_m0xso")
 sprite_scale = Vector3(4, 4, 4)
+food_drop_chance = 0.1
 food_drop_pool = Array[ExtResource("7_r4jyb")]([ExtResource("8_y20ep"), ExtResource("9_4t2nf"), ExtResource("10_5v1h7")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

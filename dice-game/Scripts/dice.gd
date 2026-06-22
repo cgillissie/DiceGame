@@ -136,7 +136,8 @@ func face_should_show_value(face: DiceFace) -> bool:
 		"gold",
 		"heal",
 		"vitality",
-		"bleed"
+		"bleed",
+		"freeze"
 	]
 	
 func get_face_text(face: DiceFace) -> String:

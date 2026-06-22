@@ -41,6 +41,7 @@
 [ext_resource type="Texture2D" uid="uid://dswjln01xa1b8" path="res://Assets/Sprites/UI/Player.png" id="31_1rebt"]
 [ext_resource type="Theme" uid="uid://m4nfa8q8nfv" path="res://Resources/Themes/GameUITheme.tres" id="36_47v24"]
 [ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="36_xu8d0"]
+[ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="38_8is30"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
 
@@ -282,6 +283,11 @@ text = "Edit Faces"
 custom_minimum_size = Vector2(60, 40)
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_colors/icon_normal_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_pressed_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Apply Volatile Core"
 icon = ExtResource("26_2n3pb")
@@ -330,7 +336,7 @@ size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Die Faces"
 
-[node name="DieFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=807091473]
+[node name="DieFacesContainer" type="GridContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox" unique_id=1660879537]
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -544,6 +550,11 @@ custom_minimum_size = Vector2(180, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_override_colors/icon_normal_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_pressed_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Fuse Faces"
 icon = ExtResource("26_5g3cp")
@@ -581,43 +592,17 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 12
 
-[node name="LootTitleLabel" type="Label" parent="LootPanel/LootVBox" unique_id=159370214]
+[node name="RichTextLabel" type="RichTextLabel" parent="LootPanel/LootVBox" unique_id=506048208]
 layout_mode = 2
-size_flags_vertical = 6
-theme_override_fonts/font = ExtResource("8_d53gg")
-text = "Loot Claimed!"
-horizontal_alignment = 1
-
-[node name="LootGoldLabel" type="Label" parent="LootPanel/LootVBox" unique_id=770409695]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 6
-theme_override_fonts/font = ExtResource("8_d53gg")
-horizontal_alignment = 1
-
-[node name="LootFaceLabel" type="Label" parent="LootPanel/LootVBox" unique_id=1530673133]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 6
-theme_override_fonts/font = ExtResource("8_d53gg")
-horizontal_alignment = 1
-
-[node name="LootVolatileCoreLabel" type="Label" parent="LootPanel/LootVBox" unique_id=2023435355]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 6
-theme_override_fonts/font = ExtResource("8_d53gg")
-
-[node name="LootBonusDropLabel" type="Label" parent="LootPanel/LootVBox" unique_id=950226633]
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("9_twsak")
-theme_override_font_sizes/font_size = 16
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 
 [node name="LootContinueButton" type="Button" parent="LootPanel/LootVBox" unique_id=426157888]
 custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 8
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Continue"
 
@@ -940,15 +925,30 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -320.0
-offset_top = -280.0
-offset_right = -206.0
-offset_bottom = -200.0
+offset_top = -220.0
+offset_right = -180.0
+offset_bottom = -140.0
 grow_horizontal = 0
 grow_vertical = 0
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "End Turn"
+
+[node name="MulligemButton" type="Button" parent="DiceArea" unique_id=1894677766]
+custom_minimum_size = Vector2(60, 40)
+layout_mode = 0
+offset_left = 180.0
+offset_right = 320.0
+offset_bottom = 80.0
+theme_override_colors/icon_normal_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_pressed_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "mulligem_button.text = \"Mulligem (\" + str(mulligems) + \"/\" + str(MAX_MULLIGEMS) + \")\""
+icon = ExtResource("38_8is30")
 
 [node name="RelicLabel" type="Label" parent="." unique_id=73021013]
 layout_mode = 0

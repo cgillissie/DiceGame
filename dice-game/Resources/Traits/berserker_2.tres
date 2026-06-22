@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyTrait" format=3 uid="uid://skl127pice4j"]
+
+[ext_resource type="Texture2D" uid="uid://oj71joggraka" path="res://Assets/Sprites/UI/Traits/BerserkerIcon.png" id="1_8tb7a"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="1_v4yjh"]
+
+[resource]
+script = ExtResource("1_v4yjh")
+trait_id = "berserker"
+trait_name = "Berserker"
+value = 2
+icon = ExtResource("1_8tb7a")
+description = "+2 Damage while below half HP"
+metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

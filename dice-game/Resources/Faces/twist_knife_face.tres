@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("2_gcblg")
-face_name = "Twist Knife"
 result_type = "twist_knife"
+label = "Twist Knife"
 icon = ExtResource("1_c7xim")
 metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
