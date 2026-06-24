@@ -3482,13 +3482,14 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 		"hit":
 			var hit_value: int = die.current_face.value + active_combat_bonus_damage
-			var blocked_amount: int = min(hit_value, enemy["block"])
-			var damage_after_block: int = hit_value - blocked_amount
 
-			if enemy["exposed"] and damage_after_block > 0:
-				damage_after_block += 1
+			if enemy["exposed"]:
+				hit_value += 1
 				enemy["exposed"] = false
 				show_popup_text(enemy_node, "EXPOSED +1", 2.2, Color.YELLOW)
+
+			var blocked_amount: int = min(hit_value, enemy["block"])
+			var damage_after_block: int = hit_value - blocked_amount
 
 			enemy["block"] -= blocked_amount
 			if enemy["block"] < 0:
@@ -3527,7 +3528,6 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 		_:
 			update_enemy_3d_nodes()
 			return
-	
 func apply_enemy_bleed():
 	for i in active_enemies.size():
 		var enemy = active_enemies[i]
@@ -3699,9 +3699,7 @@ func complete_current_bounty():
 	loot_panel.visible = false
 	edit_dice_panel.visible = false
 	selected_bounty_label.text = "No Bounty Selected"
-	for relic in current_bounty.unlocked_relics:
-		if !owned_relics.has(relic):
-			owned_relics.append(relic)
+	
 	print("Bounty completed. Returned to town.")
 	return_to_town_requested.emit()
 	
@@ -3721,7 +3719,11 @@ func apply_bounty_reward(bounty: BountyData):
 	if bounty.reward_reserve_slots > 0:
 		reserve_slots += bounty.reward_reserve_slots
 		update_reserve_slots_label()
-	
+		
+	for relic in current_bounty.unlocked_relics:
+		if !owned_relics.has(relic):
+			owned_relics.append(relic)
+			
 func show_expedition_camp():
 	expedition_camp_panel.visible = true
 	camp_status_label.text = "Encounter " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
