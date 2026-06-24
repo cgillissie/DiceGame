@@ -26,6 +26,9 @@ var active_status_icons: Array[Sprite3D] = []
 @export var exposed_icon_texture: Texture2D
 @export var freeze_icon_texture: Texture2D
 @export var bleed_icon_texture: Texture2D
+
+@export var ui_font: Font
+
 var status_icon_tooltips := {}
 var enemy_index: int = -1
 var enemy_data: EnemyData
@@ -61,7 +64,10 @@ func setup(index: int, enemy: Dictionary):
 	var hp_percent = float(enemy["hp"]) / float(enemy["max_hp"])
 	health_bar_fill.scale.x = clamp(hp_percent, 0.0, 1.0)
 	update_status_icons(data, enemy)
-	
+	print("--- ENEMY BAR DEBUG ---")
+	print("fill scale: ", health_bar_fill.scale)
+	print("fill global scale: ", health_bar_fill.global_transform.basis.get_scale())
+	print("HealthBar3D scale: ", $HealthBar3D.scale)
 	
 func _on_area_input_event(camera, event, position, normal, shape_idx):
 	print("Enemy clicked area event")
@@ -188,15 +194,27 @@ func add_status_icon(texture: Texture2D, index: int, tooltip: String, value: int
 
 	var icon := Sprite3D.new()
 	icon.texture = texture
-	icon.pixel_size = 0.006
+	icon.pixel_size = 0.009
 	icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	icon.position = Vector3(index * 0.22, 0, 0)
+	icon.position = Vector3(index * 0.26, -0.08, 0)
 
 	var value_label := Label3D.new()
+	value_label.font = ui_font
+	value_label.font_size = 24
 	value_label.text = str(value)
-	value_label.pixel_size = 0.006
+	value_label.pixel_size = 0.008
 	value_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	value_label.position = Vector3(0.055, -0.055, 0.01)
+	value_label.no_depth_test = true
+
+	value_label.modulate = Color.WHITE
+
+	value_label.outline_modulate = Color.BLACK
+	value_label.outline_size = 4
+
+	value_label.render_priority = 10
+	value_label.outline_render_priority = 11
+
+	value_label.position = Vector3(0.055, -0.055, 0.08)
 
 	if value <= 0:
 		value_label.visible = false

@@ -422,7 +422,7 @@ texture_filter = 0
 texture = ExtResource("5_4ekny")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=694660686]
-transform = Transform3D(1, 0, 0, 0, 0.9716483, 0.23643118, 0, -0.23643118, 0.9716483, 0, 6.685319, 19.844292)
+transform = Transform3D(1, 0, 0, 0, 0.95259243, 0.3042492, 0, -0.3042492, 0.95259243, 0, 6.685319, 19.844292)
 projection = 1
 current = true
 size = 7.996

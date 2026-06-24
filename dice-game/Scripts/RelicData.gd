@@ -2,6 +2,7 @@ extends Resource
 class_name RelicData
 
 @export var relic_name: String
-@export var description: String
-@export var effect_type: String
-@export var value: int = 0
+@export_multiline var description: String
+@export var icon: Texture2D
+
+@export var rarity := 0

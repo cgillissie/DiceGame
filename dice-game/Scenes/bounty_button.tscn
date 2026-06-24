@@ -2,9 +2,14 @@
 
 [ext_resource type="Script" uid="uid://b7gy6oq85pyt7" path="res://Scripts/bounty_button.gd" id="1_r0oh7"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="1_ualjb"]
+[ext_resource type="PackedScene" uid="uid://b6dflbb353opi" path="res://Scenes/RewardIcon.tscn" id="3_oeb10"]
+[ext_resource type="Texture2D" uid="uid://qvfhsu0sul02" path="res://Assets/Sprites/FaceIcons/GoldIcon.png" id="4_nxf36"]
+[ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="5_d7tb8"]
+[ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/Menus/VolatileCore.png" id="6_larod"]
+[ext_resource type="Texture2D" uid="uid://d1ck73cvwcthh" path="res://Assets/Sprites/UI/Menus/ReservedDieIcon.png" id="7_oeb10"]
 
 [node name="BountyButton" type="Button" unique_id=58846388]
-custom_minimum_size = Vector2(260, 70)
+custom_minimum_size = Vector2(260, 80)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -13,23 +18,45 @@ grow_vertical = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_ualjb")
 script = ExtResource("1_r0oh7")
+reward_icon_scene = ExtResource("3_oeb10")
+gold_icon = ExtResource("4_nxf36")
+mulligem_icon = ExtResource("5_d7tb8")
+volatile_core_icon = ExtResource("6_larod")
+reserve_icon = ExtResource("7_oeb10")
 
-[node name="BountyIcon" type="TextureRect" parent="." unique_id=991424198]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
-[node name="BountyLabel" type="Label" parent="." unique_id=883906186]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1476679320]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -11.5
-offset_right = 20.0
-offset_bottom = 11.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=713405715]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="BountyIcon" type="TextureRect" parent="MarginContainer/VBoxContainer" unique_id=991424198]
+layout_mode = 2
+
+[node name="BountyLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=883906186]
+layout_mode = 2
 theme_override_fonts/font = ExtResource("1_ualjb")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RewardLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1158774053]
+visible = false
+layout_mode = 2
+
+[node name="RewardsGrid" type="GridContainer" parent="MarginContainer/VBoxContainer" unique_id=470590298]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 0
+columns = 5

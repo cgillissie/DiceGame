@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://cg2qfl0ux6xgj" path="res://Assets/3D Models/GrassFieldBackground.gltf" id="6_capvs"]
 [ext_resource type="Texture2D" uid="uid://c5xnnpd3o3tsb" path="res://Assets/Sprites/WorldSprites/Pine Tree02.png" id="7_k3hd8"]
 [ext_resource type="AudioStream" uid="uid://bai15i3f43ipm" path="res://Assets/Sounds/AtmosphericSounds/MerchantWakeUp.wav" id="9_2n375"]
-[ext_resource type="Script" uid="uid://bujue2tghlgvh" path="res://Scenes/Levels/town_building.gd" id="9_c0t34"]
+[ext_resource type="Script" uid="uid://bujue2tghlgvh" path="res://Scripts/town_building.gd" id="9_c0t34"]
 [ext_resource type="AudioStream" uid="uid://myfrbtrnnlwb" path="res://Assets/Sounds/AtmosphericSounds/MerchantSleeping.wav" id="9_rxeiy"]
 [ext_resource type="Texture2D" uid="uid://cbtdxa4i0s53t" path="res://Assets/Sprites/WorldSprites/GrassSprite01.png" id="10_0b3ro"]
 [ext_resource type="AudioStream" uid="uid://7k1f4pmfp31q" path="res://Assets/Sounds/AtmosphericSounds/Fire.mp3" id="10_c0t34"]

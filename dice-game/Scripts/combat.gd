@@ -50,9 +50,9 @@ var camera_original_position: Vector3
 @onready var combat_number_label: Label = $TopMarginContainer/CenterContainer/VBoxContainer/CombatNumberLabel
 @onready var gold_label: Label = $ShopPanel/VBoxContainer/GoldLabel
 @onready var enemy_buttons_container: VBoxContainer = $RightMarginContainer/VBoxContainer/EnemyButtonsContainer
-
 @export var player_3d_scene: PackedScene
-
+@onready var player_health_bar: TextureProgressBar = $PlayerHealthBar
+@onready var player_health_label: Label = $PlayerHealthBar/PlayerHealthLabel
 
 var player_3d_node: Player3D = null
 
@@ -234,6 +234,7 @@ var encounter_choices: Array[EncounterData] = []
 
 # RELICS ##############################################################
 @onready var relic_label: Label = $RelicLabel
+var owned_relics: Array[RelicData] = []
 var has_meditation_charm: bool = false
 
 var volatile_cores: int = 0
@@ -280,6 +281,10 @@ var last_unlocked_merchant_faces: Array[DiceFace] = []
 @onready var craft_button: Button = $FoodCraftPanel/MarginContainer/VBoxContainer/CraftButton
 @onready var close_craft_button: Button = $FoodCraftPanel/MarginContainer/VBoxContainer/CloseCraftButton
 
+# TRAITS ########################################
+@export var regenerating_icon_texture: Texture2D
+
+
 signal expedition_started
 signal return_to_town_requested
 signal town_menu_closed
@@ -310,9 +315,6 @@ var player_statuses := {
 	"bleed": 0,
 	"regenerating": 0
 }
-
-@onready var player_status_container: HBoxContainer = $LeftMarginContainer/VBoxContainer/PlayerHPLabel/PlayerStatusContainer
-@onready var player_bleed_label: Label = $LeftMarginContainer/VBoxContainer/PlayerHPLabel/PlayerStatusContainer/PlayerBleedLabel
 
 var dice_nodes: Array[DiceNode] = []
 var enemy_hp: int = 20
@@ -429,7 +431,8 @@ func _ready():
 func _process(delta):
 	update_assigned_dice_panel_positions()
 	update_enemy_hover_preview()
-		
+	update_player_health_bar_position()
+	
 func spawn_player_3d_node():
 	if player_3d_node != null and is_instance_valid(player_3d_node):
 		player_3d_node.queue_free()
@@ -452,6 +455,33 @@ func update_player_3d_node():
 	var incoming := get_current_incoming_damage()
 	player_3d_node.setup(player_hp, combat_max_player_hp, player_block, incoming)
 	
+func update_player_health_bar_position():
+	if player_3d_node == null or !is_instance_valid(player_3d_node):
+		player_health_bar.visible = false
+		return
+
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		player_health_bar.visible = false
+		return
+	
+	var player_health_bar_size := Vector2(135, 140)
+	var player_health_bar_world_offset := Vector3(-0.30, -0.10, 0)
+	var player_health_label_offset := Vector2(10, -1)
+	var world_pos := player_3d_node.global_position + player_health_bar_world_offset
+	var screen_pos := camera.unproject_position(world_pos)
+
+	player_health_bar.size = player_health_bar_size
+	player_health_bar.global_position = screen_pos - player_health_bar_size * 0.5
+	
+	player_health_label.position = player_health_label_offset
+	player_health_label.size = player_health_bar_size
+	player_health_label.scale = Vector2.ONE
+	player_health_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	player_health_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	player_health_bar.visible = true
+	player_health_label.visible = true
 func update_mulligem_button():
 	mulligem_button.text = "Mulligem (" + str(mulligems) + ")"
 
@@ -819,11 +849,11 @@ func rescue_assigned_dice():
 				child.visible = false
 				child.reparent(rolling_hidden_area)
 
-func get_enemy_trait_value(enemy: Dictionary, trait_name: String) -> int:
-	var traits = enemy["data"].traits
+func get_enemy_trait_value(enemy: Dictionary, trait_id: String) -> int:
+	var data: EnemyData = enemy["data"]
 
-	for enemy_trait in traits:
-		if enemy_trait.trait_name == trait_name:
+	for enemy_trait in data.traits:
+		if enemy_trait.trait_id == trait_id:
 			return enemy_trait.value
 
 	return 0
@@ -1229,7 +1259,7 @@ func roll_all_dice():
 	for die in dice_nodes:
 		print(die, " temporary: ", die.temporary, " name: ", die.dice_data.die_name)
 	is_rolling_dice = true
-	
+	end_round_button.disabled = true
 	dice_nodes = dice_nodes.filter(func(die):
 		return is_instance_valid(die)
 	)
@@ -1653,6 +1683,7 @@ func end_round():
 				is_resolving_turn = false
 				return
 	apply_enemy_bleed()
+	apply_player_regeneration()
 	await remove_defeated_enemies()
 
 	if active_enemies.is_empty():
@@ -1800,6 +1831,11 @@ func get_lowest_health_enemy():
 
 func update_player_hp_label():
 	player_hp_label.text = "Player HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
+
+	player_health_bar.max_value = combat_max_player_hp
+	player_health_bar.value = player_hp
+	player_health_label.text = str(player_hp) + "/" + str(combat_max_player_hp)
+	
 	update_shop_buttons()
 	update_player_3d_node()
 	
@@ -1861,7 +1897,8 @@ func update_combat_log():
 
 func win_combat():
 	combat_over = true
-
+	player_health_bar.visible = false
+	player_health_label.visible = false
 	end_round_button.disabled = true
 	last_volatile_cores_gained = 0
 	var total_gold_reward := 0
@@ -1919,7 +1956,7 @@ func win_combat():
 	if player_hp > max_player_hp:
 		player_hp = max_player_hp
 	update_gold_label()
-	print("Dropped foods: ", last_dropped_foods.size())
+	apply_end_combat_relics()
 	show_loot_panel()
 	update_volatile_core_button()
 	
@@ -2042,14 +2079,15 @@ func start_new_combat():
 	combat_over = false
 	is_resolving_turn = false
 	is_in_town = false
-
+	
 	shop_panel.visible = false
 	loot_panel.visible = false
 	encounter_panel.visible = false
 	expedition_camp_panel.visible = false
 	prepare_expedition_panel.visible = false
 	town_panel.visible = false
-
+	player_health_bar.visible = true
+	player_health_label.visible = true
 	dodge_targets.clear()
 	reversal_targets.clear()
 	combat_log_entries.clear()
@@ -2113,6 +2151,7 @@ func hide_all_groups():
 	gold_container.get_parent().visible = false
 	healing_container.get_parent().visible = false
 	misses_container.get_parent().visible = false
+	actions_container.get_parent().visible = false
 	
 func update_combat_number_label():
 	combat_number_label.text = "Encounter: " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
@@ -3347,6 +3386,9 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 	if enemy_index >= enemy_3d_nodes.size():
 		return
 
+	if die.current_face == null:
+		return
+
 	var enemy = active_enemies[enemy_index]
 	var enemy_node = enemy_3d_nodes[enemy_index]
 
@@ -3354,87 +3396,96 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 		return
 
 	await launch_die_at_enemy(die, enemy_index)
-	
-	if die.current_face.result_type == "dodge":
-		if !dodge_targets.has(enemy_index):
-			dodge_targets.append(enemy_index)
 
-		add_combat_log_entry("Dodging crits from " + active_enemies[enemy_index]["data"].enemy_name + ".")
-		return
+	match die.current_face.result_type:
+		"dodge":
+			if !dodge_targets.has(enemy_index):
+				dodge_targets.append(enemy_index)
 
-	if die.current_face.result_type == "reversal":
-		if !reversal_targets.has(enemy_index):
-			reversal_targets.append(enemy_index)
-
-		add_combat_log_entry("Reversing crits from " + active_enemies[enemy_index]["data"].enemy_name + ".")
-		return
-	if die.current_face.result_type == "twist_knife":
-		var bleed_value: int = enemy.get("bleed", 0)
-
-		if bleed_value <= 0:
-			show_popup_text(enemy_3d_nodes[enemy_index], "No Bleed", 1.0, Color.GRAY)
+			add_combat_log_entry("Dodging crits from " + enemy["data"].enemy_name + ".")
 			return
 
-		enemy["bleed"] = 0
-		enemy["hp"] -= bleed_value
+		"reversal":
+			if !reversal_targets.has(enemy_index):
+				reversal_targets.append(enemy_index)
 
-		show_damage_popup(enemy_3d_nodes[enemy_index], bleed_value)
-		add_combat_log_entry("Twist Knife consumed " + str(bleed_value) + " bleed.")
+			add_combat_log_entry("Reversing crits from " + enemy["data"].enemy_name + ".")
+			return
 
-		update_enemy_3d_nodes()
-	
-	if die.current_face.result_type == "freeze":
-		active_enemies[enemy_index]["frozen"] = true
-		active_enemies[enemy_index]["freeze_stacks"] += die.current_face.value
+		"break_focus":
+			if !break_focus_targets.has(enemy_index):
+				break_focus_targets.append(enemy_index)
 
-		show_popup_text(
-			enemy_3d_nodes[enemy_index],
-			"Frozen +" + str(die.current_face.value),
-			1.2,
-			Color.CYAN
-		)
+			show_popup_text(enemy_node, "Break Focus", 1.2, Color.PURPLE)
+			add_combat_log_entry("Break Focus will cancel " + enemy["data"].enemy_name + "'s healing.")
+			return
 
-		add_combat_log_entry(
-			active_enemies[enemy_index]["data"].enemy_name +
-			" is frozen and gains " + str(die.current_face.value) + " Freeze stacks."
-		)
+		"freeze":
+			enemy["frozen"] = true
+			enemy["freeze_stacks"] += die.current_face.value
 
-		update_enemy_3d_nodes()
-		return
-		
-	match die.current_face.result_type:
+			show_popup_text(enemy_node, "Frozen +" + str(die.current_face.value), 1.2, Color.CYAN)
+			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " Freeze stacks.")
+
+			update_enemy_3d_nodes()
+			return
+
+		"bleed":
+			enemy["bleed"] += die.current_face.value
+
+			show_popup_text(enemy_node, "Bleed +" + str(die.current_face.value), 1.2, Color.RED)
+			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " bleed.")
+
+			update_enemy_3d_nodes()
+			return
+
+		"twist_knife":
+			var bleed_value: int = enemy.get("bleed", 0)
+
+			if bleed_value <= 0:
+				show_popup_text(enemy_node, "No Bleed", 1.0, Color.GRAY)
+				return
+
+			enemy["bleed"] = 0
+			enemy["hp"] -= bleed_value
+			last_player_damage += bleed_value
+
+			if enemy["hp"] < 0:
+				enemy["hp"] = 0
+
+			show_damage_popup(enemy_node, bleed_value)
+			add_combat_log_entry("Twist Knife consumed " + str(bleed_value) + " bleed.")
+
+			update_enemy_3d_nodes()
+			return
+
+		"crit":
+			var damage := die.current_face.value
+
+			enemy["hp"] -= damage
+			enemy["exposed"] = true
+			last_player_damage += damage
+
+			if enemy["hp"] < 0:
+				enemy["hp"] = 0
+
+			AudioManager.play_one_shot(critical_hit_sound, 0.85, 1.15)
+			show_popup_text(enemy_node, "-" + str(damage), 1.7, Color.GOLD)
+			show_popup_text(enemy_node, "EXPOSED", 2.2, Color.YELLOW)
+			enemy_node.hit_flash()
+			enemy_node.hurt_bump()
+			screen_shake(0.07, 0.1)
+			await hit_stop(0.03)
+
+			update_enemy_3d_nodes()
+			return
+
 		"hit":
 			var hit_value: int = die.current_face.value + active_combat_bonus_damage
 			var blocked_amount: int = min(hit_value, enemy["block"])
 			var damage_after_block: int = hit_value - blocked_amount
-			
 
-			if damage_after_block > 0:
-				enemy["hp"] -= damage_after_block
-
-				var spiked_value := get_enemy_trait_value(enemy, "spiked")
-
-				if spiked_value > 0:
-					player_hp -= spiked_value
-
-					show_damage_popup(
-						player_3d_node,
-						spiked_value
-					)
-
-					add_combat_log_entry(
-						enemy["data"].enemy_name +
-						"'s spikes dealt " +
-						str(spiked_value) +
-						" damage."
-					)
-
-					update_player_hp_label()
-					if player_hp <= 0:
-						lose_combat()
-						return
-			hit_value += next_combat_bonus_damage
-			if enemy["exposed"]:
+			if enemy["exposed"] and damage_after_block > 0:
 				damage_after_block += 1
 				enemy["exposed"] = false
 				show_popup_text(enemy_node, "EXPOSED +1", 2.2, Color.YELLOW)
@@ -3449,33 +3500,33 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			if damage_after_block > 0:
 				enemy["hp"] -= damage_after_block
 				last_player_damage += damage_after_block
+
+				if enemy["hp"] < 0:
+					enemy["hp"] = 0
+
 				await show_enemy_hit_sequence(enemy_index, 0, damage_after_block)
 
-		"crit":
-			enemy["hp"] -= die.current_face.value
-			enemy["exposed"] = true
-			last_player_damage += die.current_face.value
+				var spiked_value := get_enemy_trait_value(enemy, "spiked")
+				if spiked_value > 0:
+					player_hp -= spiked_value
 
-			AudioManager.play_one_shot(critical_hit_sound, 0.85, 1.15)
-			show_popup_text(enemy_node, "-" + str(die.current_face.value), 1.7, Color.GOLD)
-			show_popup_text(enemy_node, "EXPOSED", 2.2, Color.YELLOW)
-			enemy_node.hit_flash()
-			enemy_node.hurt_bump()
-			screen_shake(0.07, 0.1)
-			await hit_stop(0.03)
-		"bleed":
-			enemy["bleed"] += die.current_face.value
-			show_popup_text(enemy_3d_nodes[enemy_index], "Bleed +" + str(die.current_face.value), 1.2, Color.RED)
-			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " bleed.")
-			
-		"break_focus":
-			if !break_focus_targets.has(enemy_index):
-				break_focus_targets.append(enemy_index)
+					if player_hp < 0:
+						player_hp = 0
 
-			show_popup_text(enemy_3d_nodes[enemy_index], "Break Focus", 1.2, Color.PURPLE)
-			add_combat_log_entry("Break Focus will cancel " + enemy["data"].enemy_name + "'s healing.")
-			
-	update_enemy_3d_nodes()
+					show_damage_popup(player_3d_node, spiked_value)
+					add_combat_log_entry(enemy["data"].enemy_name + "'s spikes dealt " + str(spiked_value) + " damage.")
+					update_player_hp_label()
+
+					if player_hp <= 0:
+						lose_combat()
+						return
+
+			update_enemy_3d_nodes()
+			return
+
+		_:
+			update_enemy_3d_nodes()
+			return
 	
 func apply_enemy_bleed():
 	for i in active_enemies.size():
@@ -3648,6 +3699,9 @@ func complete_current_bounty():
 	loot_panel.visible = false
 	edit_dice_panel.visible = false
 	selected_bounty_label.text = "No Bounty Selected"
+	for relic in current_bounty.unlocked_relics:
+		if !owned_relics.has(relic):
+			owned_relics.append(relic)
 	print("Bounty completed. Returned to town.")
 	return_to_town_requested.emit()
 	
@@ -3913,7 +3967,9 @@ func use_consumable_item(item: ConsumableItem):
 		return
 
 	active_food_items.append(item)
-
+	if item.grants_trait != null:
+		player_statuses[item.grants_trait.trait_id] = item.grants_trait.value
+		update_player_status_icons()
 	next_combat_bonus_block += item.next_combat_block
 	next_combat_bonus_damage += item.next_combat_damage
 	next_combat_bonus_max_hp += item.next_combat_max_hp
@@ -4320,20 +4376,58 @@ func play_purchase_sound():
 func add_mulligems(amount: int):
 	mulligems = min(mulligems + amount, MAX_MULLIGEMS)
 	update_mulligem_button()
-	
-
-func add_player_status_icon(texture: Texture2D, value: int, tooltip: String):
-	var icon = status_icon_scene.instantiate()
-	player_status_container.add_child(icon)
-
-	icon.setup(texture, value, tooltip)
 
 func update_player_status_icons():
 	var bleed_value: int = player_statuses.get("bleed", 0)
-
-	player_status_container.visible = bleed_value > 0
-	player_bleed_label.visible = bleed_value > 0
-	player_bleed_label.text = "Bleed " + str(bleed_value)
-
+	
 	if player_3d_node != null and is_instance_valid(player_3d_node):
 		player_3d_node.set_bleeding(bleed_value > 0)
+		var regenerating_value: int = player_statuses.get("regenerating", 0)
+
+
+		player_3d_node.update_status_icons(
+			bleed_icon_texture,
+			bleed_value,
+			regenerating_icon_texture,
+			regenerating_value
+		)
+func apply_player_regeneration():
+	var regen_value: int = player_statuses.get("regenerating", 0)
+
+	if regen_value <= 0:
+		return
+
+	player_hp += regen_value
+
+	if player_hp > combat_max_player_hp:
+		player_hp = combat_max_player_hp
+
+	show_popup_text(player_3d_node, "+" + str(regen_value), 1.2, Color.GREEN)
+	add_combat_log_entry("Regenerating healed " + str(regen_value) + " HP.")
+
+	update_player_hp_label()
+	update_player_status_icons()
+
+func has_relic(name: String) -> bool:
+	for relic in owned_relics:
+		if relic.relic_name == name:
+			return true
+	return false
+
+
+func get_relic(name: String) -> RelicData:
+	for relic in owned_relics:
+		if relic.relic_name == name:
+			return relic
+	return null
+	
+func apply_end_combat_relics():
+	if has_relic("Meditation Beads"):
+		var heal := get_reserved_die_count()
+
+		if heal > 0:
+			player_hp = min(player_hp + heal, combat_max_player_hp)
+
+			show_popup_text(player_3d_node, "+" + str(heal), 1.2, Color.GREEN)
+			add_combat_log_entry("Meditation Beads restored " + str(heal) + " HP.")
+			update_player_hp_label()

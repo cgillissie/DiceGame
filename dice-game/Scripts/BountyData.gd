@@ -13,3 +13,6 @@ class_name BountyData
 @export var reward_gold: int = 0
 @export var reward_reserve_slots: int = 0
 @export var unlocked_merchant_faces: Array[DiceFace]
+@export var mulligem_reward: int = 1
+@export var unlocked_relics: Array[RelicData]
+@export var unlocked_recipes: Array[FoodRecipe]

@@ -8,6 +8,9 @@
 [ext_resource type="Resource" uid="uid://dcran6njk6egl" path="res://Resources/Encounters/knight2_encounter.tres" id="5_nbqgd"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="7_w1n20"]
 [ext_resource type="Resource" uid="uid://qbtg018y6l3c" path="res://Resources/Faces/heal_1_face.tres" id="8_waqwh"]
+[ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="9_ch3sf"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="10_fbtch"]
+[ext_resource type="Resource" uid="uid://b5fukb2rrejry" path="res://Resources/Relics/MeditationBeads.tres" id="11_fbtch"]
 
 [resource]
 script = ExtResource("2_61cr2")
@@ -16,6 +19,9 @@ boss_encounter = ExtResource("1_nbqgd")
 expedition_encounter_pool = Array[ExtResource("1_dtjmy")]([ExtResource("3_bkxrh"), ExtResource("4_w1n20"), ExtResource("5_nbqgd")])
 min_encounters_before_boss = 5
 max_encounters_before_boss = 7
+reward_volatile_cores = 1
+reward_gold = 100
 reward_reserve_slots = 1
 unlocked_merchant_faces = Array[ExtResource("7_w1n20")]([ExtResource("8_waqwh")])
+unlocked_relics = Array[ExtResource("10_fbtch")]([ExtResource("11_fbtch")])
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

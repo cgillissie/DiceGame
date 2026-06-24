@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://b5fukb2rrejry"]
+
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_n6sxl"]
+[ext_resource type="Texture2D" uid="uid://2tuus7fijb8y" path="res://Assets/Sprites/UI/Relics/MeditationBeads.png" id="1_slphd"]
+
+[resource]
+script = ExtResource("1_n6sxl")
+relic_name = "Meditation Beads"
+description = "Heal 1 HP for every reserved die at the end of the round."
+icon = ExtResource("1_slphd")
+metadata/_custom_type_script = "uid://dkturafp4qles"
