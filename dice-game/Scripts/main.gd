@@ -42,6 +42,8 @@ func _init():
 	OS.set_environment("SteamGameID", AppID)
 
 func _ready():
+	town_music_player.bus = "Music"
+
 	load_town()
 	init_steam()
 	
@@ -181,13 +183,23 @@ func focus_town_camera(building_id: String):
 	camera_tween = create_tween()
 	camera_tween.tween_property(town_camera, "position", target_position, 0.45)
 	
+func is_menu_blocking_input() -> bool:
+	var combat_scene := get_node_or_null("CombatUI")
+	if combat_scene == null:
+		return false
+
+	var options_overlay := combat_scene.get_node_or_null("OptionsOverlay")
+	return options_overlay != null and options_overlay.visible
+	
 func check_town_hover():
+	if is_menu_blocking_input():
+		return
 	if town_menu_is_open():
 		if hovered_building != null:
 			hovered_building.force_unhover()
 			hovered_building = null
 		return
-	
+
 	if town_camera == null:
 		return
 
@@ -219,6 +231,9 @@ func check_town_hover():
 			hovered_building.force_hover()
 			
 func _input(event):
+	if is_menu_blocking_input():
+		return
+
 	if town_menu_is_open():
 		return
 	if event is InputEventMouseButton and event.pressed:

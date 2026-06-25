@@ -9,6 +9,10 @@ func _ready():
 	dice_player = AudioStreamPlayer.new()
 	dice_all_select_player = AudioStreamPlayer.new()
 
+	ui_player.bus = "SFX"
+	dice_player.bus = "SFX"
+	dice_all_select_player.bus = "SFX"
+
 	add_child(ui_player)
 	add_child(dice_player)
 	add_child(dice_all_select_player)
@@ -33,6 +37,7 @@ func play_one_shot(sound: AudioStream, min_pitch := 0.95, max_pitch := 1.05):
 		return
 
 	var player := AudioStreamPlayer.new()
+	player.bus = "SFX"
 	add_child(player)
 
 	player.stream = sound

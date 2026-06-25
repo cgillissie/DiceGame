@@ -45,6 +45,7 @@
 [ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="38_8is30"]
 [ext_resource type="Texture2D" uid="uid://7t4bfebwxxns" path="res://Assets/Sprites/UI/HealthBarBack.png" id="43_r4oui"]
 [ext_resource type="Texture2D" uid="uid://csyxss4fswjvp" path="res://Assets/Sprites/UI/HealthBarFront.png" id="44_1e1l8"]
+[ext_resource type="Texture2D" uid="uid://drjollb23nknw" path="res://Assets/Sprites/UI/Menus/OptionsButtonIcon.png" id="46_uip5d"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
 
@@ -1187,6 +1188,10 @@ size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Camp"
 
+[node name="CampHPLabel" type="Label" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=1335523104]
+layout_mode = 2
+horizontal_alignment = 1
+
 [node name="CampStatusLabel" type="Label" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=1961535326]
 layout_mode = 2
 size_flags_horizontal = 4
@@ -1529,3 +1534,126 @@ grow_vertical = 2
 theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="OptionsButton" type="Button" parent="." unique_id=1847866830]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -84.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 84.0
+grow_horizontal = 0
+icon = ExtResource("46_uip5d")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="OptionsOverlay" type="ColorRect" parent="." unique_id=703170604]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.41960785)
+
+[node name="OptionsPanel" type="Panel" parent="OptionsOverlay" unique_id=1721699135]
+visible = false
+custom_minimum_size = Vector2(420, 520)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -260.0
+offset_right = 210.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="OptionsOverlay/OptionsPanel" unique_id=1288791180]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="OptionsOverlay/OptionsPanel/MarginContainer" unique_id=828818186]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 8
+
+[node name="OptionsTitleLabel" type="Label" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=478753799]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Options"
+horizontal_alignment = 1
+
+[node name="MasterVolumeLabel" type="Label" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=83667025]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Master"
+
+[node name="MasterVolumeSlider" type="HSlider" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=1641043553]
+layout_mode = 2
+max_value = 1.0
+step = 0.1
+
+[node name="MusicVolumeLabel" type="Label" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=493067572]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Music"
+
+[node name="MusicVolumeSlider" type="HSlider" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=1569873659]
+layout_mode = 2
+max_value = 1.0
+step = 0.1
+
+[node name="SFXVolumeLabel" type="Label" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=461862052]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "SFX"
+
+[node name="SFXVolumeSlider" type="HSlider" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=528217259]
+layout_mode = 2
+max_value = 1.0
+step = 0.1
+
+[node name="FullscreenCheckBox" type="CheckBox" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=1613586627]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = " Fullscreen"
+
+[node name="ResolutionOptionButton" type="OptionButton" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=826986515]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="RestartRunButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=176290461]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Restart Run"
+
+[node name="QuitGameButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=895565409]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Quit"
+
+[node name="CloseOptionsButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=1086447467]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Close"
+
+[node name="ContinueRunButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=2091718788]
+layout_mode = 2
+text = "Continue Run"

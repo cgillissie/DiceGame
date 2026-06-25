@@ -28,12 +28,17 @@ func _ready():
 	input_event.connect(_on_input_event)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
+
 	if sprite != null:
 		sprite.frame_changed.connect(_on_sprite_frame_changed)
+
 	add_child(audio_player)
+	audio_player.bus = "SFX"
 	audio_player.max_distance = 50.0
 	audio_player.unit_size = 10.0
+
 	add_child(idle_audio_player)
+	idle_audio_player.bus = "SFX"
 	idle_audio_player.max_distance = 50.0
 	idle_audio_player.unit_size = 6.0
 	idle_audio_player.volume_db = idle_loop_volume_db
@@ -41,6 +46,7 @@ func _ready():
 	if idle_loop_sound != null:
 		idle_audio_player.stream = idle_loop_sound
 		idle_audio_player.play()
+
 	if sprite != null and sprite.sprite_frames.has_animation(idle_animation):
 		sprite.play(idle_animation)
 

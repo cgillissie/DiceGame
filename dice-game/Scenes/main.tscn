@@ -97,7 +97,9 @@ merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), Ex
 
 [node name="DiceRollSFX" type="AudioStreamPlayer" parent="CombatUI" unique_id=2019394322]
 stream = ExtResource("5_kry3j")
+bus = &"SFX"
 
 [node name="TownMusicPlayer" type="AudioStreamPlayer" parent="." unique_id=1247847039]
 stream = ExtResource("34_neg2b")
 autoplay = true
+bus = &"Music"

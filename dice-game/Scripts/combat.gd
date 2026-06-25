@@ -1,5 +1,7 @@
 extends Control
 
+const SETTINGS_SAVE_PATH := "user://settings.cfg"
+const RUN_SAVE_PATH := "user://run_save.cfg"
 
 @export var dice_scene: PackedScene
 @export var starting_dice: Array[DiceData]
@@ -187,7 +189,7 @@ var is_in_town: bool = true
 @onready var camp_items_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampItemsButton
 @onready var camp_continue_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampContinueButton
 @onready var camp_craft_food_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CraftFoodButton
-
+@onready var camp_hp_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampHPLabel
 
 # Bounty Tracking #############################
 
@@ -284,6 +286,26 @@ var last_unlocked_merchant_faces: Array[DiceFace] = []
 # TRAITS ########################################
 @export var regenerating_icon_texture: Texture2D
 
+# Options Menu ####################################
+@onready var options_overlay: ColorRect = $OptionsOverlay
+@onready var options_button: Button = $OptionsButton
+@onready var options_panel: Panel = $OptionsOverlay/OptionsPanel
+@onready var close_options_button: Button = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/CloseOptionsButton
+@onready var options_restart_button: Button = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/RestartRunButton
+@onready var options_quit_button: Button = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/QuitGameButton
+@onready var master_volume_slider: HSlider = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/MasterVolumeSlider
+@onready var music_volume_slider: HSlider = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/MusicVolumeSlider
+@onready var sfx_volume_slider: HSlider = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/SFXVolumeSlider
+@onready var fullscreen_check_box = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/FullscreenCheckBox
+@onready var resolution_option: OptionButton = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/ResolutionOptionButton
+@onready var continue_run_button: Button = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/ContinueRunButton
+
+const AVAILABLE_RESOLUTIONS := [
+	Vector2i(1280, 720),
+	Vector2i(1600, 900),
+	Vector2i(1920, 1080),
+	Vector2i(2560, 1440)
+]
 
 signal expedition_started
 signal return_to_town_requested
@@ -393,6 +415,35 @@ func _ready():
 			current_encounter = encounter_pool.pick_random()
 	assigned_dice_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	enemy_roll_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	options_panel.visible = false
+	options_button.pressed.connect(open_options_menu)
+	close_options_button.pressed.connect(close_options_menu)
+	options_restart_button.pressed.connect(restart_run)
+	options_quit_button.pressed.connect(quit_game)
+	continue_run_button.pressed.connect(load_run)
+	fullscreen_check_box.toggled.connect(_on_fullscreen_toggled)
+	resolution_option.item_selected.connect(_on_resolution_selected)
+	resolution_option.add_item("1280 x 720")
+	resolution_option.add_item("1600 x 900")
+	resolution_option.add_item("1920 x 1080")
+	resolution_option.add_item("2560 x 1440")
+	master_volume_slider.value_changed.connect(_on_master_volume_changed)
+	music_volume_slider.value_changed.connect(_on_music_volume_changed)
+	sfx_volume_slider.value_changed.connect(_on_sfx_volume_changed)
+	master_volume_slider.min_value = 0.0
+	master_volume_slider.max_value = 1.0
+	master_volume_slider.step = 0.01
+	master_volume_slider.value = 1.0
+
+	music_volume_slider.min_value = 0.0
+	music_volume_slider.max_value = 1.0
+	music_volume_slider.step = 0.01
+	music_volume_slider.value = 1.0
+
+	sfx_volume_slider.min_value = 0.0
+	sfx_volume_slider.max_value = 1.0
+	sfx_volume_slider.step = 0.01
+	sfx_volume_slider.value = 1.0
 	# load_encounter(current_encounter)
 	town_panel.visible = false
 	set_combat_ui_enabled(false)
@@ -459,7 +510,10 @@ func update_player_health_bar_position():
 	if player_3d_node == null or !is_instance_valid(player_3d_node):
 		player_health_bar.visible = false
 		return
-
+	if combat_over or is_in_town:
+		player_health_bar.visible = false
+		player_health_label.visible = false
+		return
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
 		player_health_bar.visible = false
@@ -579,6 +633,11 @@ func update_begin_expedition_button_visibility():
 		and !expedition_camp_panel.visible
 
 func update_enemy_hover_preview():
+	if is_menu_blocking_input():
+		hide_status_tooltip()
+		hide_enemy_roll_preview()
+		hovered_enemy_index = -1
+		return
 	var hovering_status_tooltip
 	var camera := get_viewport().get_camera_3d()
 
@@ -1535,6 +1594,12 @@ func end_round():
 
 		var healed_index := active_enemies.find(lowest_enemy)
 
+		var max_hp = lowest_enemy["max_hp"]
+		if lowest_enemy["hp"] > max_hp:
+			lowest_enemy["hp"] = max_hp
+
+		update_enemy_3d_nodes()
+
 		if healed_index != -1 and healed_index < enemy_3d_nodes.size():
 			if is_instance_valid(enemy_3d_nodes[healed_index]):
 				show_popup_text(
@@ -1544,13 +1609,7 @@ func end_round():
 					Color.GREEN
 				)
 
-		var max_hp = lowest_enemy["max_hp"]
-
-		if lowest_enemy["hp"] > max_hp:
-			lowest_enemy["hp"] = max_hp
-
-	update_enemy_3d_nodes()
-
+				await get_tree().create_timer(0.70).timeout
 	last_damage_taken = 0
 
 	for enemy_index in active_enemies.size():
@@ -1682,7 +1741,7 @@ func end_round():
 				lose_combat()
 				is_resolving_turn = false
 				return
-	apply_enemy_bleed()
+	await apply_enemy_bleed()
 	apply_player_regeneration()
 	await remove_defeated_enemies()
 
@@ -1970,6 +2029,8 @@ func win_combat():
 	active_combat_bonus_block = 0
 	active_combat_bonus_damage = 0
 	combat_max_player_hp = max_player_hp
+	save_run()
+	
 	# Functions for combat rewards
 	
 func show_loot_panel():
@@ -2353,7 +2414,11 @@ func rebuild_face_inventory_grid():
 		"gold",
 		"dodge",
 		"reversal",
-		"miss"
+		"miss",
+		"freeze",
+		"bleed",
+		"twist_knife",
+		"break_focus"
 	]
 
 	var grid := GridContainer.new()
@@ -2581,8 +2646,17 @@ func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 		return false	
 		
 	if face_a.result_type == "miss" and face_b.result_type == "miss":
-		return true
+		if selected_edit_die != null:
+			for face in selected_edit_die.faces:
+				if face.result_type == "dodge":
+					print("This die already has a Dodge face.")
+					return false
 
+		return true
+		
+	if face_a.result_type == "break_focus" and face_b.result_type == "break_focus":
+		return false
+		
 	if (face_a.result_type == "dodge" and face_b.result_type == "crit") or (face_a.result_type == "crit" and face_b.result_type == "dodge"):
 		return true
 
@@ -2597,6 +2671,10 @@ func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 		or (face_a.result_type == "heal" and face_b.result_type == "crit"):
 			return true
 			
+	if (face_a.result_type == "crit" and face_b.result_type == "heal") \
+	or (face_a.result_type == "heal" and face_b.result_type == "crit"):
+		return true
+		
 	if face_a.result_type != face_b.result_type:
 		return false
 
@@ -2609,16 +2687,22 @@ func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
 	if face_a.result_type == "miss" and face_b.result_type == "miss":
 		return create_dodge_face()
 
-	if (face_a.result_type == "dodge" and face_b.result_type == "crit") or (face_a.result_type == "crit" and face_b.result_type == "dodge"):
+	if (face_a.result_type == "dodge" and face_b.result_type == "crit") \
+	or (face_a.result_type == "crit" and face_b.result_type == "dodge"):
 		return create_reversal_face()
-		
+
 	if (face_a.result_type == "crit" and face_b.result_type == "bleed") \
-		or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
-			return create_twist_knife_face()
+	or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
+		return create_twist_knife_face()
 
 	var new_face: DiceFace = face_a.duplicate(true)
 	new_face.value += 1
 	new_face.face_name = "Face"
+	
+	if (face_a.result_type == "crit" and face_b.result_type == "heal") \
+	or (face_a.result_type == "heal" and face_b.result_type == "crit"):
+		return create_break_focus_face()
+	
 	return new_face
 
 func create_upgraded_face(face: DiceFace) -> DiceFace:
@@ -2680,6 +2764,14 @@ func create_twist_knife_face() -> DiceFace:
 	face.value = 0
 	return face
 	
+func create_break_focus_face() -> DiceFace:
+	var face := DiceFace.new()
+	face.face_name = "Break Focus"
+	face.result_type = "break_focus"
+	face.value = 0
+	face.icon = break_focus_face_template.icon
+	return face
+
 func update_fuse_button_text():
 	if fusion_mode:
 		fuse_faces_button.text = "Fuse Selected"
@@ -3431,6 +3523,12 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			return
 
 		"bleed":
+			if enemy["block"] > 0:
+				show_popup_text(enemy_node, "Blocked Bleed", 1.0, Color.GRAY)
+				add_combat_log_entry(enemy["data"].enemy_name + "'s block stopped Bleed.")
+				update_enemy_3d_nodes()
+				return
+
 			enemy["bleed"] += die.current_face.value
 
 			show_popup_text(enemy_node, "Bleed +" + str(die.current_face.value), 1.2, Color.RED)
@@ -3482,14 +3580,16 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 		"hit":
 			var hit_value: int = die.current_face.value + active_combat_bonus_damage
+			var exposed_bonus := 0
 
 			if enemy["exposed"]:
-				hit_value += 1
+				exposed_bonus = 1
 				enemy["exposed"] = false
 				show_popup_text(enemy_node, "EXPOSED +1", 2.2, Color.YELLOW)
 
 			var blocked_amount: int = min(hit_value, enemy["block"])
-			var damage_after_block: int = hit_value - blocked_amount
+			var normal_damage_after_block: int = hit_value - blocked_amount
+			var total_damage_to_hp: int = normal_damage_after_block + exposed_bonus
 
 			enemy["block"] -= blocked_amount
 			if enemy["block"] < 0:
@@ -3498,29 +3598,31 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			if blocked_amount > 0:
 				await show_enemy_hit_sequence(enemy_index, blocked_amount, 0)
 
-			if damage_after_block > 0:
-				enemy["hp"] -= damage_after_block
-				last_player_damage += damage_after_block
+			if total_damage_to_hp > 0:
+				enemy["hp"] -= total_damage_to_hp
+				last_player_damage += total_damage_to_hp
 
 				if enemy["hp"] < 0:
 					enemy["hp"] = 0
 
-				await show_enemy_hit_sequence(enemy_index, 0, damage_after_block)
+				await show_enemy_hit_sequence(enemy_index, 0, total_damage_to_hp)
 
-				var spiked_value := get_enemy_trait_value(enemy, "spiked")
-				if spiked_value > 0:
-					player_hp -= spiked_value
+				if normal_damage_after_block > 0:
+					var spiked_value := get_enemy_trait_value(enemy, "spiked")
 
-					if player_hp < 0:
-						player_hp = 0
+					if spiked_value > 0:
+						player_hp -= spiked_value
 
-					show_damage_popup(player_3d_node, spiked_value)
-					add_combat_log_entry(enemy["data"].enemy_name + "'s spikes dealt " + str(spiked_value) + " damage.")
-					update_player_hp_label()
+						if player_hp < 0:
+							player_hp = 0
 
-					if player_hp <= 0:
-						lose_combat()
-						return
+						show_damage_popup(player_3d_node, spiked_value)
+						add_combat_log_entry(enemy["data"].enemy_name + "'s spikes dealt " + str(spiked_value) + " damage.")
+						update_player_hp_label()
+
+						if player_hp <= 0:
+							lose_combat()
+							return
 
 			update_enemy_3d_nodes()
 			return
@@ -3528,6 +3630,7 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 		_:
 			update_enemy_3d_nodes()
 			return
+			
 func apply_enemy_bleed():
 	for i in active_enemies.size():
 		var enemy = active_enemies[i]
@@ -3550,7 +3653,8 @@ func apply_enemy_bleed():
 
 		if enemy["bleed"] < 0:
 			enemy["bleed"] = 0
-			
+		await get_tree().create_timer(0.35).timeout
+		
 func launch_enemy_die_at_player(enemy_index: int, face: DiceFace):
 	if enemy_index < 0 or enemy_index >= enemy_3d_nodes.size():
 		return
@@ -3727,6 +3831,7 @@ func apply_bounty_reward(bounty: BountyData):
 func show_expedition_camp():
 	expedition_camp_panel.visible = true
 	camp_status_label.text = "Encounter " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
+	camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
 	hide_combat_dice()
 	
 func hide_combat_dice():
@@ -3937,7 +4042,7 @@ func use_consumable(index: int):
 	player_hp += item.heal_amount
 	if player_hp > max_player_hp:
 		player_hp = max_player_hp
-
+	camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
 	next_combat_bonus_block += item.next_combat_block
 	next_combat_bonus_damage += item.next_combat_damage
 
@@ -4433,3 +4538,308 @@ func apply_end_combat_relics():
 			show_popup_text(player_3d_node, "+" + str(heal), 1.2, Color.GREEN)
 			add_combat_log_entry("Meditation Beads restored " + str(heal) + " HP.")
 			update_player_hp_label()
+
+func is_menu_blocking_input() -> bool:
+	return options_overlay.visible \
+		or shop_panel.visible \
+		or loot_panel.visible \
+		or edit_dice_panel.visible \
+		or bounty_board_panel.visible \
+		or expedition_camp_panel.visible \
+		or prepare_expedition_panel.visible \
+		or merchant_panel.visible \
+		or food_craft_panel.visible
+		
+func open_options_menu():
+	options_overlay.visible = true
+	options_panel.visible = true
+
+func close_options_menu():
+	options_overlay.visible = false
+	options_panel.visible = false
+
+func quit_game():
+	save_settings()
+	save_run()
+	get_tree().quit()
+
+func _on_master_volume_changed(value: float):
+	set_bus_volume("Master", value)
+	save_settings()
+
+
+func _on_music_volume_changed(value: float):
+	set_bus_volume("Music", value)
+	save_settings()
+
+func _on_sfx_volume_changed(value: float):
+	set_bus_volume("SFX", value)
+	save_settings()
+
+func set_bus_volume(bus_name: String, value: float):
+	var bus_index := AudioServer.get_bus_index(bus_name)
+
+	if bus_index == -1:
+		push_error("Audio bus not found: " + bus_name)
+		return
+
+	if value <= 0.0:
+		AudioServer.set_bus_mute(bus_index, true)
+	else:
+		AudioServer.set_bus_mute(bus_index, false)
+		AudioServer.set_bus_volume_db(bus_index, linear_to_db(value))
+
+func _on_fullscreen_toggled(enabled: bool):
+	if enabled:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	save_settings()
+func _on_resolution_selected(index: int):
+	print("Resolution selected: ", index)
+
+	if index < 0 or index >= AVAILABLE_RESOLUTIONS.size():
+		return
+
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_size(AVAILABLE_RESOLUTIONS[index])
+
+	var screen_size := DisplayServer.screen_get_size()
+	var window_size : Vector2i = AVAILABLE_RESOLUTIONS[index]
+	DisplayServer.window_set_position((screen_size - window_size) / 2)
+	save_settings()
+	
+func save_settings():
+	var config := ConfigFile.new()
+
+	config.set_value("audio", "master", master_volume_slider.value)
+	config.set_value("audio", "music", music_volume_slider.value)
+	config.set_value("audio", "sfx", sfx_volume_slider.value)
+
+	config.set_value("display", "fullscreen", fullscreen_check_box.button_pressed)
+	config.set_value("display", "resolution_index", resolution_option.selected)
+
+	config.save(SETTINGS_SAVE_PATH)
+
+func save_run():
+	var config := ConfigFile.new()
+
+	config.set_value("run", "gold", gold)
+	config.set_value("run", "mulligems", mulligems)
+	config.set_value("run", "volatile_cores", volatile_cores)
+	config.set_value("run", "die_fragments", die_fragments)
+
+	config.set_value("player", "hp", player_hp)
+	config.set_value("player", "max_hp", max_player_hp)
+
+	config.set_value("expedition", "progress", expedition_progress)
+	config.set_value("expedition", "required_encounters", expedition_required_encounters)
+	config.set_value("expedition", "is_boss_fight", expedition_is_boss_fight)
+	config.set_value("expedition", "current_bounty", get_resource_path(current_bounty))
+
+	var completed_bounty_paths := save_resource_path_array(completed_bounties)
+	config.set_value("progress", "completed_bounties", completed_bounty_paths)
+
+	var dice_save := []
+	for die in owned_dice:
+		dice_save.append(save_die(die))
+
+	config.set_value("inventory", "owned_dice", dice_save)
+	config.set_value("inventory", "consumables", save_resource_path_array(consumable_inventory))
+	config.set_value("unlock", "owned_relics", save_resource_path_array(owned_relics))
+	config.set_value("unlock", "unlocked_food_tier", unlocked_food_tier)
+	
+	var face_save := []
+
+	for face in face_inventory:
+		if face != null:
+			face_save.append(save_face(face))
+
+	config.set_value("inventory", "face_inventory", face_save)
+	var err := config.save(RUN_SAVE_PATH)
+
+	if err == OK:
+		print("Run saved.")
+	else:
+		push_error("Failed to save run.")
+	print("Run save path: ", ProjectSettings.globalize_path(RUN_SAVE_PATH))
+	
+func serialize_die(die: DiceData) -> Dictionary:
+	var face_data := []
+
+	for face in die.faces:
+		face_data.append(serialize_face(face))
+
+	return {
+		"die_name": die.die_name,
+		"sides": die.sides,
+		"can_explode": die.can_explode,
+		"faces": face_data
+	}
+	
+func serialize_face(face: DiceFace) -> Dictionary:
+	return {
+		"face_name": face.face_name,
+		"result_type": face.result_type,
+		"value": face.value
+	}
+	
+func get_resource_path(resource: Resource) -> String:
+	if resource == null:
+		return ""
+
+	return resource.resource_path
+
+func save_resource_path_array(items: Array) -> Array[String]:
+	var paths: Array[String] = []
+
+	for item in items:
+		if item is Resource:
+			var path := get_resource_path(item)
+
+			if path != "":
+				paths.append(path)
+
+	return paths
+
+func save_face(face: DiceFace) -> Dictionary:
+	return {
+		"face_name": face.face_name,
+		"result_type": face.result_type,
+		"value": face.value,
+		"resource_path": face.resource_path
+	}
+
+
+func load_face(data: Dictionary) -> DiceFace:
+	var path: String = data.get("resource_path", "")
+
+	if path != "":
+		var loaded = load(path)
+		if loaded is DiceFace:
+			return loaded.duplicate(true)
+
+	var face := DiceFace.new()
+	face.face_name = data.get("face_name", "Face")
+	face.result_type = data.get("result_type", "miss")
+	face.value = data.get("value", 0)
+
+	return face
+	
+func save_die(die: DiceData) -> Dictionary:
+	var saved_faces := []
+
+	for face in die.faces:
+		if face != null:
+			saved_faces.append(save_face(face))
+
+	return {
+		"die_name": die.die_name,
+		"sides": die.sides,
+		"can_explode": die.can_explode,
+		"faces": saved_faces
+	}
+	
+func load_die(data: Dictionary) -> DiceData:
+	var die := DiceData.new()
+
+	die.die_name = data.get("die_name", "Saved Die")
+	die.sides = data.get("sides", 6)
+	die.can_explode = data.get("can_explode", false)
+	die.faces = []
+
+	for face_data in data.get("faces", []):
+		if face_data is Dictionary:
+			die.faces.append(load_face(face_data))
+
+	return die
+
+func load_resource_path_array(paths: Array) -> Array:
+	var items := []
+
+	for path in paths:
+		if path == "":
+			continue
+
+		var resource = load(path)
+		if resource != null:
+			items.append(resource)
+
+	return items
+	
+func load_run():
+	var config := ConfigFile.new()
+	var err := config.load(RUN_SAVE_PATH)
+
+	if err != OK:
+		print("No run save found.")
+		return false
+
+	gold = config.get_value("run", "gold", gold)
+	mulligems = config.get_value("run", "mulligems", mulligems)
+	volatile_cores = config.get_value("run", "volatile_cores", volatile_cores)
+	die_fragments = config.get_value("run", "die_fragments", die_fragments)
+
+	player_hp = config.get_value("player", "hp", player_hp)
+	max_player_hp = config.get_value("player", "max_hp", max_player_hp)
+	combat_max_player_hp = max_player_hp
+
+	expedition_progress = config.get_value("expedition", "progress", expedition_progress)
+	expedition_required_encounters = config.get_value("expedition", "required_encounters", expedition_required_encounters)
+	expedition_is_boss_fight = config.get_value("expedition", "is_boss_fight", expedition_is_boss_fight)
+
+	var bounty_path: String = config.get_value("expedition", "current_bounty", "")
+	if bounty_path != "":
+		current_bounty = load(bounty_path)
+
+	completed_bounties.clear()
+
+	var loaded_bounties := load_resource_path_array(
+		config.get_value("progress", "completed_bounties", [])
+	)
+
+	for bounty in loaded_bounties:
+		if bounty is BountyData:
+			completed_bounties.append(bounty)
+
+	# Face Inventory
+	face_inventory.clear()
+
+	for face_data in config.get_value("inventory", "face_inventory", []):
+		if face_data is Dictionary:
+			face_inventory.append(load_face(face_data))
+
+
+	# Consumables
+	consumable_inventory.clear()
+
+	var loaded_consumables := load_resource_path_array(
+		config.get_value("inventory", "consumables", [])
+	)
+
+	for item in loaded_consumables:
+		if item is ConsumableItem:
+			consumable_inventory.append(item)
+
+
+	# Relics
+	owned_relics.clear()
+
+	var loaded_relics := load_resource_path_array(
+		config.get_value("unlock", "owned_relics", [])
+	)
+
+	for relic in loaded_relics:
+		if relic is RelicData:
+			owned_relics.append(relic)
+
+	unlocked_food_tier = config.get_value("unlock", "unlocked_food_tier", unlocked_food_tier)
+
+	update_gold_label()
+	update_player_hp_label()
+	update_mulligem_button()
+	update_volatile_core_button()
+
+	print("Run loaded.")
+	return true
+	

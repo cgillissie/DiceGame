@@ -710,6 +710,7 @@ stream = ExtResource("10_c0t34")
 volume_db = -10.0
 autoplay = true
 max_distance = 100.0
+bus = &"SFX"
 
 [node name="DiceSmithBuildingSprite" type="AnimatedSprite3D" parent="buildings" unique_id=1323908407]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 3.9630494, 1.5831444, 0)

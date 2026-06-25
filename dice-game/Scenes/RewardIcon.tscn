@@ -12,6 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 script = ExtResource("1_qh80y")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1700488676]
