@@ -69,7 +69,7 @@ var enemy_roll_preview_panel: Control = null
 
 @onready var player_block_label: Label = $LeftMarginContainer/VBoxContainer/PlayerBlockLabel
 @onready var incoming_damage_label: Label = $LeftMarginContainer/VBoxContainer/IncomingDamageLabel
-@onready var reserve_slots_label: Label = $LeftMarginContainer/VBoxContainer/ReserveSlotsLabel
+@onready var reserve_slots_label: Label = $DiceArea/ReserveHBox/ReserveSlotsLabel
 
 # AUTO WIN BUTTON FOR TESTING
 @onready var debug_win_button: Button = $DebugWinButton
@@ -97,6 +97,7 @@ var assigned_enemy_containers: Array[GridContainer] = []
 @onready var status_tooltip_label: Label = $StatusTooltipPanel/StatusTooltipLabel
 
 @export var damage_popup_scene: PackedScene
+@export var reserve_icon_texture: Texture2D
 
 # Enemy loot drops
 @export var enemy_face_drop_pool: Array[DiceFace]
@@ -190,6 +191,8 @@ var is_in_town: bool = true
 @onready var camp_continue_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampContinueButton
 @onready var camp_craft_food_button: Button = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CraftFoodButton
 @onready var camp_hp_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampHPLabel
+@onready var camp_progress_title_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampProgressTitleLabel
+@onready var camp_progress_value_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampProgressValueLabel
 
 # Bounty Tracking #############################
 
@@ -235,7 +238,11 @@ var encounter_choices: Array[EncounterData] = []
 @onready var enemies_label: Label = $RightMarginContainer/VBoxContainer/EnemiesLabel
 
 # RELICS ##############################################################
+@onready var relic_container: HBoxContainer = $RelicPanel/HBoxContainer
+@export var relic_icon_scene: PackedScene
 @onready var relic_label: Label = $RelicLabel
+
+var last_unlocked_relics: Array[RelicData] = []
 var owned_relics: Array[RelicData] = []
 var has_meditation_charm: bool = false
 
@@ -299,6 +306,10 @@ var last_unlocked_merchant_faces: Array[DiceFace] = []
 @onready var fullscreen_check_box = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/FullscreenCheckBox
 @onready var resolution_option: OptionButton = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/ResolutionOptionButton
 @onready var continue_run_button: Button = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/ContinueRunButton
+
+# Death Overlay ###################################
+@onready var death_overlay: ColorRect = $DeathOverlay
+@onready var death_restart_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/RestartButton
 
 const AVAILABLE_RESOLUTIONS := [
 	Vector2i(1280, 720),
@@ -445,9 +456,11 @@ func _ready():
 	sfx_volume_slider.step = 0.01
 	sfx_volume_slider.value = 1.0
 	# load_encounter(current_encounter)
+	death_overlay.visible = false
+	death_restart_button.pressed.connect(restart_run)
 	town_panel.visible = false
 	set_combat_ui_enabled(false)
-	
+	# refresh_relic_panel()
 	roll_merchant_stock()
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
@@ -1317,6 +1330,8 @@ func roll_all_dice():
 		return
 	for die in dice_nodes:
 		print(die, " temporary: ", die.temporary, " name: ", die.dice_data.die_name)
+	player_block = active_combat_bonus_block
+	update_player_block_label()
 	is_rolling_dice = true
 	end_round_button.disabled = true
 	dice_nodes = dice_nodes.filter(func(die):
@@ -1414,7 +1429,7 @@ func resolve_player_dice():
 	)
 
 	var gold_gained_this_turn := 0
-	player_block = 0
+	# player_block = 0
 	dodged_enemy_crits = false
 	last_player_damage = 0
 
@@ -1435,8 +1450,8 @@ func resolve_player_dice():
 			continue
 
 		match die.current_face.result_type:
-			"block":
-				player_block += die.current_face.value
+			#"block":
+				#player_block += die.current_face.value
 
 			"gold":
 				gold_gained_this_turn += die.current_face.value
@@ -1576,7 +1591,8 @@ func end_round():
 
 	for healer_index in active_enemies.size():
 		var healer = active_enemies[healer_index]
-
+		if healer["frozen"]:
+			continue
 		if healer["heal"] <= 0:
 			continue
 
@@ -1609,7 +1625,7 @@ func end_round():
 					Color.GREEN
 				)
 
-				await get_tree().create_timer(0.70).timeout
+				await get_tree().create_timer(1.50).timeout
 	last_damage_taken = 0
 
 	for enemy_index in active_enemies.size():
@@ -1894,7 +1910,7 @@ func update_player_hp_label():
 	player_health_bar.max_value = combat_max_player_hp
 	player_health_bar.value = player_hp
 	player_health_label.text = str(player_hp) + "/" + str(combat_max_player_hp)
-	
+	update_camp_hp_label()
 	update_shop_buttons()
 	update_player_3d_node()
 	
@@ -1968,6 +1984,14 @@ func win_combat():
 	last_die_fragments_gained = randi_range(1, 3)
 	die_fragments += last_die_fragments_gained
 	last_mulligems_gained = 0
+	last_unlocked_relics.clear()
+	if expedition_is_boss_fight and current_bounty != null:
+		for relic in current_bounty.unlocked_relics:
+			if !owned_relics.has(relic):
+				owned_relics.append(relic)
+				last_unlocked_relics.append(relic)
+
+		# refresh_relic_panel()
 	for enemy_data in defeated_enemies:
 		total_gold_reward += enemy_data.gold_reward
 		if randf() <= enemy_data.volatile_core_drop_chance:
@@ -2059,7 +2083,15 @@ func show_loot_panel():
 			loot_text += food.item_name + "\n"
 
 		loot_text += "\n"
+		
+	if last_unlocked_relics.size() > 0:
+		loot_text += "[center][color=yellow]Relics[/color]\n"
 
+		for relic in last_unlocked_relics:
+			loot_text += relic.relic_name + "\n"
+
+		loot_text += "\n"
+		
 	# Volatile Cores
 	if last_volatile_cores_gained > 0:
 		loot_text += "[center][color=orange]Volatile Cores: +" + str(last_volatile_cores_gained) + "[/color]\n\n"
@@ -2116,17 +2148,17 @@ func heal_reward():
 	
 func lose_combat():
 	combat_over = true
-	combat_log_label.text = "You were defeated."
+	is_resolving_turn = false
 
-	end_round_button.disabled = true
-	defeat_label.visible = true
-	restart_run_button.visible = true
+	hide_all_combat_ui()
+	show_death_screen()
 
 	clear_food_buffs()
 	
 func restart_run():
 	delete_run_save()
 	get_tree().reload_current_scene()
+	# refresh_relic_panel()
 	
 func clear_food_buffs():
 	active_food_items.clear()
@@ -2220,7 +2252,14 @@ func hide_all_groups():
 	actions_container.get_parent().visible = false
 	
 func update_combat_number_label():
-	combat_number_label.text = "Encounter: " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
+	if expedition_is_boss_fight:
+		combat_number_label.text = "Boss Encounter"
+	else:
+		combat_number_label.text = "Encounter: %d/%d" % [
+			expedition_progress + 1,
+			expedition_required_encounters
+		]
+
 	combat_number_label.visible = !is_in_town
 	
 
@@ -2939,16 +2978,27 @@ func clear_all_dice_groups():
 
 # RELIC FUNCTIONALITY ###################################################
 func apply_end_round_relics():
-	if has_meditation_charm:
-		var reserved_count := get_reserved_die_count()
-		var heal_amount := reserved_count
+	if has_relic("Meditation Beads"):
+		var heal_amount := get_reserved_die_count()
 
-		player_hp += heal_amount
+		if heal_amount <= 0:
+			return
 
-		if player_hp > max_player_hp:
-			player_hp = max_player_hp
+		player_hp = min(player_hp + heal_amount, combat_max_player_hp)
 
-		combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+		show_popup_text(
+			player_3d_node,
+			"+" + str(heal_amount),
+			1.2,
+			Color.GREEN
+		)
+
+		add_combat_log_entry(
+			"Meditation Beads restored " +
+			str(heal_amount) +
+			" HP."
+		)
+
 		update_player_hp_label()
 
 func update_relic_label():
@@ -3013,7 +3063,8 @@ func update_incoming_damage_label():
 	update_player_3d_node()
 	
 func update_reserve_slots_label():
-	reserve_slots_label.text = "Reserve: " + str(get_reserved_die_count()) + "/" + str(reserve_slots)
+	var reserved := get_reserved_die_count()
+	reserve_slots_label.text = str(reserved) + "/" + str(reserve_slots)
 	
 func clear_assignments_for_enemy(enemy_index: int):
 	for die in dice_nodes:
@@ -3798,6 +3849,12 @@ func complete_current_bounty():
 	for face in current_bounty.unlocked_merchant_faces:
 		if !merchant_unlocked_faces.has(face):
 			merchant_unlocked_faces.append(face)
+	for relic in current_bounty.unlocked_relics:
+		if !owned_relics.has(relic):
+			owned_relics.append(relic)
+			last_unlocked_relics.append(relic)
+
+	# refresh_relic_panel()
 	current_bounty = null
 	expedition_is_boss_fight = false
 	expedition_progress = 0
@@ -3833,10 +3890,10 @@ func apply_bounty_reward(bounty: BountyData):
 	for relic in current_bounty.unlocked_relics:
 		if !owned_relics.has(relic):
 			owned_relics.append(relic)
-			
+			# refresh_relic_panel()
 func show_expedition_camp():
 	expedition_camp_panel.visible = true
-	camp_status_label.text = "Encounter " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
+	update_expedition_progress_labels()
 	camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
 	hide_combat_dice()
 	update_camp_hp_label()
@@ -4115,13 +4172,26 @@ func is_food_already_active(item: ConsumableItem) -> bool:
 	return false
 	
 func update_active_food_icons():
-	clear_container(active_food_container)
+	for child in active_food_container.get_children():
+		child.queue_free()
 
-	for item in active_food_items:
-		var buff_icon = active_buff_icon_scene.instantiate()
+	# Food buffs
+	for food in active_food_items:
+		var icon = active_buff_icon_scene.instantiate()
+		icon.setup(
+			food.icon,
+			food.item_name + "\n" + food.description
+		)
+		active_food_container.add_child(icon)
 
-		buff_icon.setup(item.icon, item.description)
-		active_food_container.add_child(buff_icon)
+	# Relics
+	for relic in owned_relics:
+		var icon = active_buff_icon_scene.instantiate()
+		icon.setup(
+			relic.icon,
+			relic.relic_name + "\n" + relic.description
+		)
+		active_food_container.add_child(icon)
 		
 func open_camp_items():
 	prepare_return_context = "camp"
@@ -4536,15 +4606,7 @@ func get_relic(name: String) -> RelicData:
 	return null
 	
 func apply_end_combat_relics():
-	if has_relic("Meditation Beads"):
-		var heal := get_reserved_die_count()
-
-		if heal > 0:
-			player_hp = min(player_hp + heal, combat_max_player_hp)
-
-			show_popup_text(player_3d_node, "+" + str(heal), 1.2, Color.GREEN)
-			add_combat_log_entry("Meditation Beads restored " + str(heal) + " HP.")
-			update_player_hp_label()
+	pass
 
 func is_menu_blocking_input() -> bool:
 	return options_overlay.visible \
@@ -4848,7 +4910,7 @@ func load_run():
 	for relic in owned_relics:
 		if relic.relic_name in owned_relic_names:
 			owned_relics.append(relic)
-
+			# refresh_relic_panel()
 	unlocked_food_tier = config.get_value("unlock", "unlocked_food_tier", unlocked_food_tier)
 
 	selected_edit_die = null
@@ -4880,3 +4942,40 @@ func delete_run_save():
 	if FileAccess.file_exists(RUN_SAVE_PATH):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(RUN_SAVE_PATH))
 		
+		
+func update_expedition_progress_labels():
+	camp_progress_title_label.text = "Bounty Progress"
+
+	if expedition_is_boss_fight:
+		camp_progress_value_label.text = "Boss Encounter"
+	else:
+		camp_progress_value_label.text = "Encounter %d/%d" % [
+			expedition_progress + 1,
+			expedition_required_encounters
+		]
+
+func hide_all_combat_ui():
+	end_round_button.visible = false
+	mulligem_button.visible = false
+	player_health_bar.visible = false
+	player_health_label.visible = false
+	assigned_dice_overlay.visible = false
+	enemy_roll_overlay.visible = false
+	reserve_slots_label.visible = false
+	combat_number_label.visible = false
+	player_hp_label.visible = false
+	player_block_label.visible = false
+	incoming_damage_label.visible = false
+
+	hide_all_groups()
+	hide_status_tooltip()
+	hide_enemy_roll_preview()
+
+
+func show_death_screen():
+	death_overlay.modulate.a = 0.0
+	death_overlay.visible = true
+
+	var tween := create_tween()
+	tween.tween_property(death_overlay, "modulate:a", 1.0, 0.75)
+	

@@ -61,13 +61,11 @@ func setup(index: int, enemy: Dictionary):
 	set_intent_pair(crit_icon, crit_value, enemy["crit"])
 	set_intent_pair(block_icon, block_value, enemy["block"])
 	set_intent_pair(heal_icon, heal_value, enemy["heal"])
-	var hp_percent = float(enemy["hp"]) / float(enemy["max_hp"])
-	health_bar_fill.scale.x = clamp(hp_percent, 0.0, 1.0)
+	var hp_percent :float = clamp(float(enemy["hp"]) / float(enemy["max_hp"]), 0.0, 1.0)
+
+	health_bar_fill.scale.x = hp_percent
+	health_bar_fill.position.x = -(1.0 - hp_percent) * 0.16
 	update_status_icons(data, enemy)
-	print("--- ENEMY BAR DEBUG ---")
-	print("fill scale: ", health_bar_fill.scale)
-	print("fill global scale: ", health_bar_fill.global_transform.basis.get_scale())
-	print("HealthBar3D scale: ", $HealthBar3D.scale)
 	
 func _on_area_input_event(camera, event, position, normal, shape_idx):
 	print("Enemy clicked area event")
