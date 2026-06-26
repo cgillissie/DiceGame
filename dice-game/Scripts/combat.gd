@@ -420,7 +420,7 @@ func _ready():
 	close_options_button.pressed.connect(close_options_menu)
 	options_restart_button.pressed.connect(restart_run)
 	options_quit_button.pressed.connect(quit_game)
-	continue_run_button.pressed.connect(load_run)
+	continue_run_button.pressed.connect(continue_run)
 	fullscreen_check_box.toggled.connect(_on_fullscreen_toggled)
 	resolution_option.item_selected.connect(_on_resolution_selected)
 	resolution_option.add_item("1280 x 720")
@@ -2082,7 +2082,11 @@ func show_loot_panel():
 		loot_text += "[center][color=violet]Mulligems: +" + str(last_mulligems_gained) + "[/color]\n\n"
 	loot_rich_text_label.clear()
 	loot_rich_text_label.append_text(loot_text)
-			
+		
+func update_camp_hp_label():
+	if camp_hp_label != null:
+		camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(max_player_hp)
+		
 func open_shop_after_loot():
 	loot_panel.visible = false
 
@@ -2121,6 +2125,7 @@ func lose_combat():
 	clear_food_buffs()
 	
 func restart_run():
+	delete_run_save()
 	get_tree().reload_current_scene()
 	
 func clear_food_buffs():
@@ -2375,6 +2380,7 @@ func close_edit_dice_panel():
 	update_fuse_button_text()
 	
 func refresh_edit_dice_panel():
+	print("Refreshing editor. Dice:", owned_dice.size(), " Faces:", face_inventory.size())
 	rebuild_owned_dice_grid()
 
 	clear_container(die_faces_container)
@@ -3833,6 +3839,7 @@ func show_expedition_camp():
 	camp_status_label.text = "Encounter " + str(expedition_progress + 1) + "/" + str(expedition_required_encounters)
 	camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
 	hide_combat_dice()
+	update_camp_hp_label()
 	
 func hide_combat_dice():
 	for die in dice_nodes:
@@ -4047,7 +4054,7 @@ func use_consumable(index: int):
 	next_combat_bonus_damage += item.next_combat_damage
 
 	consumable_inventory.remove_at(index)
-
+	update_camp_hp_label()
 	update_player_hp_label()
 	rebuild_prepare_consumables()
 	
@@ -4635,54 +4642,147 @@ func save_run():
 	config.set_value("expedition", "progress", expedition_progress)
 	config.set_value("expedition", "required_encounters", expedition_required_encounters)
 	config.set_value("expedition", "is_boss_fight", expedition_is_boss_fight)
-	config.set_value("expedition", "current_bounty", get_resource_path(current_bounty))
+	config.set_value("expedition", "current_bounty", current_bounty.bounty_name if current_bounty != null else "")
 
-	var completed_bounty_paths := save_resource_path_array(completed_bounties)
-	config.set_value("progress", "completed_bounties", completed_bounty_paths)
+	var completed_bounty_names := []
+	for bounty in completed_bounties:
+		if bounty != null:
+			completed_bounty_names.append(bounty.bounty_name)
+
+	config.set_value("progress", "completed_bounties", completed_bounty_names)
 
 	var dice_save := []
 	for die in owned_dice:
-		dice_save.append(save_die(die))
+		if die != null:
+			dice_save.append(serialize_die(die))
 
 	config.set_value("inventory", "owned_dice", dice_save)
-	config.set_value("inventory", "consumables", save_resource_path_array(consumable_inventory))
-	config.set_value("unlock", "owned_relics", save_resource_path_array(owned_relics))
-	config.set_value("unlock", "unlocked_food_tier", unlocked_food_tier)
-	
-	var face_save := []
 
+	var face_save := []
 	for face in face_inventory:
 		if face != null:
-			face_save.append(save_face(face))
+			face_save.append(serialize_face(face))
 
 	config.set_value("inventory", "face_inventory", face_save)
+
+	var consumable_save := []
+	for item in consumable_inventory:
+		if item != null:
+			consumable_save.append(serialize_consumable(item))
+
+	config.set_value("inventory", "consumables", consumable_save)
+
+	var owned_relic_names := []
+	for relic in owned_relics:
+		if relic != null:
+			owned_relic_names.append(relic.relic_name)
+
+	config.set_value("unlock", "owned_relics", owned_relic_names)
+	config.set_value("unlock", "unlocked_food_tier", unlocked_food_tier)
+
 	var err := config.save(RUN_SAVE_PATH)
 
 	if err == OK:
 		print("Run saved.")
+		print("Run save path: ", ProjectSettings.globalize_path(RUN_SAVE_PATH))
 	else:
 		push_error("Failed to save run.")
-	print("Run save path: ", ProjectSettings.globalize_path(RUN_SAVE_PATH))
 	
 func serialize_die(die: DiceData) -> Dictionary:
-	var face_data := []
+	var faces := []
 
 	for face in die.faces:
-		face_data.append(serialize_face(face))
+		faces.append(serialize_face(face))
 
 	return {
 		"die_name": die.die_name,
 		"sides": die.sides,
 		"can_explode": die.can_explode,
-		"faces": face_data
+		"sprite_path": die.sprite.resource_path if die.sprite != null else "",
+		"faces": faces
 	}
 	
 func serialize_face(face: DiceFace) -> Dictionary:
 	return {
 		"face_name": face.face_name,
 		"result_type": face.result_type,
-		"value": face.value
+		"value": face.value,
+		"label": face.label,
+		"icon_path": face.icon.resource_path if face.icon != null else ""
 	}
+	
+func serialize_consumable(item: ConsumableItem) -> Dictionary:
+	return {
+		"item_name": item.item_name,
+		"description": item.description,
+		"icon_path": item.icon.resource_path if item.icon != null else "",
+		"cost": item.cost,
+		"heal_amount": item.heal_amount,
+		"next_combat_block": item.next_combat_block,
+		"next_combat_damage": item.next_combat_damage,
+		"increase_max_hp": item.increase_max_hp,
+		"next_combat_max_hp": item.next_combat_max_hp,
+		"food_tier": item.food_tier,
+		"grants_trait_path": item.grants_trait.resource_path if item.grants_trait != null else ""
+	}
+
+
+
+func deserialize_face(data: Dictionary) -> DiceFace:
+	var face := DiceFace.new()
+
+	face.face_name = data.get("face_name", "Face")
+	face.result_type = data.get("result_type", "miss")
+	face.value = data.get("value", 0)
+	face.label = data.get("label", "")
+
+	var icon_path: String = data.get("icon_path", "")
+	if icon_path != "":
+		face.icon = load(icon_path)
+
+	return face
+	
+func deserialize_die(data: Dictionary) -> DiceData:
+	var die := DiceData.new()
+
+	die.die_name = data.get("die_name", "Basic Die")
+	die.sides = data.get("sides", 6)
+	die.can_explode = data.get("can_explode", false)
+
+	var sprite_path: String = data.get("sprite_path", "")
+	if sprite_path != "":
+		die.sprite = load(sprite_path)
+
+	die.faces.clear()
+
+	for face_data in data.get("faces", []):
+		die.faces.append(deserialize_face(face_data))
+
+	return die
+	
+func deserialize_consumable(data: Dictionary) -> ConsumableItem:
+	var item := ConsumableItem.new()
+
+	item.item_name = data.get("item_name", "")
+	item.description = data.get("description", "")
+
+	var icon_path: String = data.get("icon_path", "")
+	if icon_path != "":
+		item.icon = load(icon_path)
+
+	item.cost = data.get("cost", 5)
+	item.heal_amount = data.get("heal_amount", 0)
+	item.next_combat_block = data.get("next_combat_block", 0)
+	item.next_combat_damage = data.get("next_combat_damage", 0)
+	item.increase_max_hp = data.get("increase_max_hp", 0)
+	item.next_combat_max_hp = data.get("next_combat_max_hp", 0)
+	item.food_tier = data.get("food_tier", 1)
+
+	var trait_path: String = data.get("grants_trait_path", "")
+	if trait_path != "":
+		item.grants_trait = load(trait_path)
+
+	return item
 	
 func get_resource_path(resource: Resource) -> String:
 	if resource == null:
@@ -4690,83 +4790,6 @@ func get_resource_path(resource: Resource) -> String:
 
 	return resource.resource_path
 
-func save_resource_path_array(items: Array) -> Array[String]:
-	var paths: Array[String] = []
-
-	for item in items:
-		if item is Resource:
-			var path := get_resource_path(item)
-
-			if path != "":
-				paths.append(path)
-
-	return paths
-
-func save_face(face: DiceFace) -> Dictionary:
-	return {
-		"face_name": face.face_name,
-		"result_type": face.result_type,
-		"value": face.value,
-		"resource_path": face.resource_path
-	}
-
-
-func load_face(data: Dictionary) -> DiceFace:
-	var path: String = data.get("resource_path", "")
-
-	if path != "":
-		var loaded = load(path)
-		if loaded is DiceFace:
-			return loaded.duplicate(true)
-
-	var face := DiceFace.new()
-	face.face_name = data.get("face_name", "Face")
-	face.result_type = data.get("result_type", "miss")
-	face.value = data.get("value", 0)
-
-	return face
-	
-func save_die(die: DiceData) -> Dictionary:
-	var saved_faces := []
-
-	for face in die.faces:
-		if face != null:
-			saved_faces.append(save_face(face))
-
-	return {
-		"die_name": die.die_name,
-		"sides": die.sides,
-		"can_explode": die.can_explode,
-		"faces": saved_faces
-	}
-	
-func load_die(data: Dictionary) -> DiceData:
-	var die := DiceData.new()
-
-	die.die_name = data.get("die_name", "Saved Die")
-	die.sides = data.get("sides", 6)
-	die.can_explode = data.get("can_explode", false)
-	die.faces = []
-
-	for face_data in data.get("faces", []):
-		if face_data is Dictionary:
-			die.faces.append(load_face(face_data))
-
-	return die
-
-func load_resource_path_array(paths: Array) -> Array:
-	var items := []
-
-	for path in paths:
-		if path == "":
-			continue
-
-		var resource = load(path)
-		if resource != null:
-			items.append(resource)
-
-	return items
-	
 func load_run():
 	var config := ConfigFile.new()
 	var err := config.load(RUN_SAVE_PATH)
@@ -4788,58 +4811,72 @@ func load_run():
 	expedition_required_encounters = config.get_value("expedition", "required_encounters", expedition_required_encounters)
 	expedition_is_boss_fight = config.get_value("expedition", "is_boss_fight", expedition_is_boss_fight)
 
-	var bounty_path: String = config.get_value("expedition", "current_bounty", "")
-	if bounty_path != "":
-		current_bounty = load(bounty_path)
+	var saved_bounty_name: String = config.get_value("expedition", "current_bounty", "")
+	if saved_bounty_name != "":
+		for bounty in completed_bounties:
+			if bounty.bounty_name == saved_bounty_name:
+				current_bounty = bounty
+				break
 
 	completed_bounties.clear()
+	var completed_bounty_names: Array = config.get_value("progress", "completed_bounties", [])
 
-	var loaded_bounties := load_resource_path_array(
-		config.get_value("progress", "completed_bounties", [])
-	)
+	for bounty in completed_bounties:
+		bounty.completed = bounty.bounty_name in completed_bounty_names
 
-	for bounty in loaded_bounties:
-		if bounty is BountyData:
+		if bounty.completed:
 			completed_bounties.append(bounty)
 
-	# Face Inventory
-	face_inventory.clear()
+	owned_dice.clear()
+	for die_data in config.get_value("inventory", "owned_dice", []):
+		if die_data is Dictionary:
+			owned_dice.append(deserialize_die(die_data))
 
+	face_inventory.clear()
 	for face_data in config.get_value("inventory", "face_inventory", []):
 		if face_data is Dictionary:
-			face_inventory.append(load_face(face_data))
+			face_inventory.append(deserialize_face(face_data))
 
-
-	# Consumables
 	consumable_inventory.clear()
+	for item_data in config.get_value("inventory", "consumables", []):
+		if item_data is Dictionary:
+			consumable_inventory.append(deserialize_consumable(item_data))
 
-	var loaded_consumables := load_resource_path_array(
-		config.get_value("inventory", "consumables", [])
-	)
-
-	for item in loaded_consumables:
-		if item is ConsumableItem:
-			consumable_inventory.append(item)
-
-
-	# Relics
 	owned_relics.clear()
+	var owned_relic_names: Array = config.get_value("unlock", "owned_relics", [])
 
-	var loaded_relics := load_resource_path_array(
-		config.get_value("unlock", "owned_relics", [])
-	)
-
-	for relic in loaded_relics:
-		if relic is RelicData:
+	for relic in owned_relics:
+		if relic.relic_name in owned_relic_names:
 			owned_relics.append(relic)
 
 	unlocked_food_tier = config.get_value("unlock", "unlocked_food_tier", unlocked_food_tier)
+
+	selected_edit_die = null
 
 	update_gold_label()
 	update_player_hp_label()
 	update_mulligem_button()
 	update_volatile_core_button()
 
+	print("Loaded dice count: ", owned_dice.size())
+	print("Loaded face inventory count: ", face_inventory.size())
+	print("Loaded consumable count: ", consumable_inventory.size())
+	print("Loaded relic count: ", owned_relics.size())
 	print("Run loaded.")
+
 	return true
-	
+func continue_run():
+
+	if !load_run():
+		return
+
+	refresh_edit_dice_panel()
+	update_gold_label()
+	update_player_hp_label()
+	update_mulligem_button()
+	update_volatile_core_button()
+
+func delete_run_save():
+	if FileAccess.file_exists(RUN_SAVE_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(RUN_SAVE_PATH))
+		
