@@ -11,6 +11,7 @@ const RUN_SAVE_PATH := "user://run_save.cfg"
 @export var dodge_face_template: DiceFace
 @export var reversal_face_template: DiceFace
 @export var break_focus_face_template: DiceFace
+@export var twist_knife_face_template: DiceFace
 
 var enemy_3d_nodes: Array[Enemy3D] = []
 
@@ -2930,6 +2931,8 @@ func create_twist_knife_face() -> DiceFace:
 	face.face_name = "Twist Knife"
 	face.result_type = "twist_knife"
 	face.value = 0
+	face.label = "Twist"
+	face.icon = twist_knife_face_template.icon
 	return face
 	
 func create_break_focus_face() -> DiceFace:
