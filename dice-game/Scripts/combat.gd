@@ -99,6 +99,8 @@ var assigned_enemy_containers: Array[GridContainer] = []
 @export var damage_popup_scene: PackedScene
 @export var reserve_icon_texture: Texture2D
 
+var run_encounters_completed: int = 0
+
 # Enemy loot drops
 @export var enemy_face_drop_pool: Array[DiceFace]
 var dropped_face: DiceFace
@@ -278,6 +280,11 @@ var unlocked_food_tier: int = 1
 @onready var prepare_consumables_container: GridContainer = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/PrepareConsumablesContainer
 @onready var merchant_gold_label: Label = $MerchantPanel/MarginContainer/VBoxContainer/MerchantGoldLabel
 @export var merchant_food_pool: Array[ConsumableItem]
+@export var merchant_relic_pool: Array[RelicData]
+@onready var merchant_relic_button: Button = $MerchantPanel/MarginContainer/VBoxContainer/BuyRelicButton
+
+var current_merchant_relic: RelicData = null
+var merchant_relic_cost: int = 175
 var merchant_food_stock: Array[ConsumableItem] = []
 var merchant_unlocked_faces: Array[DiceFace] = []
 var merchant_face_cost: int = 12
@@ -310,6 +317,10 @@ var last_unlocked_merchant_faces: Array[DiceFace] = []
 # Death Overlay ###################################
 @onready var death_overlay: ColorRect = $DeathOverlay
 @onready var death_restart_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/RestartButton
+
+@onready var endless_choice_overlay: ColorRect = $EndlessChoiceOverlay
+@onready var end_demo_button: Button = $EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer/EndDemoButton
+@onready var continue_endless_button: Button = $EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer/ContinueEndlessButton
 
 const AVAILABLE_RESOLUTIONS := [
 	Vector2i(1280, 720),
@@ -413,6 +424,9 @@ func _ready():
 	close_craft_button.pressed.connect(close_food_crafting)
 	begin_expedition_button.pressed.connect(open_prepare_expedition)
 	actions_button.pressed.connect(select_group.bind(actions_container))
+	endless_choice_overlay.visible = false
+	end_demo_button.pressed.connect(end_demo)
+	continue_endless_button.pressed.connect(continue_endless_mode)
 	mulligem_button.pressed.connect(use_mulligem)
 	update_mulligem_button()
 	d4_button.pressed.connect(craft_empty_die.bind(4))
@@ -746,7 +760,7 @@ func get_encounter_text(encounter: EncounterData) -> String:
 	return encounter.encounter_name
 	
 func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
-	var scaled_max_hp = enemy_data.max_hp + (expedition_progress * 2)
+	var scaled_max_hp = enemy_data.max_hp + (run_encounters_completed * 2)
 
 	return {
 		"data": enemy_data,
@@ -843,6 +857,11 @@ func roll_enemy_intents():
 
 		if armored_value > 0:
 			enemy["block"] += armored_value
+
+		if has_relic("Ice Crystal") and enemy["freeze_stacks"] > 0:
+			enemy["attack"] = max(enemy["attack"] - 1, 0)
+			enemy["crit"] = max(enemy["crit"] - 1, 0)
+			enemy["roll_text"] += "Ice Crystal -1 "
 
 	calculate_auto_block()
 	update_incoming_damage_label()
@@ -1199,14 +1218,15 @@ func regroup_dice():
 	for die in dice_nodes:
 		if die.assigned_enemy_index != -1:
 			continue
-
+			
+		die.scale = Vector2.ONE * get_combat_die_scale()
 		die.set_compact_mode(false)
 
 		var target_container = get_container_for_die(die)
 
 		if die.get_parent() != target_container:
 			die.reparent(target_container)
-
+	update_combat_dice_spacing()
 	update_group_visibility()
 func has_visible_dice(container: GridContainer) -> bool:
 	for child in container.get_children():
@@ -1215,7 +1235,31 @@ func has_visible_dice(container: GridContainer) -> bool:
 
 	return false
 
+func update_combat_dice_spacing():
+	var count := owned_dice.size()
+	var spacing := 8
 
+	if count > 8:
+		spacing = 6
+	if count > 12:
+		spacing = 4
+	if count > 16:
+		spacing = 2
+
+	var containers := [
+		actions_container,
+		hits_container,
+		crits_container,
+		blocks_container,
+		gold_container,
+		healing_container,
+		misses_container
+	]
+
+	for container in containers:
+		container.add_theme_constant_override("h_separation", spacing)
+		container.add_theme_constant_override("v_separation", spacing)
+		
 func update_group_visibility():
 	actions_container.get_parent().visible = has_visible_dice(actions_container)
 	hits_container.get_parent().visible = has_visible_dice(hits_container)
@@ -1238,7 +1282,9 @@ func spawn_dice():
 			die_node.reserve_requested.connect(handle_reserve_request)
 		misses_container.add_child(die_node)
 		die_node.setup(die_data)
+		die_node.scale = Vector2.ONE * get_combat_die_scale()
 		dice_nodes.append(die_node)
+	update_combat_dice_spacing()
 	update_group_visibility()
 	
 func handle_die_click(die: DiceNode):
@@ -1714,7 +1760,11 @@ func end_round():
 
 					if player_block < 0:
 						player_block = 0
-
+					if has_relic("Spiked Shield"):
+						enemy["bleed"] += 1
+						show_popup_text(enemy_3d_nodes[enemy_index], "Bleed +1", 1.2, Color.RED)
+						add_combat_log_entry("Spiked Shield inflicted 1 Bleed.")
+						update_enemy_3d_nodes()
 					AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
 					show_popup_text(
 						player_3d_node,
@@ -1799,7 +1849,7 @@ func apply_player_bleed():
 		return
 
 	player_hp -= bleed_value
-
+	AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
 	if player_hp < 0:
 		player_hp = 0
 
@@ -1972,6 +2022,7 @@ func update_combat_log():
 
 func win_combat():
 	combat_over = true
+	run_encounters_completed += 1
 	player_health_bar.visible = false
 	player_health_label.visible = false
 	end_round_button.disabled = true
@@ -2016,7 +2067,9 @@ func win_combat():
 				consumable_inventory.append(food_drop)
 				last_dropped_foods.append(food_drop)
 	clear_food_buffs()
-	
+	if has_relic("Lucky Coin"):
+		gold += 5
+		gold_reward += 5
 	gold += total_gold_reward
 	gold_reward = total_gold_reward
 	if mulligems < MAX_MULLIGEMS:
@@ -2158,6 +2211,8 @@ func lose_combat():
 func restart_run():
 	delete_run_save()
 	get_tree().reload_current_scene()
+	rebuild_bounty_board()
+	run_encounters_completed = 0
 	# refresh_relic_panel()
 	
 func clear_food_buffs():
@@ -2195,7 +2250,7 @@ func start_new_combat():
 	selected_enemy_index = -1
 	selected_dice_order.clear()
 	break_focus_targets.clear()
-	
+	$DiceArea/ReserveHBox.visible = true
 	last_player_damage = 0
 	last_damage_taken = 0
 
@@ -2211,14 +2266,16 @@ func start_new_combat():
 
 	combat_number += 1
 	update_combat_number_label()
-
+	
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	player_hp = min(player_hp + next_combat_heal, combat_max_player_hp)
 
 	active_combat_bonus_block = next_combat_bonus_block
 	active_combat_bonus_damage = next_combat_bonus_damage
 	player_block = active_combat_bonus_block
-
+	if has_relic("Iron Charm"):
+		active_combat_bonus_block += 2
+		player_block += 2
 	update_player_block_label()
 	update_player_hp_label()
 
@@ -2241,6 +2298,20 @@ func start_new_combat():
 	update_player_3d_node()
 
 	end_round_button.disabled = false
+	
+func get_combat_die_scale() -> float:
+	var count := owned_dice.size()
+
+	if count <= 8:
+		return 1.0
+	elif count <= 12:
+		return 0.85
+	elif count <= 16:
+		return 0.72
+	elif count <= 20:
+		return 0.62
+
+	return 0.55
 	
 func hide_all_groups():
 	hits_container.get_parent().visible = false
@@ -3583,9 +3654,10 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			if enemy["block"] > 0:
 				show_popup_text(enemy_node, "Blocked Bleed", 1.0, Color.GRAY)
 				add_combat_log_entry(enemy["data"].enemy_name + "'s block stopped Bleed.")
+				AudioManager.play_one_shot(hit_blocked_sound, 0.9, 1.1)
 				update_enemy_3d_nodes()
 				return
-
+			AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
 			enemy["bleed"] += die.current_face.value
 
 			show_popup_text(enemy_node, "Bleed +" + str(die.current_face.value), 1.2, Color.RED)
@@ -3600,11 +3672,11 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			if bleed_value <= 0:
 				show_popup_text(enemy_node, "No Bleed", 1.0, Color.GRAY)
 				return
-
+			
 			enemy["bleed"] = 0
 			enemy["hp"] -= bleed_value
 			last_player_damage += bleed_value
-
+			AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
 			if enemy["hp"] < 0:
 				enemy["hp"] = 0
 
@@ -3643,11 +3715,17 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 				exposed_bonus = 1
 				enemy["exposed"] = false
 				show_popup_text(enemy_node, "EXPOSED +1", 2.2, Color.YELLOW)
-
+			if has_relic("Bloodstone"):
+				enemy["bleed"] += 1
+			if has_relic("Frozen Heart"):
+				enemy["freeze_stacks"] += 1
 			var blocked_amount: int = min(hit_value, enemy["block"])
 			var normal_damage_after_block: int = hit_value - blocked_amount
 			var total_damage_to_hp: int = normal_damage_after_block + exposed_bonus
+			var damage := hit_value
 
+			if has_relic("Executioner's Axe") and enemy["bleed"] > 0:
+				damage += 2
 			enemy["block"] -= blocked_amount
 			if enemy["block"] < 0:
 				enemy["block"] = 0
@@ -3694,10 +3772,22 @@ func apply_enemy_bleed():
 
 		if enemy["bleed"] <= 0:
 			continue
+		if enemy["block"] > 0:
+			AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
 
+			if i < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[i]):
+				show_popup_text(enemy_3d_nodes[i], "Blocked Bleed", 1.0, Color.CORNFLOWER_BLUE)
+
+			enemy["bleed"] -= 1
+			if enemy["bleed"] < 0:
+				enemy["bleed"] = 0
+
+			update_enemy_3d_nodes()
+			await get_tree().create_timer(0.35).timeout
+			continue
 		var bleed_damage: int = enemy["bleed"]
 		enemy["hp"] -= bleed_damage
-
+		AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
 		if enemy["hp"] < 0:
 			enemy["hp"] = 0
 
@@ -3853,7 +3943,8 @@ func complete_current_bounty():
 		if !owned_relics.has(relic):
 			owned_relics.append(relic)
 			last_unlocked_relics.append(relic)
-
+	if all_bounties_completed():
+		show_endless_choice()
 	# refresh_relic_panel()
 	current_bounty = null
 	expedition_is_boss_fight = false
@@ -3893,6 +3984,7 @@ func apply_bounty_reward(bounty: BountyData):
 			# refresh_relic_panel()
 func show_expedition_camp():
 	expedition_camp_panel.visible = true
+	$DiceArea/ReserveHBox.visible = false
 	update_expedition_progress_labels()
 	camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
 	hide_combat_dice()
@@ -3986,7 +4078,11 @@ func roll_merchant_stock():
 	merchant_food_stock.clear()
 
 	var available_foods: Array[ConsumableItem] = []
+	current_merchant_relic = null
 
+	if merchant_relic_pool.size() > 0:
+		if randf() <= 0.20:
+			current_merchant_relic = merchant_relic_pool.pick_random()
 	for item in merchant_food_pool:
 		if item.food_tier <= unlocked_food_tier:
 			available_foods.append(item)
@@ -4013,19 +4109,46 @@ func rebuild_merchant():
 
 	merchant_gold_label.text = "Gold: " + str(gold)
 
+	var merchant_entries := []
+
 	for item in merchant_food_stock:
-		var owned_count := get_consumable_count(item)
+		merchant_entries.append(item)
 
-		var button = item_button_scene.instantiate()
-		merchant_stock_container.add_child(button)
+	if current_merchant_relic != null:
+		merchant_entries.append(current_merchant_relic)
 
-		button.setup(
-			item,
-			"x" + str(owned_count),
-			str(item.cost) + "g"
-		)
-		button.tooltip_text = item.item_name + "\n" + item.description
-		button.pressed.connect(buy_consumable.bind(item))
+	for entry in merchant_entries:
+		if entry is ConsumableItem:
+			var owned_count := get_consumable_count(entry)
+
+			var button = item_button_scene.instantiate()
+			merchant_stock_container.add_child(button)
+
+			button.setup(
+				entry.icon,
+				"x" + str(owned_count),
+				str(entry.cost) + "g"
+			)
+
+			button.tooltip_text = entry.item_name + "\n" + entry.description
+			button.disabled = gold < entry.cost
+			button.pressed.connect(buy_consumable.bind(entry))
+
+		elif entry is RelicData:
+			var button = item_button_scene.instantiate()
+			merchant_stock_container.add_child(button)
+			
+			button.setup(
+				entry.icon,
+				"",
+				str(merchant_relic_cost) + "g"
+			)
+
+			button.tooltip_text = entry.relic_name + "\n" + entry.description
+			button.disabled = gold < merchant_relic_cost
+			button.pressed.connect(buy_merchant_relic)
+			print("Merchant relic: ", entry.relic_name)
+			print("Merchant relic icon: ", entry.icon)
 	for face in merchant_unlocked_faces:
 		var button = inventory_face_button_scene.instantiate()
 		merchant_stock_container.add_child(button)
@@ -4033,14 +4156,31 @@ func rebuild_merchant():
 		button.setup(face, false)
 
 		var price_label := button.get_node_or_null("PriceLabel")
-		print("Price label found: ", price_label)
 		if price_label != null:
 			price_label.text = str(merchant_face_cost) + "g"
-		
 
 		button.tooltip_text = get_face_display_name(face) + "\nCost: " + str(merchant_face_cost) + "g"
 		button.pressed.connect(buy_merchant_face.bind(face))
 		
+func buy_merchant_relic():
+	if current_merchant_relic == null:
+		return
+
+	if gold < merchant_relic_cost:
+		return
+
+	gold -= merchant_relic_cost
+
+	if !owned_relics.has(current_merchant_relic):
+		owned_relics.append(current_merchant_relic)
+
+	current_merchant_relic = null
+
+	update_gold_label()
+	update_active_food_icons()
+	rebuild_merchant()
+	save_run()
+
 func buy_merchant_face(face: DiceFace):
 	if gold < merchant_face_cost:
 		return
@@ -4093,7 +4233,12 @@ func rebuild_prepare_consumables():
 		var button = item_button_scene.instantiate()
 		prepare_consumables_container.add_child(button)
 
-		button.setup(item, "x" + str(item_counts[item_name]), "")
+		button.setup(
+			item.icon,
+			"x" + str(item_counts[item_name]),
+			""
+		)
+
 		button.tooltip_text = item.item_name + "\n" + item.description
 		button.pressed.connect(use_consumable_item.bind(item))
 		
@@ -4305,7 +4450,7 @@ func rebuild_food_crafting_grid():
 		var button = item_button_scene.instantiate()
 		food_craft_items_container.add_child(button)
 
-		button.setup(item, "x" + str(item_counts[item_name]), "")
+		button.setup(item.icon, "x" + str(item_counts[item_name]), "")
 		button.tooltip_text = item.item_name + "\n" + item.description
 		if selected_food_craft_names.has(item_name):
 			button.modulate = Color.YELLOW
@@ -4692,7 +4837,8 @@ func save_settings():
 
 func save_run():
 	var config := ConfigFile.new()
-
+	
+	config.set_value("run", "encounters_completed", run_encounters_completed)
 	config.set_value("run", "gold", gold)
 	config.set_value("run", "mulligems", mulligems)
 	config.set_value("run", "volatile_cores", volatile_cores)
@@ -4859,7 +5005,7 @@ func load_run():
 	if err != OK:
 		print("No run save found.")
 		return false
-
+	
 	gold = config.get_value("run", "gold", gold)
 	mulligems = config.get_value("run", "mulligems", mulligems)
 	volatile_cores = config.get_value("run", "volatile_cores", volatile_cores)
@@ -4868,7 +5014,7 @@ func load_run():
 	player_hp = config.get_value("player", "hp", player_hp)
 	max_player_hp = config.get_value("player", "max_hp", max_player_hp)
 	combat_max_player_hp = max_player_hp
-
+	run_encounters_completed = config.get_value("run", "encounters_completed", run_encounters_completed)
 	expedition_progress = config.get_value("expedition", "progress", expedition_progress)
 	expedition_required_encounters = config.get_value("expedition", "required_encounters", expedition_required_encounters)
 	expedition_is_boss_fight = config.get_value("expedition", "is_boss_fight", expedition_is_boss_fight)
@@ -4979,3 +5125,28 @@ func show_death_screen():
 	var tween := create_tween()
 	tween.tween_property(death_overlay, "modulate:a", 1.0, 0.75)
 	
+func all_bounties_completed() -> bool:
+	for bounty in bounty_pool:
+		if !bounty.completed:
+			return false
+
+	return true
+	
+func reset_bounties_for_endless_mode():
+	for bounty in completed_bounties:
+		bounty.completed = false
+
+	completed_bounties.clear()
+	rebuild_bounty_board()
+	save_run()
+
+func show_endless_choice():
+	endless_choice_overlay.visible = true
+
+func end_demo():
+	endless_choice_overlay.visible = false
+	quit_game()
+
+func continue_endless_mode():
+	endless_choice_overlay.visible = false
+	reset_bounties_for_endless_mode()

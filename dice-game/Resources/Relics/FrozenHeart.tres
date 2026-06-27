@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://c2xavey4nxv2s"]
+
+[ext_resource type="Texture2D" uid="uid://ckjj2fql04yxr" path="res://Assets/Sprites/UI/Relics/FrozenHeart.png" id="1_0u5wj"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_mxoaj"]
+
+[resource]
+script = ExtResource("1_mxoaj")
+relic_name = "Frozen Heart"
+description = "Hits apply 1 Freeze."
+icon = ExtResource("1_0u5wj")
+metadata/_custom_type_script = "uid://dkturafp4qles"

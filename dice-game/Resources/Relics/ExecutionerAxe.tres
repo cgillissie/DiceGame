@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://d2kn0eyjin8uj"]
+
+[ext_resource type="Texture2D" uid="uid://bf0yuj8k18ln2" path="res://Assets/Sprites/UI/Relics/ExecutionersAxe.png" id="1_hr2bq"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_n408q"]
+
+[resource]
+script = ExtResource("1_n408q")
+relic_name = "Executioner's Axe"
+description = "+2 Damage from Hits against bleeding enemies."
+icon = ExtResource("1_hr2bq")
+metadata/_custom_type_script = "uid://dkturafp4qles"

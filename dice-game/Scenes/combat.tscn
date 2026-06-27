@@ -49,9 +49,12 @@
 [ext_resource type="Theme" uid="uid://m4nfa8q8nfv" path="res://Resources/Themes/GameUITheme.tres" id="36_47v24"]
 [ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="36_xu8d0"]
 [ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="38_8is30"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="38_g5yct"]
+[ext_resource type="Resource" uid="uid://cmx1h34g2m86g" path="res://Resources/Relics/IronCharm.tres" id="39_iyk1o"]
+[ext_resource type="Resource" uid="uid://b5fukb2rrejry" path="res://Resources/Relics/MeditationBeads.tres" id="40_y1f24"]
 [ext_resource type="Texture2D" uid="uid://7t4bfebwxxns" path="res://Assets/Sprites/UI/HealthBarBack.png" id="43_r4oui"]
 [ext_resource type="Texture2D" uid="uid://csyxss4fswjvp" path="res://Assets/Sprites/UI/HealthBarFront.png" id="44_1e1l8"]
-[ext_resource type="Texture2D" uid="uid://drjollb23nknw" path="res://Assets/Sprites/UI/Menus/OptionsButtonIcon.png" id="46_uip5d"]
+[ext_resource type="Texture2D" uid="uid://b4img0g2htlio" path="res://Assets/Sprites/UI/Menus/OptionsButtonIcon2.png" id="52_b4fdd"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
 
@@ -95,6 +98,7 @@ coin_purchase_sound = ExtResource("30_1e1l8")
 relic_icon_scene = ExtResource("33_b4fdd")
 item_button_scene = ExtResource("25_iv3ie")
 active_buff_icon_scene = ExtResource("35_y3gh1")
+merchant_relic_pool = Array[ExtResource("38_g5yct")]([ExtResource("39_iyk1o"), ExtResource("40_y1f24")])
 regenerating_icon_texture = ExtResource("32_1e1l8")
 
 [node name="DeathOverlay" type="ColorRect" parent="." unique_id=804734905]
@@ -940,7 +944,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 4
+columns = 5
 
 [node name="CritsGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=2116378373]
 visible = false
@@ -958,7 +962,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 4
+columns = 5
 
 [node name="MissesGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=408449911]
 visible = false
@@ -974,7 +978,7 @@ text = "Misses"
 layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 4
+columns = 5
 
 [node name="ActionsGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=2068123690]
 visible = false
@@ -989,7 +993,7 @@ text = "Actions"
 layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 4
+columns = 5
 
 [node name="EndRoundButton" type="Button" parent="DiceArea" unique_id=374448024]
 custom_minimum_size = Vector2(60, 40)
@@ -1608,6 +1612,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="OptionsButton" type="Button" parent="." unique_id=1847866830]
+texture_filter = 1
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 1
 anchors_preset = 1
@@ -1618,10 +1623,18 @@ offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 84.0
 grow_horizontal = 0
-icon = ExtResource("46_uip5d")
 flat = true
 icon_alignment = 1
 expand_icon = true
+
+[node name="TextureRect" type="TextureRect" parent="OptionsButton" unique_id=1207994123]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 0
+offset_left = -32.0
+offset_right = 64.0
+offset_bottom = 96.0
+theme = ExtResource("36_47v24")
+texture = ExtResource("52_b4fdd")
 
 [node name="OptionsOverlay" type="ColorRect" parent="." unique_id=703170604]
 visible = false
@@ -1744,3 +1757,77 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="EndlessChoiceOverlay" type="ColorRect" parent="." unique_id=702295376]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.627451)
+
+[node name="Panel" type="Panel" parent="EndlessChoiceOverlay" unique_id=1156370480]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="EndlessChoiceOverlay/Panel" unique_id=545459007]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBoxContainer" type="VBoxContainer" parent="EndlessChoiceOverlay/Panel/MarginContainer" unique_id=935821225]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="EndlessTitleLabel" type="Label" parent="EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer" unique_id=81139770]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+theme_override_font_sizes/font_size = 32
+text = "All Bounties Complete!"
+
+[node name="EndlessDescriptionLabel" type="Label" parent="EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer" unique_id=189704902]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_font_sizes/font_size = 24
+text = "You can end the demo here, or continue playing endlessly.
+Warning: endless mode may eventually break if the run goes long enough."
+horizontal_alignment = 1
+
+[node name="ContinueEndlessButton" type="Button" parent="EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer" unique_id=114049837]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_font_sizes/font_size = 20
+text = "Continue Endlessly"
+
+[node name="RestartRunButton" type="Button" parent="EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer" unique_id=581107968]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_font_sizes/font_size = 20
+text = "Start New Run"
+
+[node name="EndDemoButton" type="Button" parent="EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer" unique_id=1109284669]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_d53gg")
+theme_override_font_sizes/font_size = 20
+text = "End Demo"

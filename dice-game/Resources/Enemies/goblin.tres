@@ -15,7 +15,6 @@
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="11_brliy"]
 [ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="11_nh72w"]
 [ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="12_yvlty"]
-[ext_resource type="Resource" uid="uid://ye7ajta4ldxx" path="res://Resources/Traits/venomous_3.tres" id="16_peuxe"]
 
 [resource]
 script = ExtResource("9_nh72w")
@@ -25,9 +24,7 @@ dice_pool = Array[ExtResource("1_5a2vq")]([ExtResource("3_uralg"), ExtResource("
 face_drop_pool = Array[ExtResource("5_g8hdv")]([ExtResource("6_a11xo"), ExtResource("7_5qokg"), ExtResource("8_peuxe")])
 dice_drop_pool = Array[ExtResource("1_5a2vq")]([ExtResource("2_65j85")])
 dice_drop_chance = 0.1
-volatile_core_drop_chance = 0.05
 sprite_frames = ExtResource("10_65j85")
 sprite_scale = Vector3(4, 4, 4)
-traits = Array[ExtResource("11_brliy")]([ExtResource("16_peuxe")])
 food_drop_pool = Array[ExtResource("9_5qokg")]([ExtResource("10_peuxe"), ExtResource("11_nh72w"), ExtResource("12_yvlty")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

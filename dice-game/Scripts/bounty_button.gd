@@ -15,8 +15,12 @@ var bounty_data: BountyData
 
 func setup(bounty: BountyData):
 	bounty_data = bounty
-
 	text = ""
+
+	if bounty_label == null:
+		push_error("BountyButton is missing BountyLabel.")
+		return
+
 	bounty_label.text = bounty.bounty_name
 
 	clear_rewards()

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://bkrkxnd4xhdks"]
+
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_dkcsh"]
+[ext_resource type="Texture2D" uid="uid://by0oocdveyjwl" path="res://Assets/Sprites/UI/Relics/IceCrystal.png" id="1_wicat"]
+
+[resource]
+script = ExtResource("1_dkcsh")
+relic_name = "Ice Crystal"
+description = "Frozen enemies deal 1 less damage."
+icon = ExtResource("1_wicat")
+metadata/_custom_type_script = "uid://dkturafp4qles"

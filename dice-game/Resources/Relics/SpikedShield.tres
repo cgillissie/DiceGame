@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://cv85wceo6wpqw"]
+
+[ext_resource type="Texture2D" uid="uid://tbh1xrjhmebm" path="res://Assets/Sprites/UI/Relics/SpikedShield.png" id="1_7h74i"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_bm0g1"]
+
+[resource]
+script = ExtResource("1_bm0g1")
+relic_name = "Spiked Shield"
+description = "Blocking attacks applies bleed to the attacker."
+icon = ExtResource("1_7h74i")
+metadata/_custom_type_script = "uid://dkturafp4qles"

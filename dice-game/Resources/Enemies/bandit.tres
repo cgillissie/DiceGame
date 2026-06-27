@@ -25,7 +25,6 @@ face_drop_pool = Array[ExtResource("2_yofmu")]([ExtResource("4_b3vgr"), ExtResou
 dice_drop_pool = Array[ExtResource("1_s1pfn")]([ExtResource("2_b3vgr")])
 dice_drop_chance = 0.1
 gold_reward = 20
-volatile_core_drop_chance = 0.1
 sprite_frames = ExtResource("9_5cxva")
 sprite_scale = Vector3(4, 4, 4)
 traits = Array[ExtResource("10_ccvhs")]([ExtResource("15_y2o13")])

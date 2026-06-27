@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://h6v128lalype"]
+
+[ext_resource type="Texture2D" uid="uid://s08dbuekajc4" path="res://Assets/Sprites/UI/Relics/Bloodstone.png" id="1_ay55w"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_k2ww8"]
+
+[resource]
+script = ExtResource("1_k2ww8")
+relic_name = "Bloodstone"
+description = "Hits apply 1 Bleed."
+icon = ExtResource("1_ay55w")
+metadata/_custom_type_script = "uid://dkturafp4qles"

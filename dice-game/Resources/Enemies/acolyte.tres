@@ -25,7 +25,6 @@ face_drop_pool = Array[ExtResource("2_dn2q0")]([ExtResource("5_m0xso"), ExtResou
 dice_drop_pool = Array[ExtResource("1_t7c7u")]([ExtResource("2_62f34")])
 dice_drop_chance = 0.1
 gold_reward = 20
-volatile_core_drop_chance = 0.15
 sprite_frames = ExtResource("8_m0xso")
 sprite_scale = Vector3(4, 4, 4)
 food_drop_chance = 0.1

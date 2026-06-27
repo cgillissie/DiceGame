@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://cmx1h34g2m86g"]
+
+[ext_resource type="Texture2D" uid="uid://ll1pwa0ocah2" path="res://Assets/Sprites/UI/Relics/IronCharm.png" id="1_3uc6k"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_c7lyl"]
+
+[resource]
+script = ExtResource("1_c7lyl")
+relic_name = "Iron Charm"
+description = "Start each round with 2 Block."
+icon = ExtResource("1_3uc6k")
+metadata/_custom_type_script = "uid://dkturafp4qles"

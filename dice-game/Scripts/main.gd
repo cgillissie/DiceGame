@@ -33,7 +33,11 @@ var town_camera_is_tweening := false
 @onready var current_world_3d: Node3D = $CurrentWorld3D
 @onready var combat = $CombatUI
 @onready var fade_rect: ColorRect = $FadeRect
-@onready var town_music_player: AudioStreamPlayer = $TownMusicPlayer
+@onready var music_player: AudioStreamPlayer = $MusicPlayer
+
+@export var town_music: AudioStream
+@export var boss_music: AudioStream
+@export var expedition_music: Array[AudioStream]
 
 var active_world: Node3D = null
 
@@ -42,14 +46,19 @@ func _init():
 	OS.set_environment("SteamGameID", AppID)
 
 func _ready():
-	town_music_player.bus = "Music"
+	
 
 	load_town()
 	init_steam()
 	
+	
 	combat.town_menu_closed.connect(reset_town_interaction)
 	combat.expedition_started.connect(start_expedition_world)
 	combat.return_to_town_requested.connect(return_to_town)
+	music_player.bus = "Music"
+
+	if !music_player.finished.is_connected(_on_music_finished):
+		music_player.finished.connect(_on_music_finished)
 	
 func init_steam():
 	Steam.steamInit()
@@ -75,7 +84,26 @@ func load_world(scene: PackedScene):
 
 	active_world = scene.instantiate()
 	current_world_3d.add_child(active_world)
+	
+func play_music(track: AudioStream):
+	if track == null:
+		return
 
+	if music_player.stream == track and music_player.playing:
+		return
+
+	music_player.stream = track
+	music_player.play()
+	
+func _on_music_finished():
+	if music_player == null:
+		return
+
+	if music_player.stream == null:
+		return
+
+	music_player.play()
+	
 func apply_town_camera_shake(delta):
 	if town_camera == null:
 		return
@@ -143,8 +171,7 @@ func load_town():
 
 	combat.set_combat_ui_enabled(false)
 
-	if !town_music_player.playing:
-		await fade_audio_in(town_music_player, 0.75)
+	await play_music_fade(town_music)
 	
 func _on_town_building_clicked(building_id: String):
 	match building_id:
@@ -255,13 +282,15 @@ func town_menu_is_open() -> bool:
 
 func start_expedition_world():
 	await fade_to_black()
-	await fade_audio_out(town_music_player, 0.5)
+	await play_music_fade(
+	expedition_music.pick_random()
+)
 
 	load_world(combat_scene)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(true)
 	combat.start_expedition()
-
+	
 	await fade_from_black()
 	
 func return_to_town():
@@ -281,7 +310,27 @@ func fade_from_black():
 	tween.tween_property(fade_rect, "modulate:a", 0.0, 0.35)
 	await tween.finished
 	fade_rect.visible = false
+func play_music_fade(track: AudioStream):
+	if track == null:
+		return
 
+	if music_player.stream == track and music_player.playing:
+		return
+
+	if music_player.playing:
+		var out := create_tween()
+		out.tween_property(music_player, "volume_db", -40.0, 0.5)
+		await out.finished
+
+	music_player.stop()
+	music_player.stream = track
+	music_player.volume_db = -40.0
+	music_player.play()
+
+	var fade := create_tween()
+	fade.tween_property(music_player, "volume_db", 0.0, 0.5)
+	await fade.finished
+	
 func focus_camera_anchor(anchor_name: String):
 	if town_camera == null:
 		return

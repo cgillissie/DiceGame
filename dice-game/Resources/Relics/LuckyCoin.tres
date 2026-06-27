@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://dj146iqrticyt"]
+
+[ext_resource type="Texture2D" uid="uid://qvfhsu0sul02" path="res://Assets/Sprites/FaceIcons/GoldIcon.png" id="1_l7xbk"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="1_meqvx"]
+
+[resource]
+script = ExtResource("1_meqvx")
+relic_name = "Lucky Coin"
+description = "Gain +5 gold after each combat."
+icon = ExtResource("1_l7xbk")
+metadata/_custom_type_script = "uid://dkturafp4qles"
