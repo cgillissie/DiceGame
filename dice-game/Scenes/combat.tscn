@@ -52,8 +52,15 @@
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="38_g5yct"]
 [ext_resource type="Resource" uid="uid://cmx1h34g2m86g" path="res://Resources/Relics/IronCharm.tres" id="39_iyk1o"]
 [ext_resource type="Resource" uid="uid://b5fukb2rrejry" path="res://Resources/Relics/MeditationBeads.tres" id="40_y1f24"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="42_gib6t"]
+[ext_resource type="Resource" uid="uid://skl127pice4j" path="res://Resources/Traits/berserker_2.tres" id="43_h6x2e"]
 [ext_resource type="Texture2D" uid="uid://7t4bfebwxxns" path="res://Assets/Sprites/UI/HealthBarBack.png" id="43_r4oui"]
 [ext_resource type="Texture2D" uid="uid://csyxss4fswjvp" path="res://Assets/Sprites/UI/HealthBarFront.png" id="44_1e1l8"]
+[ext_resource type="Resource" uid="uid://c0ojcob53cive" path="res://Resources/Traits/regenerating_1.tres" id="44_2rvx2"]
+[ext_resource type="Resource" uid="uid://bfo0d3b00358m" path="res://Resources/Traits/regenerating_2.tres" id="45_vqjug"]
+[ext_resource type="Resource" uid="uid://ce4jsrai1w2sf" path="res://Resources/Traits/spiked_1.tres" id="46_tqjuo"]
+[ext_resource type="Resource" uid="uid://d2sd5swvjv0m5" path="res://Resources/Traits/venomous_1.tres" id="47_fx8i1"]
+[ext_resource type="Resource" uid="uid://ye7ajta4ldxx" path="res://Resources/Traits/venomous_3.tres" id="48_fu7uk"]
 [ext_resource type="Texture2D" uid="uid://b4img0g2htlio" path="res://Assets/Sprites/UI/Menus/OptionsButtonIcon2.png" id="52_b4fdd"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
@@ -100,6 +107,8 @@ item_button_scene = ExtResource("25_iv3ie")
 active_buff_icon_scene = ExtResource("35_y3gh1")
 merchant_relic_pool = Array[ExtResource("38_g5yct")]([ExtResource("39_iyk1o"), ExtResource("40_y1f24")])
 regenerating_icon_texture = ExtResource("32_1e1l8")
+random_enemy_trait_pool = Array[ExtResource("42_gib6t")]([ExtResource("43_h6x2e"), ExtResource("44_2rvx2"), ExtResource("45_vqjug"), ExtResource("46_tqjuo"), ExtResource("47_fx8i1"), ExtResource("48_fu7uk")])
+random_trait_scaling_threshold = 8
 
 [node name="DeathOverlay" type="ColorRect" parent="." unique_id=804734905]
 visible = false
@@ -944,7 +953,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 5
+columns = 4
 
 [node name="CritsGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=2116378373]
 visible = false
@@ -962,7 +971,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 5
+columns = 4
 
 [node name="MissesGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=408449911]
 visible = false
@@ -978,7 +987,7 @@ text = "Misses"
 layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 5
+columns = 4
 
 [node name="ActionsGroup" type="VBoxContainer" parent="DiceArea/CenterContainer/DiceGroupsContainer" unique_id=2068123690]
 visible = false
@@ -993,7 +1002,7 @@ text = "Actions"
 layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 5
+columns = 4
 
 [node name="EndRoundButton" type="Button" parent="DiceArea" unique_id=374448024]
 custom_minimum_size = Vector2(60, 40)

@@ -158,7 +158,21 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 		)
 
 		icon_index += 1
+	if enemy.has("bonus_traits"):
+		for enemy_trait in enemy["bonus_traits"]:
+			var display_name: String = enemy_trait.trait_name
 
+			if display_name == "":
+				display_name = enemy_trait.trait_id.capitalize()
+
+			add_status_icon(
+				enemy_trait.icon,
+				icon_index,
+				display_name + " " + str(enemy_trait.value) + "\n" + enemy_trait.description,
+				enemy_trait.value
+			)
+
+			icon_index += 1
 	if enemy.has("exposed") and enemy["exposed"]:
 		add_status_icon(
 			exposed_icon_texture,

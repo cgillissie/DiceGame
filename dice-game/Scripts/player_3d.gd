@@ -121,7 +121,7 @@ func update_status_icons(
 			regenerating_value
 		)
 		icon_index += 1
-
+	
 
 func add_status_icon(texture: Texture2D, index: int, tooltip: String, value: int = 0):
 	if texture == null:

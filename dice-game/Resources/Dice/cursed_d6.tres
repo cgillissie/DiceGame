@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://cug85uqs416qa"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_2eigi"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_2liij"]
+
+[resource]
+script = ExtResource("2_2liij")
+faces = Array[ExtResource("1_2eigi")]([null, null, null, null, null, null])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

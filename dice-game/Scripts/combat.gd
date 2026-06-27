@@ -253,6 +253,8 @@ var volatile_core_cost: int = 35
 var last_volatile_cores_gained: int = 0
 
 var owned_dice: Array[DiceData] = []
+@export var combat_relic_drop_pool: Array[RelicData]
+@export var combat_relic_drop_chance: float = 0.05
 
 # Consumable Items #############################################
 var consumable_inventory: Array[ConsumableItem] = []
@@ -299,6 +301,9 @@ var last_unlocked_merchant_faces: Array[DiceFace] = []
 
 # TRAITS ########################################
 @export var regenerating_icon_texture: Texture2D
+@export var random_enemy_trait_pool: Array[EnemyTrait] = []
+@export var random_trait_scaling_threshold: int = 5
+@export var random_trait_chance: float = 0.20
 
 # Options Menu ####################################
 @onready var options_overlay: ColorRect = $OptionsOverlay
@@ -760,7 +765,27 @@ func get_encounter_text(encounter: EncounterData) -> String:
 	return encounter.encounter_name
 	
 func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
-	var scaled_max_hp = enemy_data.max_hp + (run_encounters_completed * 2)
+	var scaled_max_hp = enemy_data.max_hp + (run_encounters_completed * 3)
+
+	var bonus_traits: Array[EnemyTrait] = []
+
+	if run_encounters_completed >= random_trait_scaling_threshold:
+		if randf() <= random_trait_chance:
+			var valid_traits: Array[EnemyTrait] = []
+
+			for possible_trait in random_enemy_trait_pool:
+				var already_has_trait := false
+
+				for existing_trait in enemy_data.traits:
+					if existing_trait.trait_id == possible_trait.trait_id:
+						already_has_trait = true
+						break
+
+				if !already_has_trait:
+					valid_traits.append(possible_trait)
+
+			if valid_traits.size() > 0:
+				bonus_traits.append(valid_traits.pick_random())
 
 	return {
 		"data": enemy_data,
@@ -776,7 +801,8 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 		"freeze_stacks": 0,
 		"bleed": 0,
 		"roll_text": "",
-		"rolled_faces": []
+		"rolled_faces": [],
+		"bonus_traits": bonus_traits
 	}
 	
 func spawn_enemy_3d_nodes():
@@ -943,9 +969,16 @@ func rescue_assigned_dice():
 func get_enemy_trait_value(enemy: Dictionary, trait_id: String) -> int:
 	var data: EnemyData = enemy["data"]
 
+	# Built-in enemy traits
 	for enemy_trait in data.traits:
 		if enemy_trait.trait_id == trait_id:
 			return enemy_trait.value
+
+	# Random bonus traits
+	if enemy.has("bonus_traits"):
+		for enemy_trait in enemy["bonus_traits"]:
+			if enemy_trait.trait_id == trait_id:
+				return enemy_trait.value
 
 	return 0
 	
@@ -2093,6 +2126,21 @@ func win_combat():
 		player_hp = max_player_hp
 	update_gold_label()
 	apply_end_combat_relics()
+	last_unlocked_relics.clear()
+
+	if combat_relic_drop_pool.size() > 0:
+		if randf() <= combat_relic_drop_chance:
+			var valid_relics := []
+
+			for relic in combat_relic_drop_pool:
+				if !owned_relics.has(relic):
+					valid_relics.append(relic)
+
+			if valid_relics.size() > 0:
+				var dropped_relic: RelicData = valid_relics.pick_random()
+				owned_relics.append(dropped_relic)
+				last_unlocked_relics.append(dropped_relic)
+				update_active_food_icons()
 	show_loot_panel()
 	update_volatile_core_button()
 	
@@ -2302,16 +2350,20 @@ func start_new_combat():
 func get_combat_die_scale() -> float:
 	var count := owned_dice.size()
 
-	if count <= 8:
+	if count <= 4:
 		return 1.0
+	elif count <= 6:
+		return 0.90
+	elif count <= 8:
+		return 0.80
+	elif count <= 10:
+		return 0.70
 	elif count <= 12:
-		return 0.85
-	elif count <= 16:
-		return 0.72
-	elif count <= 20:
 		return 0.62
+	elif count <= 16:
+		return 0.55
 
-	return 0.55
+	return 0.48
 	
 func hide_all_groups():
 	hits_container.get_parent().visible = false
@@ -5121,7 +5173,7 @@ func hide_all_combat_ui():
 func show_death_screen():
 	death_overlay.modulate.a = 0.0
 	death_overlay.visible = true
-
+	$DiceArea/ReserveHBox.visible = false
 	var tween := create_tween()
 	tween.tween_property(death_overlay, "modulate:a", 1.0, 0.75)
 	
