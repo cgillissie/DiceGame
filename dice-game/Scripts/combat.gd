@@ -293,6 +293,9 @@ var merchant_unlocked_faces: Array[DiceFace] = []
 var merchant_face_cost: int = 12
 var last_unlocked_merchant_faces: Array[DiceFace] = []
 
+var selected_sell_face: DiceFace = null
+var sell_face_value: int = 2
+
 # Food Crafting Panel ############################
 @onready var food_craft_panel: Panel = $FoodCraftPanel
 @onready var food_craft_items_container: GridContainer = $FoodCraftPanel/MarginContainer/VBoxContainer/FoodCraftItemsContainer
@@ -401,7 +404,7 @@ func _ready():
 
 	print("Owned dice after setup: ", owned_dice.size())
 		
-	fuse_faces_button.pressed.connect(toggle_fusion_mode)
+
 	hits_button.pressed.connect(select_group.bind(hits_container))
 	crits_button.pressed.connect(select_group.bind(crits_container))
 	blocks_button.pressed.connect(select_group.bind(blocks_container))
@@ -601,13 +604,10 @@ func reroll_available_dice():
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
-
 		if die.used:
 			continue
-
 		if die.reserved:
 			continue
-
 		if die.assigned_enemy_index != -1:
 			continue
 
@@ -619,19 +619,28 @@ func reroll_available_dice():
 	for die in dice_to_reroll:
 		die.selected = false
 		selected_dice_order.erase(die)
-		die.visible = false
-		die.reparent(rolling_hidden_area)
+		die.assigned_enemy_index = -1
+		die.scale = Vector2.ONE * get_combat_die_scale()
+
+		if die.get_parent() != roll_animation_area:
+			die.reparent(roll_animation_area)
+
+		die.position = Vector2.ZERO
+		die.visible = true
 
 	update_group_visibility()
 
 	for die in dice_to_reroll:
-		die.visible = true
 		dice_roll_sfx.pitch_scale = randf_range(0.9, 1.1)
 		dice_roll_sfx.play()
+
 		await die.roll_animated(roll_animation_area, 0, 1)
+
 		var final_container := get_container_for_die(die)
 		await die.fly_to_container(final_container)
+
 		die.set_compact_mode(false)
+		die.scale = Vector2.ONE * get_combat_die_scale()
 
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
@@ -2569,7 +2578,7 @@ func refresh_edit_dice_panel():
 		die_faces_container.add_child(face_button)
 
 		face_button.setup(face, i, i == selected_die_face_index)
-		face_button.pressed.connect(select_die_face.bind(i))
+		
 	
 func rebuild_face_inventory_grid():
 	clear_container(inventory_faces_container)
@@ -2607,7 +2616,6 @@ func rebuild_face_inventory_grid():
 			grid.add_child(button)
 
 			button.setup(face, selected_inventory_face_indices.has(i))
-			button.pressed.connect(handle_inventory_face_click.bind(i))
 			
 func rebuild_owned_dice_grid():
 	clear_container(owned_dice_container)
@@ -2927,13 +2935,8 @@ func craft_empty_die(sides: int):
 	refresh_edit_dice_panel()
 	
 func create_twist_knife_face() -> DiceFace:
+	return twist_knife_face_template.duplicate(true)
 	var face := DiceFace.new()
-	face.face_name = "Twist Knife"
-	face.result_type = "twist_knife"
-	face.value = 0
-	face.label = "Twist"
-	face.icon = twist_knife_face_template.icon
-	return face
 	
 func create_break_focus_face() -> DiceFace:
 	var face := DiceFace.new()
@@ -4226,16 +4229,24 @@ func buy_merchant_relic():
 
 	gold -= merchant_relic_cost
 
-	if !owned_relics.has(current_merchant_relic):
+	if !has_relic_name(current_merchant_relic.relic_name):
 		owned_relics.append(current_merchant_relic)
 
 	current_merchant_relic = null
 
+	AudioManager.play_ui(coin_purchase_sound)
 	update_gold_label()
 	update_active_food_icons()
 	rebuild_merchant()
 	save_run()
+	
+func has_relic_name(relic_name: String) -> bool:
+	for relic in owned_relics:
+		if relic != null and relic.relic_name == relic_name:
+			return true
 
+	return false
+	
 func buy_merchant_face(face: DiceFace):
 	if gold < merchant_face_cost:
 		return
@@ -4246,7 +4257,34 @@ func buy_merchant_face(face: DiceFace):
 	AudioManager.play_ui(coin_purchase_sound)
 	update_gold_label()
 	rebuild_merchant()
+
+func sell_face(face: DiceFace):
+	if face == null:
+		return
+
+	if !face_inventory.has(face):
+		return
+
+	face_inventory.erase(face)
+	gold += get_face_sell_value(face)
+
+	update_gold_label()
+	refresh_edit_dice_panel()
+	save_run()
 	
+func get_face_sell_value(face: DiceFace) -> int:
+	match face.result_type:
+		"miss":
+			return 1
+		"hit", "block", "heal", "gold":
+			return max(2, face.value)
+		"crit", "bleed", "freeze":
+			return max(3, face.value)
+		"dodge", "reversal", "twist_knife", "break_focus":
+			return 8
+		_:
+			return 2
+			
 func get_consumable_count(item: ConsumableItem) -> int:
 	var count := 0
 
@@ -4255,7 +4293,7 @@ func get_consumable_count(item: ConsumableItem) -> int:
 			count += 1
 
 	return count
-		
+
 func buy_consumable(item: ConsumableItem):
 	if gold < item.cost:
 		return
@@ -4371,6 +4409,171 @@ func is_food_already_active(item: ConsumableItem) -> bool:
 
 	return false
 	
+func handle_face_drop(data: Dictionary, target_slot_index: int):
+	clear_drag_fusion_preview()
+
+	if selected_edit_die == null:
+		return
+
+	if !data.has("source_type") or !data.has("face"):
+		return
+
+	if target_slot_index < 0 or target_slot_index >= selected_edit_die.faces.size():
+		return
+
+	var source_type: String = data["source_type"]
+
+	match source_type:
+		"inventory":
+			var dragged_face: DiceFace = data["face"]
+
+			if dragged_face == null:
+				return
+
+			if !face_inventory.has(dragged_face):
+				return
+
+			var target_face: DiceFace = selected_edit_die.faces[target_slot_index]
+
+			if target_face == null:
+				target_face = create_basic_miss_face()
+
+			if can_fuse_faces(dragged_face, target_face):
+				var fused_face: DiceFace = create_fused_face(dragged_face, target_face)
+
+				if fused_face == null:
+					return
+
+				selected_edit_die.faces[target_slot_index] = fused_face
+				face_inventory.erase(dragged_face)
+
+				AudioManager.play_one_shot(graft_face_sound)
+			else:
+				selected_edit_die.faces[target_slot_index] = dragged_face
+				face_inventory.erase(dragged_face)
+				face_inventory.append(target_face)
+
+				AudioManager.play_one_shot(graft_face_sound)
+
+		"equipped":
+			if !data.has("slot"):
+				return
+
+			var source_slot: int = data["slot"]
+
+			if source_slot < 0 or source_slot >= selected_edit_die.faces.size():
+				return
+
+			if source_slot == target_slot_index:
+				return
+
+			var source_face: DiceFace = selected_edit_die.faces[source_slot]
+			var target_face: DiceFace = selected_edit_die.faces[target_slot_index]
+
+			if source_face == null:
+				source_face = create_basic_miss_face()
+
+			if target_face == null:
+				target_face = create_basic_miss_face()
+
+			if can_fuse_faces(source_face, target_face):
+				var fused_face: DiceFace = create_fused_face(source_face, target_face)
+
+				if fused_face == null:
+					return
+
+				selected_edit_die.faces[target_slot_index] = fused_face
+				selected_edit_die.faces[source_slot] = create_basic_miss_face()
+
+				AudioManager.play_one_shot(graft_face_sound)
+			else:
+				selected_edit_die.faces[source_slot] = target_face
+				selected_edit_die.faces[target_slot_index] = source_face
+
+	refresh_edit_dice_panel()
+	save_run()
+	
+func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFace):
+	clear_drag_fusion_preview()
+
+	if selected_edit_die == null:
+		return
+
+	if !data.has("source_type") or !data.has("face"):
+		return
+
+	if String(data["source_type"]) != "equipped":
+		return
+
+	if !data.has("slot"):
+		return
+
+	var source_slot: int = data["slot"]
+
+	if source_slot < 0 or source_slot >= selected_edit_die.faces.size():
+		return
+
+	var equipped_face: DiceFace = selected_edit_die.faces[source_slot]
+
+	if equipped_face == null:
+		equipped_face = create_basic_miss_face()
+
+	if target_inventory_face == null:
+		return
+
+	if !face_inventory.has(target_inventory_face):
+		return
+
+	if can_fuse_faces(equipped_face, target_inventory_face):
+		var fused_face: DiceFace = create_fused_face(equipped_face, target_inventory_face)
+
+		if fused_face == null:
+			return
+
+		selected_edit_die.faces[source_slot] = fused_face
+		face_inventory.erase(target_inventory_face)
+
+		AudioManager.play_one_shot(graft_face_sound)
+	else:
+		selected_edit_die.faces[source_slot] = target_inventory_face
+		face_inventory.erase(target_inventory_face)
+		face_inventory.append(equipped_face)
+
+		AudioManager.play_one_shot(graft_face_sound)
+
+	refresh_edit_dice_panel()
+	save_run()
+	
+func create_basic_miss_face() -> DiceFace:
+	if miss_face_template != null:
+		return miss_face_template.duplicate(true)
+
+	var face := DiceFace.new()
+	face.face_name = "Miss"
+	face.result_type = "miss"
+	face.value = 0
+	face.label = "Miss"
+	return face
+	
+func update_drag_fusion_preview(dragged_face: DiceFace):
+	for child in die_faces_container.get_children():
+		if !(child is EquippedFaceButton):
+			continue
+
+		if child.face_data == null:
+			child.set_drop_state("swap")
+			continue
+
+		if can_fuse_faces(dragged_face, child.face_data):
+			child.set_drop_state("fuse")
+		else:
+			child.set_drop_state("invalid")
+	
+func clear_drag_fusion_preview():
+	for child in die_faces_container.get_children():
+		if child is EquippedFaceButton:
+			child.set_drop_state("normal")
+			
 func update_active_food_icons():
 	for child in active_food_container.get_children():
 		child.queue_free()
@@ -4901,12 +5104,17 @@ func save_run():
 
 	config.set_value("player", "hp", player_hp)
 	config.set_value("player", "max_hp", max_player_hp)
-
+	config.set_value("run", "reserve_slots", reserve_slots)
 	config.set_value("expedition", "progress", expedition_progress)
 	config.set_value("expedition", "required_encounters", expedition_required_encounters)
 	config.set_value("expedition", "is_boss_fight", expedition_is_boss_fight)
 	config.set_value("expedition", "current_bounty", current_bounty.bounty_name if current_bounty != null else "")
+	var merchant_face_save := []
 
+	for face in merchant_unlocked_faces:
+		merchant_face_save.append(serialize_face(face))
+
+	config.set_value("merchant", "unlocked_faces", merchant_face_save)
 	var completed_bounty_names := []
 	for bounty in completed_bounties:
 		if bounty != null:
@@ -5073,7 +5281,8 @@ func load_run():
 	expedition_progress = config.get_value("expedition", "progress", expedition_progress)
 	expedition_required_encounters = config.get_value("expedition", "required_encounters", expedition_required_encounters)
 	expedition_is_boss_fight = config.get_value("expedition", "is_boss_fight", expedition_is_boss_fight)
-
+	reserve_slots = config.get_value("run", "reserve_slots", reserve_slots)
+	update_reserve_slots_label()
 	var saved_bounty_name: String = config.get_value("expedition", "current_bounty", "")
 	if saved_bounty_name != "":
 		for bounty in completed_bounties:
@@ -5104,13 +5313,22 @@ func load_run():
 	for item_data in config.get_value("inventory", "consumables", []):
 		if item_data is Dictionary:
 			consumable_inventory.append(deserialize_consumable(item_data))
+	merchant_unlocked_faces.clear()
 
+	for face_data in config.get_value("merchant", "unlocked_faces", []):
+		if face_data is Dictionary:
+			merchant_unlocked_faces.append(deserialize_face(face_data))
+			
 	owned_relics.clear()
+
 	var owned_relic_names: Array = config.get_value("unlock", "owned_relics", [])
 
-	for relic in owned_relics:
-		if relic.relic_name in owned_relic_names:
+	for relic_name in owned_relic_names:
+		var relic := find_relic_by_name(relic_name)
+		if relic != null and !has_relic_name(relic.relic_name):
 			owned_relics.append(relic)
+
+	update_active_food_icons()
 			# refresh_relic_panel()
 	unlocked_food_tier = config.get_value("unlock", "unlocked_food_tier", unlocked_food_tier)
 
@@ -5128,6 +5346,27 @@ func load_run():
 	print("Run loaded.")
 
 	return true
+	
+func load_settings():
+	var config := ConfigFile.new()
+	var err := config.load(SETTINGS_SAVE_PATH)
+
+	if err != OK:
+		return
+
+	master_volume_slider.value = config.get_value("audio", "master", 1.0)
+	music_volume_slider.value = config.get_value("audio", "music", 1.0)
+	sfx_volume_slider.value = config.get_value("audio", "sfx", 1.0)
+
+	fullscreen_check_box.button_pressed = config.get_value("display", "fullscreen", false)
+	resolution_option.selected = config.get_value("display", "resolution_index", 0)
+
+	_on_master_volume_changed(master_volume_slider.value)
+	_on_music_volume_changed(music_volume_slider.value)
+	_on_sfx_volume_changed(sfx_volume_slider.value)
+	_on_fullscreen_toggled(fullscreen_check_box.button_pressed)
+	_on_resolution_selected(resolution_option.selected)
+	
 func continue_run():
 
 	if !load_run():
@@ -5154,7 +5393,17 @@ func update_expedition_progress_labels():
 			expedition_progress + 1,
 			expedition_required_encounters
 		]
+		
+func find_relic_by_name(relic_name: String) -> RelicData:
+	for relic in merchant_relic_pool:
+		if relic.relic_name == relic_name:
+			return relic
 
+	for relic in combat_relic_drop_pool:
+		if relic.relic_name == relic_name:
+			return relic
+
+	return null
 func hide_all_combat_ui():
 	end_round_button.visible = false
 	mulligem_button.visible = false
