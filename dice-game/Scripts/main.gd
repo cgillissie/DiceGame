@@ -274,6 +274,7 @@ func _input(event):
 				_on_town_building_clicked(selected_building.building_id)
 
 func town_menu_is_open() -> bool:
+	
 	return combat.merchant_panel.visible \
 		or combat.food_craft_panel.visible \
 		or combat.edit_dice_panel.visible \

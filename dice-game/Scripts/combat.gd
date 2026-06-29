@@ -131,6 +131,9 @@ var dropped_face: DiceFace
 @onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer/InventoryFacesContainer
 @onready var die_crafting_panel: Panel = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel
 @onready var fragment_label: Label = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/FragmentLabel
+@onready var sell_face_panel: Control = $EditDicePanel/MarginContainer/MainVBox/SellFacePanel
+@onready var sell_drop_area: Control = $EditDicePanel/MarginContainer/MainVBox/SellFacePanel/SellDropArea
+@onready var sell_value_label: Label = $EditDicePanel/MarginContainer/MainVBox/SellFacePanel/SellValueLabel
 
 var die_fragments: int = 0
 var last_die_fragments_gained: int = 0
@@ -144,6 +147,9 @@ var last_die_fragments_gained: int = 0
 
 @export var bleed_icon_texture: Texture2D
 @export var status_icon_scene: PackedScene
+
+@onready var edit_warning_label: Label = $EditDicePanel/EditWarningLabel
+@export var ui_fail_sound: AudioStream
 
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
@@ -2554,7 +2560,11 @@ func close_edit_dice_panel():
 func refresh_edit_dice_panel():
 	print("Refreshing editor. Dice:", owned_dice.size(), " Faces:", face_inventory.size())
 	rebuild_owned_dice_grid()
-
+	var town_only := edit_dice_return_context == "town"
+	
+	sell_value_label.text = "Drop a face here to sell"
+	sell_face_panel.visible = town_only
+	die_crafting_panel.visible = town_only
 	clear_container(die_faces_container)
 	clear_container(inventory_faces_container)
 
@@ -2810,6 +2820,12 @@ func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
 		return die_data.sides
 
 	return int(die_data.sides / 2)
+	
+func face_fits_die(die_data: DiceData, face: DiceFace) -> bool:
+	if die_data == null or face == null:
+		return false
+
+	return face.value <= get_max_face_value_for_die(die_data, face)
 	
 func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 	if face_a.result_type == "dodge" and face_b.result_type == "dodge":
@@ -3905,10 +3921,12 @@ func open_edit_dice_panel_from_town():
 	edit_dice_return_context = "town"
 	town_panel.visible = false
 	edit_dice_panel.visible = true
+	sell_face_panel.visible = true
 	die_crafting_panel.visible = true
 	refresh_die_crafting_panel()
 	update_begin_expedition_button_visibility()
 	refresh_edit_dice_panel()
+
 
 func rest_at_town():
 	player_statuses["bleed"] = 0
@@ -4060,6 +4078,7 @@ func open_edit_dice_panel_from_camp():
 	expedition_camp_panel.visible = false
 	edit_dice_panel.visible = true
 	die_crafting_panel.visible = false
+	sell_face_panel.visible = false
 	refresh_edit_dice_panel()
 	
 func continue_expedition():
@@ -4285,6 +4304,21 @@ func get_face_sell_value(face: DiceFace) -> int:
 		_:
 			return 2
 			
+func update_sell_face_preview(face: DiceFace):
+	if face == null:
+		return
+
+	var value := get_face_sell_value(face)
+	sell_value_label.text = "Sell " + get_face_text(face) + "\n+" + str(value) + " Gold"
+
+func clear_drag_fusion_preview():
+	for child in die_faces_container.get_children():
+		if child is EquippedFaceButton:
+			child.set_drop_state("normal")
+
+	if sell_value_label != null:
+		sell_value_label.text = "Drop a face here to sell"
+		
 func get_consumable_count(item: ConsumableItem) -> int:
 	var count := 0
 
@@ -4432,7 +4466,23 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 
 			if !face_inventory.has(dragged_face):
 				return
-
+			if would_exceed_dodge_limit(selected_edit_die, dragged_face, target_slot_index):
+				show_edit_message("Each die can only have 1 Dodge face.")
+				return
+			if is_last_miss_slot(selected_edit_die, target_slot_index):
+				if dragged_face.result_type != "miss":
+					show_edit_message("Every die must keep at least 1 Miss.")
+					return
+			if !face_fits_die(selected_edit_die, dragged_face):
+				var max_value := get_max_face_value_for_die(selected_edit_die, dragged_face)
+				show_edit_message(
+					get_face_display_name(dragged_face)
+					+ " is too strong for a D" + str(selected_edit_die.sides)
+					+ ".\nD" + str(selected_edit_die.sides)
+					+ " non-Crit faces can be value " + str(max_value) + " or lower."
+				)
+				return
+			
 			var target_face: DiceFace = selected_edit_die.faces[target_slot_index]
 
 			if target_face == null:
@@ -4443,7 +4493,21 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 
 				if fused_face == null:
 					return
-
+				if would_exceed_dodge_limit(selected_edit_die, fused_face, target_slot_index):
+					show_edit_message("Each die can only have 1 Dodge face.")
+					return
+				if !face_fits_die(selected_edit_die, fused_face):
+					var max_value := get_max_face_value_for_die(selected_edit_die, fused_face)
+					show_edit_message(
+						get_face_display_name(fused_face)
+						+ " is too strong for a D" + str(selected_edit_die.sides)
+						+ ".\nD" + str(selected_edit_die.sides)
+						+ " non-Crit faces can be value " + str(max_value) + " or lower."
+					)
+					return
+				if would_remove_last_miss(selected_edit_die, target_slot_index):
+					show_edit_message("Every die must keep at least 1 Miss.")
+					return
 				selected_edit_die.faces[target_slot_index] = fused_face
 				face_inventory.erase(dragged_face)
 
@@ -4478,10 +4542,23 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 
 			if can_fuse_faces(source_face, target_face):
 				var fused_face: DiceFace = create_fused_face(source_face, target_face)
-
+				if would_exceed_dodge_limit(selected_edit_die, fused_face, target_slot_index):
+					show_edit_message("Each die can only have 1 Dodge face.")
+					return
+				if !face_fits_die(selected_edit_die, fused_face):
+					var max_value := get_max_face_value_for_die(selected_edit_die, fused_face)
+					show_edit_message(
+						get_face_display_name(fused_face)
+						+ " is too strong for a D" + str(selected_edit_die.sides)
+						+ ".\nD" + str(selected_edit_die.sides)
+						+ " non-Crit faces can be value " + str(max_value) + " or lower."
+					)
+					return
 				if fused_face == null:
 					return
-
+				if would_remove_last_miss(selected_edit_die, target_slot_index):
+					show_edit_message("Every die must keep at least 1 Miss.")
+					return
 				selected_edit_die.faces[target_slot_index] = fused_face
 				selected_edit_die.faces[source_slot] = create_basic_miss_face()
 
@@ -4492,6 +4569,26 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 
 	refresh_edit_dice_panel()
 	save_run()
+	
+func would_remove_last_miss(die_data: DiceData, slot_index: int) -> bool:
+	if die_data == null:
+		return false
+
+	if slot_index < 0 or slot_index >= die_data.faces.size():
+		return false
+
+	var face := die_data.faces[slot_index]
+
+	if face == null or face.result_type != "miss":
+		return false
+
+	var miss_count := 0
+
+	for die_face in die_data.faces:
+		if die_face != null and die_face.result_type == "miss":
+			miss_count += 1
+
+	return miss_count <= 1
 	
 func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFace):
 	clear_drag_fusion_preview()
@@ -4527,6 +4624,15 @@ func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFac
 	if can_fuse_faces(equipped_face, target_inventory_face):
 		var fused_face: DiceFace = create_fused_face(equipped_face, target_inventory_face)
 
+		if !face_fits_die(selected_edit_die, fused_face):
+			var max_value := get_max_face_value_for_die(selected_edit_die, fused_face)
+			show_edit_message(
+				get_face_display_name(fused_face)
+				+ " is too strong for a D" + str(selected_edit_die.sides)
+				+ ".\nD" + str(selected_edit_die.sides)
+				+ " non-Crit faces can be value " + str(max_value) + " or lower."
+			)
+			return
 		if fused_face == null:
 			return
 
@@ -4569,11 +4675,75 @@ func update_drag_fusion_preview(dragged_face: DiceFace):
 		else:
 			child.set_drop_state("invalid")
 	
-func clear_drag_fusion_preview():
-	for child in die_faces_container.get_children():
-		if child is EquippedFaceButton:
-			child.set_drop_state("normal")
-			
+func handle_sell_face_drop(data: Dictionary):
+	clear_drag_fusion_preview()
+
+	if edit_dice_return_context != "town":
+		return
+
+	if !data.has("face"):
+		return
+
+	var face: DiceFace = data["face"]
+	var source_type: String = data.get("source_type", "")
+
+	if face == null:
+		return
+
+	if source_type != "inventory":
+		show_edit_message("Only inventory faces can be sold.")
+		return
+
+	if !face_inventory.has(face):
+		return
+
+	face_inventory.erase(face)
+
+	var value := get_face_sell_value(face)
+	gold += value
+
+	AudioManager.play_one_shot(coin_purchase_sound)
+
+	update_gold_label()
+	refresh_edit_dice_panel()
+	save_run()
+	
+func show_edit_message(text: String):
+	edit_warning_label.text = text
+	edit_warning_label.visible = true
+	edit_warning_label.modulate = Color.RED
+
+	AudioManager.play_one_shot(ui_fail_sound)
+
+	var tween := create_tween()
+	tween.tween_interval(1.0)
+	tween.tween_property(edit_warning_label, "modulate:a", 0.0, 1.0)
+	tween.tween_callback(func():
+		edit_warning_label.visible = false
+		edit_warning_label.text = ""
+		edit_warning_label.modulate = Color.RED
+	)
+	
+func is_last_miss_slot(die_data: DiceData, slot_index: int) -> bool:
+	if die_data == null:
+		return false
+
+	if slot_index < 0 or slot_index >= die_data.faces.size():
+		return false
+
+	var slot_face: DiceFace = die_data.faces[slot_index]
+
+	if slot_face == null or slot_face.result_type != "miss":
+		return false
+
+	var miss_count := 0
+
+	for face in die_data.faces:
+		if face != null and face.result_type == "miss":
+			miss_count += 1
+
+	return miss_count <= 1
+
 func update_active_food_icons():
 	for child in active_food_container.get_children():
 		child.queue_free()
@@ -4903,6 +5073,26 @@ func apply_shatter_from_enemy(defeated_index: int):
 		if i < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[i]):
 			show_damage_popup(enemy_3d_nodes[i], shatter_damage)
 
+func would_exceed_dodge_limit(die_data: DiceData, incoming_face: DiceFace, replacing_slot_index: int = -1) -> bool:
+	if die_data == null or incoming_face == null:
+		return false
+
+	if incoming_face.result_type != "dodge":
+		return false
+
+	var dodge_count := 0
+
+	for i in die_data.faces.size():
+		var face := die_data.faces[i]
+
+		if i == replacing_slot_index:
+			continue
+
+		if face != null and face.result_type == "dodge":
+			dodge_count += 1
+
+	return dodge_count >= 1
+	
 func open_food_crafting_from_town():
 	food_crafting_return_context = "town"
 	food_craft_panel.visible = true

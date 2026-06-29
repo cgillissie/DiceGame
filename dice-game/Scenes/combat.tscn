@@ -30,6 +30,7 @@
 [ext_resource type="PackedScene" uid="uid://dbvoffg4j0igx" path="res://Scenes/bounty_button.tscn" id="18_tasd2"]
 [ext_resource type="PackedScene" uid="uid://kittmnbg3lmw" path="res://Scenes/StatusIcon.tscn" id="19_j0btd"]
 [ext_resource type="AudioStream" uid="uid://bbge4urhnjudy" path="res://Assets/Sounds/AttackSFX/Death01.wav" id="19_nar6d"]
+[ext_resource type="AudioStream" uid="uid://bfbacqv4ow1ir" path="res://Assets/Sounds/AtmosphericSounds/FailMessage.wav" id="22_2rvx2"]
 [ext_resource type="PackedScene" uid="uid://bsq7fckelmss" path="res://Scenes/ItemButton.tscn" id="25_iv3ie"]
 [ext_resource type="AudioStream" uid="uid://cegwg2epimtwl" path="res://Assets/Sounds/AttackSFX/CriticalHit01.wav" id="25_r4oui"]
 [ext_resource type="AudioStream" uid="uid://dpmiivcqxm1nk" path="res://Assets/Sounds/AttackSFX/CriticalDieRoll.wav" id="26_1e1l8"]
@@ -62,6 +63,7 @@
 [ext_resource type="Resource" uid="uid://d2sd5swvjv0m5" path="res://Resources/Traits/venomous_1.tres" id="47_fx8i1"]
 [ext_resource type="Resource" uid="uid://ye7ajta4ldxx" path="res://Resources/Traits/venomous_3.tres" id="48_fu7uk"]
 [ext_resource type="Texture2D" uid="uid://b4img0g2htlio" path="res://Assets/Sprites/UI/Menus/OptionsButtonIcon2.png" id="52_b4fdd"]
+[ext_resource type="Script" uid="uid://cf04t4ovmanqi" path="res://Scenes/sell_face_drop_area.gd" id="55_h6x2e"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
 
@@ -88,6 +90,7 @@ owned_die_button_scene = ExtResource("6_nar6d")
 equipped_face_button_scene = ExtResource("17_5g3cp")
 bleed_icon_texture = ExtResource("18_o5j5i")
 status_icon_scene = ExtResource("19_j0btd")
+ui_fail_sound = ExtResource("22_2rvx2")
 bounty_button_scene = ExtResource("18_tasd2")
 ui_click_sound = ExtResource("14_jcm61")
 roll_all_sound = ExtResource("15_ley77")
@@ -428,6 +431,52 @@ layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
 
+[node name="SellFacePanel" type="Panel" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=1511789237]
+custom_minimum_size = Vector2(300, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SellTitleLabel" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/SellFacePanel" unique_id=337453565]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -85.5
+offset_top = -11.5
+offset_right = 85.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("9_twsak")
+
+[node name="SellDropArea" type="Panel" parent="EditDicePanel/MarginContainer/MainVBox/SellFacePanel" unique_id=1396988652]
+custom_minimum_size = Vector2(320, 60)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_right = 160.0
+offset_bottom = 60.0
+grow_horizontal = 2
+script = ExtResource("55_h6x2e")
+
+[node name="SellValueLabel" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/SellFacePanel" unique_id=2073190618]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_top = -11.5
+offset_right = 0.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+
 [node name="DieCraftingPanel" type="Panel" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=479855391]
 custom_minimum_size = Vector2(425, 64)
 layout_mode = 2
@@ -630,6 +679,22 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Close"
+
+[node name="EditWarningLabel" type="Label" parent="EditDicePanel" unique_id=1622187622]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 23.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("9_twsak")
+theme_override_font_sizes/font_size = 48
+horizontal_alignment = 1
 
 [node name="LootPanel" type="Panel" parent="." unique_id=759087292]
 visible = false
