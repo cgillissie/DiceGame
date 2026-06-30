@@ -65,6 +65,13 @@ func setup(index: int, enemy: Dictionary):
 
 	health_bar_fill.scale.x = hp_percent
 	health_bar_fill.position.x = -(1.0 - hp_percent) * 0.16
+	name_label.outline_size = 2
+	name_label.outline_modulate = Color.BLACK
+	intent_label.outline_size = 2
+	intent_label.outline_modulate = Color.BLACK
+	hp_label.outline_size = 2
+	hp_label.outline_modulate = Color.BLACK
+	
 	update_status_icons(data, enemy)
 	
 func _on_area_input_event(camera, event, position, normal, shape_idx):

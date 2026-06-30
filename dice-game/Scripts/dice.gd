@@ -34,7 +34,7 @@ var temporary: bool = false
 var has_exploded: bool = false
 var temporary_value_bonus: int = 0
 var display_value_override: int = -1
-
+var base_visual_scale := Vector2.ONE
 	
 func _ready():
 	reserve_lock_icon.visible = false
@@ -77,8 +77,61 @@ func _gui_input(event):
 
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			reserve_requested.emit(self)
+			
+func set_base_visual_scale(new_scale: Vector2):
+	base_visual_scale = new_scale
+	scale = base_visual_scale
+	
+func _on_mouse_entered():
+	scale = base_visual_scale * 1.08
+	z_index = 100
 
 
+func _on_mouse_exited():
+	scale = base_visual_scale
+	z_index = 0
+	
+func update_tooltip():
+	if current_face == null:
+		tooltip_text = ""
+		return
+
+	tooltip_text = get_face_tooltip(current_face)
+	
+func get_face_tooltip(face: DiceFace) -> String:
+	match face.result_type:
+		"miss":
+			return "Miss"
+		"hit":
+			return "Hit %d\nDeals %d damage." % [face.value, face.value]
+
+		"crit":
+			return "Critical %d\nIgnores Block." % face.value
+
+		"block":
+			return "Block " + str(face.value) + "\nGain " + str(face.value) + " Block."
+
+		"heal":
+			return "Heal " + str(face.value) + "\nRestore " + str(face.value) + " HP."
+
+		"gold":
+			return "Gold %d\nGain %d gold after combat." % face.value
+
+		"bleed":
+			return "Bleed %d\nApply %d Bleed." % face.value
+
+		"freeze":
+			return "Freeze %d\nApply %d Freeze." % face.value
+
+		"dodge":
+			return "Dodge\nThe targeted enemy Critical Misses."
+
+		"twist_knife":
+			return "Twist Knife\nTriggers Bleed immediately."
+
+		_:
+			return face.face_name
+		
 func update_visual():
 	if dice_data == null:
 		return
@@ -124,7 +177,9 @@ func update_visual():
 	if dice_data != null and dice_data.can_explode:
 		if current_face_index == dice_data.faces.size() - 1:
 			exploding_icon.visible = true
-			
+	
+	update_tooltip()
+	
 func face_should_show_value(face: DiceFace) -> bool:
 	if face == null:
 		return false
@@ -137,7 +192,8 @@ func face_should_show_value(face: DiceFace) -> bool:
 		"heal",
 		"vitality",
 		"bleed",
-		"freeze"
+		"freeze",
+		"pain"
 	]
 	
 func get_face_text(face: DiceFace) -> String:
@@ -160,12 +216,16 @@ func get_face_text(face: DiceFace) -> String:
 			return ""
 		"reversal":
 			return ""
-		"freeze":
-			return "Freeze " + str(face.value)
 		"bleed":
 			return "Bleed " + str(face.value)
+		"freeze":
+			return "Freeze " + str(face.value)
+		"vitality":
+			return "Vitality " + str(face.value)
 		"twist_knife":
 			return ""
+		"pain":
+			return "Pain " + str(face.value)
 		_:
 			return face.result_type
 

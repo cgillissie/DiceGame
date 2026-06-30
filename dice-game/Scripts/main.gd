@@ -21,6 +21,9 @@ var town_camera_is_tweening := false
 
 @export var town_scene: PackedScene
 @export var combat_scene: PackedScene
+@export var witch_encounter_scene: PackedScene
+
+
 
 @export var camera_zoom_sound: AudioStream
 @export var critical_hit_sound: AudioStream
@@ -46,15 +49,20 @@ func _init():
 	OS.set_environment("SteamGameID", AppID)
 
 func _ready():
-	
-
 	load_town()
 	init_steam()
-	
 	
 	combat.town_menu_closed.connect(reset_town_interaction)
 	combat.expedition_started.connect(start_expedition_world)
 	combat.return_to_town_requested.connect(return_to_town)
+
+	await get_tree().process_frame
+
+	if FileAccess.file_exists(combat.RUN_SAVE_PATH):
+		var loaded : bool = combat.load_run()
+
+		if loaded and combat.expedition_active:
+			await load_saved_expedition()
 	music_player.bus = "Music"
 
 	if !music_player.finished.is_connected(_on_music_finished):
@@ -77,6 +85,19 @@ func init_steam():
 func _process(delta):
 	check_town_hover()
 	apply_town_camera_shake(delta)
+	
+func load_saved_expedition():
+	await fade_to_black()
+
+	load_world(combat_scene)
+	combat.bind_world(active_world)
+	combat.set_combat_ui_enabled(false)
+
+	combat.show_expedition_camp()
+
+	await play_music_fade(expedition_music.pick_random())
+
+	await fade_from_black()
 	
 func load_world(scene: PackedScene):
 	if active_world != null and is_instance_valid(active_world):
@@ -281,17 +302,19 @@ func town_menu_is_open() -> bool:
 		or combat.bounty_board_panel.visible \
 		or combat.prepare_expedition_panel.visible
 
-func start_expedition_world():
+func start_expedition_world(event_type: String = "combat"):
+	if event_type == "witch":
+		await start_witch_encounter_world()
+		return
+
 	await fade_to_black()
-	await play_music_fade(
-	expedition_music.pick_random()
-)
+	await play_music_fade(expedition_music.pick_random())
 
 	load_world(combat_scene)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(true)
 	combat.start_expedition()
-	
+
 	await fade_from_black()
 	
 func return_to_town():
@@ -435,3 +458,36 @@ func fade_audio_in(player: AudioStreamPlayer, duration: float = 0.5):
 	var tween := create_tween()
 	tween.tween_property(player, "volume_db", 0.0, duration)
 	await tween.finished
+
+func start_witch_encounter_world():
+	await fade_to_black()
+
+	load_world(witch_encounter_scene)
+
+	combat.hide_all_major_panels()
+	combat.visible = false
+
+	if active_world.has_signal("witch_choice_made"):
+		active_world.witch_choice_made.connect(_on_witch_choice_made)
+
+	await fade_from_black()
+
+func _on_witch_choice_made(accepted: bool):
+	await fade_to_black()
+
+	combat.visible = true
+
+	if accepted:
+		combat.accept_witch_offer()
+	else:
+		combat.ignore_witch_offer()
+	
+	load_world(combat_scene)
+	combat.bind_world(active_world)
+	combat.set_combat_ui_enabled(false)
+	combat.show_expedition_camp()
+	combat.expedition_progress += 1
+	combat.save_run()
+	await fade_from_black()
+	
+	

@@ -2,8 +2,15 @@
 
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_2eigi"]
 [ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_2liij"]
+[ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="2_4ek5e"]
+[ext_resource type="Resource" uid="uid://b36t3rtj3bgip" path="res://Resources/Faces/pain_1_face.tres" id="3_p1l8o"]
+[ext_resource type="Resource" uid="uid://5v5w6urpctu6" path="res://Resources/Faces/pain_2_face.tres" id="4_ncg3r"]
+[ext_resource type="Texture2D" uid="uid://cdduguq4s5qvu" path="res://Assets/Sprites/FaceIcons/PainDieIcon.png" id="6_i03hg"]
 
 [resource]
 script = ExtResource("2_2liij")
-faces = Array[ExtResource("1_2eigi")]([null, null, null, null, null, null])
+die_name = "Pain Die"
+sprite = ExtResource("6_i03hg")
+faces = Array[ExtResource("1_2eigi")]([ExtResource("2_4ek5e"), ExtResource("2_4ek5e"), ExtResource("2_4ek5e"), ExtResource("3_p1l8o"), ExtResource("3_p1l8o"), ExtResource("4_ncg3r")])
+editable = false
 metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://bgsgbcu5fnjsq" path="res://Scenes/combat.tscn" id="2_bo1nx"]
 [ext_resource type="PackedScene" uid="uid://bn2k8y4ettc0" path="res://Scenes/Levels/town_scene.tscn" id="2_hdf80"]
 [ext_resource type="PackedScene" uid="uid://u2wd2rtxq7p2" path="res://Scenes/Levels/forest_level.tscn" id="3_jwpg7"]
+[ext_resource type="PackedScene" uid="uid://cvo1axegmlc63" path="res://Scenes/Levels/witch_encounter.tscn" id="4_2daye"]
 [ext_resource type="AudioStream" uid="uid://chhkugptwmn5l" path="res://Assets/Sounds/AtmosphericSounds/CameraZoomWind.wav" id="4_r33sp"]
 [ext_resource type="AudioStream" uid="uid://cegwg2epimtwl" path="res://Assets/Sounds/AttackSFX/CriticalHit01.wav" id="5_8cuat"]
 [ext_resource type="Script" uid="uid://rk2mjb2mygmu" path="res://Scripts/PlayerCharacterData.gd" id="5_344ge"]
@@ -32,6 +33,7 @@
 [ext_resource type="Resource" uid="uid://crlf7hdas1kqh" path="res://Resources/Faces/twist_knife_face.tres" id="19_ptfg5"]
 [ext_resource type="Resource" uid="uid://dxx5utuffbx3w" path="res://Resources/Faces/break_focus_face.tres" id="20_nwwfm"]
 [ext_resource type="Resource" uid="uid://coeiua8kqh4r6" path="res://Resources/FoodRecipes/RegenerationTonic_recipe.tres" id="20_ueoa1"]
+[ext_resource type="Resource" uid="uid://b36t3rtj3bgip" path="res://Resources/Faces/pain_1_face.tres" id="21_1semv"]
 [ext_resource type="Resource" uid="uid://dtgk20cmtnd8t" path="res://Resources/FoodRecipes/Ale_recipe.tres" id="21_6vcvc"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="22_7k868"]
 [ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="23_hpc6h"]
@@ -39,6 +41,7 @@
 [ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="25_e08e2"]
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="26_neg2b"]
 [ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="27_r33sp"]
+[ext_resource type="Resource" uid="uid://beq20pnxoa546" path="res://Resources/Relics/WitchCharm.tres" id="32_2060n"]
 [ext_resource type="AudioStream" uid="uid://ihx4cw7m2oft" path="res://Assets/Music/YouMustDieTownTheme.wav" id="34_neg2b"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="39_s8vy0"]
 [ext_resource type="Resource" uid="uid://cmx1h34g2m86g" path="res://Resources/Relics/IronCharm.tres" id="40_jut3y"]
@@ -68,6 +71,7 @@ metadata/_custom_type_script = "uid://rk2mjb2mygmu"
 script = ExtResource("1_b3802")
 town_scene = ExtResource("2_hdf80")
 combat_scene = ExtResource("3_jwpg7")
+witch_encounter_scene = ExtResource("4_2daye")
 camera_zoom_sound = ExtResource("4_r33sp")
 critical_hit_sound = ExtResource("5_8cuat")
 critical_roll_sound = ExtResource("6_o1aky")
@@ -97,9 +101,11 @@ dodge_face_template = ExtResource("7_7k868")
 reversal_face_template = ExtResource("8_hpc6h")
 break_focus_face_template = ExtResource("20_nwwfm")
 twist_knife_face_template = ExtResource("19_ptfg5")
+pain_face_template = ExtResource("21_1semv")
 player_character_data = SubResource("Resource_hptm8")
 encounter_pool = Array[ExtResource("7_fdnlq")]([ExtResource("8_jkdf5"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
 bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf")])
+witch_charm_relic = ExtResource("32_2060n")
 combat_relic_drop_pool = Array[ExtResource("39_s8vy0")]([ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("40_jut3y"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResource("20_ueoa1"), ExtResource("21_6vcvc")])
 merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), ExtResource("24_kltya"), ExtResource("25_e08e2"), ExtResource("26_neg2b"), ExtResource("27_r33sp")])

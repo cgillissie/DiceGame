@@ -12,6 +12,7 @@ const RUN_SAVE_PATH := "user://run_save.cfg"
 @export var reversal_face_template: DiceFace
 @export var break_focus_face_template: DiceFace
 @export var twist_knife_face_template: DiceFace
+@export var pain_face_template: DiceFace
 
 var enemy_3d_nodes: Array[Enemy3D] = []
 
@@ -148,7 +149,7 @@ var last_die_fragments_gained: int = 0
 @export var bleed_icon_texture: Texture2D
 @export var status_icon_scene: PackedScene
 
-@onready var edit_warning_label: Label = $EditDicePanel/EditWarningLabel
+@onready var edit_warning_label: Label = $EditDicePanel/MarginContainer/EditWarningLabel
 @export var ui_fail_sound: AudioStream
 
 var selected_inventory_face_indices: Array[int] = []
@@ -254,7 +255,7 @@ var encounter_choices: Array[EncounterData] = []
 var last_unlocked_relics: Array[RelicData] = []
 var owned_relics: Array[RelicData] = []
 var has_meditation_charm: bool = false
-
+@export var witch_charm_relic: RelicData
 var volatile_cores: int = 0
 var volatile_core_cost: int = 35
 var last_volatile_cores_gained: int = 0
@@ -290,7 +291,6 @@ var unlocked_food_tier: int = 1
 @onready var merchant_gold_label: Label = $MerchantPanel/MarginContainer/VBoxContainer/MerchantGoldLabel
 @export var merchant_food_pool: Array[ConsumableItem]
 @export var merchant_relic_pool: Array[RelicData]
-@onready var merchant_relic_button: Button = $MerchantPanel/MarginContainer/VBoxContainer/BuyRelicButton
 
 var current_merchant_relic: RelicData = null
 var merchant_relic_cost: int = 175
@@ -327,7 +327,6 @@ var sell_face_value: int = 2
 @onready var sfx_volume_slider: HSlider = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/SFXVolumeSlider
 @onready var fullscreen_check_box = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/FullscreenCheckBox
 @onready var resolution_option: OptionButton = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/ResolutionOptionButton
-@onready var continue_run_button: Button = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/ContinueRunButton
 
 # Death Overlay ###################################
 @onready var death_overlay: ColorRect = $DeathOverlay
@@ -344,9 +343,16 @@ const AVAILABLE_RESOLUTIONS := [
 	Vector2i(2560, 1440)
 ]
 
-signal expedition_started
+signal expedition_started(event_type: String)
 signal return_to_town_requested
 signal town_menu_closed
+
+const PLAN_COMBAT := "combat"
+const PLAN_WITCH := "witch"
+
+var expedition_encounter_plan: Array = []
+var loaded_pending_encounter: bool = false
+var expedition_active: bool = false
 
 var selected_food_craft_names: Array[String] = []
 
@@ -369,6 +375,7 @@ var base_enemy_hp: int = 20
 
 var max_player_hp: int = 30
 var player_hp: int = 30
+var player_hp_at_combat_start: int = 30
 
 var player_statuses := {
 	"bleed": 0,
@@ -450,9 +457,7 @@ func _ready():
 	d10_button.pressed.connect(craft_empty_die.bind(10))
 	d12_button.pressed.connect(craft_empty_die.bind(12))
 	d20_button.pressed.connect(craft_empty_die.bind(20))
-	if current_encounter == null:
-		if encounter_pool.size() > 0:
-			current_encounter = encounter_pool.pick_random()
+	
 	assigned_dice_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	enemy_roll_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	options_panel.visible = false
@@ -460,7 +465,7 @@ func _ready():
 	close_options_button.pressed.connect(close_options_menu)
 	options_restart_button.pressed.connect(restart_run)
 	options_quit_button.pressed.connect(quit_game)
-	continue_run_button.pressed.connect(continue_run)
+	
 	fullscreen_check_box.toggled.connect(_on_fullscreen_toggled)
 	resolution_option.item_selected.connect(_on_resolution_selected)
 	resolution_option.add_item("1280 x 720")
@@ -473,17 +478,17 @@ func _ready():
 	master_volume_slider.min_value = 0.0
 	master_volume_slider.max_value = 1.0
 	master_volume_slider.step = 0.01
-	master_volume_slider.value = 1.0
+	
 
 	music_volume_slider.min_value = 0.0
 	music_volume_slider.max_value = 1.0
 	music_volume_slider.step = 0.01
-	music_volume_slider.value = 1.0
+	
 
 	sfx_volume_slider.min_value = 0.0
 	sfx_volume_slider.max_value = 1.0
 	sfx_volume_slider.step = 0.01
-	sfx_volume_slider.value = 1.0
+	load_settings()
 	# load_encounter(current_encounter)
 	death_overlay.visible = false
 	death_restart_button.pressed.connect(restart_run)
@@ -521,6 +526,8 @@ func _ready():
 	update_gold_label()
 	town_panel.visible = false
 	
+
+
 func _process(delta):
 	update_assigned_dice_panel_positions()
 	update_enemy_hover_preview()
@@ -626,7 +633,7 @@ func reroll_available_dice():
 		die.selected = false
 		selected_dice_order.erase(die)
 		die.assigned_enemy_index = -1
-		die.scale = Vector2.ONE * get_combat_die_scale()
+		die.set_base_visual_scale(Vector2.ONE * get_combat_die_scale())
 
 		if die.get_parent() != roll_animation_area:
 			die.reparent(roll_animation_area)
@@ -646,7 +653,7 @@ func reroll_available_dice():
 		await die.fly_to_container(final_container)
 
 		die.set_compact_mode(false)
-		die.scale = Vector2.ONE * get_combat_die_scale()
+		die.set_base_visual_scale(Vector2.ONE * get_combat_die_scale())
 
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
@@ -1251,7 +1258,7 @@ func get_container_for_die(die: DiceNode) -> GridContainer:
 		"heal", "vitality":
 			return healing_container
 
-		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus":
+		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus", "pain":
 			return actions_container
 			
 		
@@ -1268,7 +1275,7 @@ func regroup_dice():
 		if die.assigned_enemy_index != -1:
 			continue
 			
-		die.scale = Vector2.ONE * get_combat_die_scale()
+		die.set_base_visual_scale(Vector2.ONE * get_combat_die_scale())
 		die.set_compact_mode(false)
 
 		var target_container = get_container_for_die(die)
@@ -1572,11 +1579,23 @@ func resolve_player_dice():
 
 			"dodge":
 				dodged_enemy_crits = true
+			"pain":
+				player_hp -= die.current_face.value
+				if player_hp < 0:
+						player_hp = 0
 
+				show_damage_popup(player_3d_node, die.current_face.value)
+				add_combat_log_entry("Pain dealt " + str(die.current_face.value) + " damage.")
+
+				update_player_hp_label()
+
+				if player_hp <= 0:
+					lose_combat()
+					return
 			_:
 				pass
 
-		if die.current_face.result_type in ["block", "gold", "heal", "vitality", "dodge"]:
+		if die.current_face.result_type in ["block", "gold", "heal", "vitality", "dodge", "pain"]:
 			die.reserved = false
 			die.used = true
 			die.selected = false
@@ -2071,7 +2090,6 @@ func update_combat_log():
 
 func win_combat():
 	combat_over = true
-	run_encounters_completed += 1
 	player_health_bar.visible = false
 	player_health_label.visible = false
 	end_round_button.disabled = true
@@ -2157,6 +2175,11 @@ func win_combat():
 				owned_relics.append(dropped_relic)
 				last_unlocked_relics.append(dropped_relic)
 				update_active_food_icons()
+	expedition_progress += 1
+	run_encounters_completed += 1
+	expedition_is_boss_fight = expedition_progress >= expedition_required_encounters
+
+	save_run()
 	show_loot_panel()
 	update_volatile_core_button()
 	
@@ -2170,6 +2193,7 @@ func win_combat():
 	active_combat_bonus_block = 0
 	active_combat_bonus_damage = 0
 	combat_max_player_hp = max_player_hp
+
 	save_run()
 	
 	# Functions for combat rewards
@@ -2188,7 +2212,7 @@ func show_loot_panel():
 		loot_text += "[center][color=gold]Faces[/color]\n"
 
 		for face in last_dropped_faces:
-			loot_text += get_face_display_name(face) + "\n"
+			loot_text += get_face_text(face) + "\n"
 
 		loot_text += "\n"
 
@@ -2266,7 +2290,17 @@ func heal_reward():
 func lose_combat():
 	combat_over = true
 	is_resolving_turn = false
-
+	if has_relic("Witch's Charm"):
+		consume_relic("Witch's Charm")
+		player_hp = 1
+		expedition_active = false
+		is_in_town = true
+		current_bounty = null
+		current_encounter = null
+		expedition_encounter_plan.clear()
+		save_run()
+		return_to_town_requested.emit()
+		return
 	hide_all_combat_ui()
 	show_death_screen()
 
@@ -2305,6 +2339,15 @@ func start_new_combat():
 	town_panel.visible = false
 	player_health_bar.visible = true
 	player_health_label.visible = true
+	set_combat_ui_enabled(true)
+
+	begin_expedition_button.visible = false
+	end_round_button.visible = true
+	mulligem_button.visible = true
+
+	$DiceArea.visible = true
+	$DiceArea/ReserveHBox.visible = true
+
 	dodge_targets.clear()
 	reversal_targets.clear()
 	combat_log_entries.clear()
@@ -2314,7 +2357,14 @@ func start_new_combat():
 	selected_enemy_index = -1
 	selected_dice_order.clear()
 	break_focus_targets.clear()
-	$DiceArea/ReserveHBox.visible = true
+
+	actions_container.get_parent().visible = true
+	hits_container.get_parent().visible = true
+	crits_container.get_parent().visible = true
+	blocks_container.get_parent().visible = true
+	gold_container.get_parent().visible = true
+	healing_container.get_parent().visible = true
+	misses_container.get_parent().visible = true
 	last_player_damage = 0
 	last_damage_taken = 0
 
@@ -2330,7 +2380,7 @@ func start_new_combat():
 
 	combat_number += 1
 	update_combat_number_label()
-	
+	player_hp_at_combat_start = player_hp
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	player_hp = min(player_hp + next_combat_heal, combat_max_player_hp)
 
@@ -2342,10 +2392,13 @@ func start_new_combat():
 		player_block += 2
 	update_player_block_label()
 	update_player_hp_label()
-
+	print("START NEW COMBAT current_encounter: ", current_encounter.encounter_name if current_encounter != null else "NULL")
 	load_encounter(current_encounter)
 
 	spawn_dice()
+	for die in dice_nodes:
+		if is_instance_valid(die):
+			die.visible = true
 	await roll_all_dice()
 	
 	mulligem_used_this_turn = false
@@ -2583,7 +2636,7 @@ func refresh_edit_dice_panel():
 
 	for i in selected_edit_die.faces.size():
 		var face := selected_edit_die.faces[i]
-
+		
 		var face_button = equipped_face_button_scene.instantiate()
 		die_faces_container.add_child(face_button)
 
@@ -2934,6 +2987,10 @@ func update_craft_button(button: TextureButton, cost: int):
 		
 func craft_empty_die(sides: int):
 	if die_fragments < sides:
+		show_edit_message(
+			"Need %d Die Fragments (%d/%d)"
+			% [sides, die_fragments, sides]
+		)
 		return
 
 	die_fragments -= sides
@@ -3937,18 +3994,18 @@ func rest_at_town():
 	
 
 func start_expedition():
-	if current_bounty == null:
+	if current_encounter == null:
+		var first_node := get_current_plan_node()
+
+		if first_node.get("type", PLAN_COMBAT) == PLAN_COMBAT:
+			current_encounter = first_node["encounter"]
+		else:
+			current_encounter = null
+
+	if current_encounter == null:
+		push_error("Cannot start expedition. current_encounter is null.")
 		return
 
-	combat_number = 0
-	expedition_progress = 0
-	expedition_is_boss_fight = false
-	expedition_required_encounters = randi_range(
-		current_bounty.min_encounters_before_boss,
-		current_bounty.max_encounters_before_boss
-	)
-	print("Rolled required encounters: ", expedition_required_encounters)
-	current_encounter = current_bounty.expedition_encounter_pool.pick_random()
 	start_new_combat()
 
 func open_bounty_board():
@@ -4035,6 +4092,10 @@ func complete_current_bounty():
 	selected_bounty_label.text = "No Bounty Selected"
 	
 	print("Bounty completed. Returned to town.")
+	expedition_active = false
+	is_in_town = true
+	current_bounty = null
+	current_encounter = null
 	return_to_town_requested.emit()
 	
 func apply_bounty_reward(bounty: BountyData):
@@ -4058,13 +4119,40 @@ func apply_bounty_reward(bounty: BountyData):
 		if !owned_relics.has(relic):
 			owned_relics.append(relic)
 			# refresh_relic_panel()
+			
 func show_expedition_camp():
+	is_in_town = false
+	combat_over = true
+	is_resolving_turn = false
+	is_rolling_dice = false
+
+	set_combat_ui_enabled(false)
+
 	expedition_camp_panel.visible = true
+	town_panel.visible = false
+	shop_panel.visible = false
+	loot_panel.visible = false
+	encounter_panel.visible = false
+	prepare_expedition_panel.visible = false
+	edit_dice_panel.visible = false
+	food_craft_panel.visible = false
+	merchant_panel.visible = false
+	begin_expedition_button.visible = false
+	end_round_button.visible = false
+	mulligem_button.visible = false
 	$DiceArea/ReserveHBox.visible = false
-	update_expedition_progress_labels()
-	camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(combat_max_player_hp)
+	player_health_bar.visible = false
+	player_health_label.visible = false
+
 	hide_combat_dice()
+	hide_all_groups()
+
+	selected_enemy_index = -1
+	selected_dice_order.clear()
+
+	update_expedition_progress_labels()
 	update_camp_hp_label()
+	update_mulligem_button()
 	
 func hide_combat_dice():
 	for die in dice_nodes:
@@ -4082,16 +4170,27 @@ func open_edit_dice_panel_from_camp():
 	refresh_edit_dice_panel()
 	
 func continue_expedition():
+	if current_bounty == null:
+		show_edit_message("No bounty loaded. Returning to town.")
+		return_to_town_requested.emit()
+		return
+
 	expedition_camp_panel.visible = false
-	expedition_progress += 1
 
-	if expedition_progress < expedition_required_encounters:
-		current_encounter = current_bounty.expedition_encounter_pool.pick_random()
-	else:
-		expedition_is_boss_fight = true
-		current_encounter = current_bounty.boss_encounter
+	var node := get_current_plan_node()
 
-	start_new_combat()
+	if node.is_empty():
+		show_edit_message("No expedition event found.")
+		return
+
+	match node.get("type", PLAN_COMBAT):
+		PLAN_COMBAT:
+			current_encounter = node["encounter"]
+			expedition_is_boss_fight = expedition_progress >= expedition_required_encounters
+			start_new_combat()
+
+		PLAN_WITCH:
+			expedition_started.emit("witch")
 	
 func open_trophies():
 	town_panel.visible = false
@@ -4147,6 +4246,38 @@ func confirm_start_expedition():
 		expedition_camp_panel.visible = true
 		prepare_return_context = "town"
 		return
+
+	if current_bounty == null:
+		print("Cannot start expedition. current_bounty is null.")
+		return
+
+	combat_number = 0
+	expedition_progress = 0
+	expedition_is_boss_fight = false
+	expedition_active = true
+	is_in_town = false
+	loaded_pending_encounter = false
+
+	var extra_encounters := get_scaled_bounty_extra_encounters()
+
+	expedition_required_encounters = randi_range(
+		current_bounty.min_encounters_before_boss + extra_encounters,
+		current_bounty.max_encounters_before_boss + extra_encounters
+	)
+
+	build_expedition_plan()
+	var first_node := get_current_plan_node()
+
+	if first_node.get("type", PLAN_COMBAT) == PLAN_COMBAT:
+		current_encounter = first_node["encounter"]
+	else:
+		current_encounter = null
+
+	print("Starting bounty: ", current_bounty.bounty_name)
+	print("Required encounters: ", expedition_required_encounters)
+	print("First encounter: ", current_encounter.encounter_name if current_encounter != null else "NULL")
+
+	save_run()
 
 	prepare_return_context = "town"
 	expedition_started.emit()
@@ -4599,7 +4730,41 @@ func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFac
 	if !data.has("source_type") or !data.has("face"):
 		return
 
-	if String(data["source_type"]) != "equipped":
+	var source_type := String(data["source_type"])
+
+	if source_type == "inventory":
+		var dragged_face: DiceFace = data["face"]
+
+		if dragged_face == null:
+			return
+
+		if dragged_face == target_inventory_face:
+			return
+
+		if !face_inventory.has(dragged_face):
+			return
+
+		if !face_inventory.has(target_inventory_face):
+			return
+
+		if !can_fuse_faces(dragged_face, target_inventory_face):
+			return
+
+		var fused_face := create_fused_face(dragged_face, target_inventory_face)
+
+		if fused_face == null:
+			return
+
+		face_inventory.erase(dragged_face)
+		face_inventory.erase(target_inventory_face)
+		face_inventory.append(fused_face)
+
+		AudioManager.play_one_shot(graft_face_sound)
+		refresh_edit_dice_panel()
+		save_run()
+		return
+
+	if source_type != "equipped":
 		return
 
 	if !data.has("slot"):
@@ -4634,6 +4799,9 @@ func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFac
 			)
 			return
 		if fused_face == null:
+			return
+		if is_last_miss_slot(selected_edit_die, source_slot):
+			show_edit_message("Every die must keep at least 1 Miss.")
 			return
 
 		selected_edit_die.faces[source_slot] = fused_face
@@ -4708,17 +4876,27 @@ func handle_sell_face_drop(data: Dictionary):
 	refresh_edit_dice_panel()
 	save_run()
 	
+var edit_warning_tween: Tween = null
+
 func show_edit_message(text: String):
+	if edit_warning_label == null:
+		push_error("edit_warning_label is null.")
+		return
+
+	if edit_warning_tween != null and edit_warning_tween.is_valid():
+		edit_warning_tween.kill()
+
 	edit_warning_label.text = text
 	edit_warning_label.visible = true
 	edit_warning_label.modulate = Color.RED
+	edit_warning_label.z_index = 1000
 
 	AudioManager.play_one_shot(ui_fail_sound)
 
-	var tween := create_tween()
-	tween.tween_interval(1.0)
-	tween.tween_property(edit_warning_label, "modulate:a", 0.0, 1.0)
-	tween.tween_callback(func():
+	edit_warning_tween = create_tween()
+	edit_warning_tween.tween_interval(1.0)
+	edit_warning_tween.tween_property(edit_warning_label, "modulate:a", 0.0, 1.0)
+	edit_warning_tween.tween_callback(func():
 		edit_warning_label.visible = false
 		edit_warning_label.text = ""
 		edit_warning_label.modulate = Color.RED
@@ -4778,7 +4956,8 @@ func open_camp_items():
 		prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
 	else:
 		prepare_selected_bounty_label.text = "Expedition Items"
-
+	camp_hp_label.visible = true
+	update_camp_hp_label()
 	rebuild_prepare_consumables()
 
 func apply_damage_bonus_to_dice_visuals():
@@ -4838,6 +5017,8 @@ func open_food_crafting():
 	expedition_camp_panel.visible = false
 	food_craft_panel.visible = true
 	selected_food_craft_names.clear()
+	camp_hp_label.visible = true
+	update_camp_hp_label()
 	update_begin_expedition_button_visibility()
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
@@ -4857,6 +5038,7 @@ func close_food_crafting():
 			town_menu_closed.emit()
 
 	food_crafting_return_context = ""
+	update_camp_hp_label()
 	update_begin_expedition_button_visibility()
 	
 func rebuild_food_crafting_grid():
@@ -5277,7 +5459,7 @@ func save_settings():
 	config.set_value("audio", "master", master_volume_slider.value)
 	config.set_value("audio", "music", music_volume_slider.value)
 	config.set_value("audio", "sfx", sfx_volume_slider.value)
-
+	config.set_value("player", "hp_at_combat_start", player_hp_at_combat_start)
 	config.set_value("display", "fullscreen", fullscreen_check_box.button_pressed)
 	config.set_value("display", "resolution_index", resolution_option.selected)
 
@@ -5291,13 +5473,45 @@ func save_run():
 	config.set_value("run", "mulligems", mulligems)
 	config.set_value("run", "volatile_cores", volatile_cores)
 	config.set_value("run", "die_fragments", die_fragments)
+	var should_save_pending_encounter := expedition_active \
+		and !expedition_camp_panel.visible \
+		and current_encounter != null
 
+	config.set_value(
+		"expedition",
+		"current_encounter",
+		get_resource_path(current_encounter) if should_save_pending_encounter else ""
+	)
+	config.set_value("expedition", "is_in_town", is_in_town)
+	
+	if is_in_town or expedition_camp_panel.visible:
+		player_hp_at_combat_start = player_hp
 	config.set_value("player", "hp", player_hp)
 	config.set_value("player", "max_hp", max_player_hp)
+	config.set_value("player", "hp_at_combat_start", player_hp_at_combat_start)
 	config.set_value("run", "reserve_slots", reserve_slots)
-	config.set_value("expedition", "progress", expedition_progress)
 	config.set_value("expedition", "required_encounters", expedition_required_encounters)
 	config.set_value("expedition", "is_boss_fight", expedition_is_boss_fight)
+	var saved_plan: Array = []
+
+	for node in expedition_encounter_plan:
+		var node_type: String = node.get("type", PLAN_COMBAT)
+
+		if node_type == PLAN_COMBAT:
+			saved_plan.append({
+				"type": PLAN_COMBAT,
+				"encounter_path": get_resource_path(node["encounter"])
+			})
+		elif node_type == PLAN_WITCH:
+			saved_plan.append({
+				"type": PLAN_WITCH,
+				"encounter_path": ""
+			})
+
+	config.set_value("expedition", "encounter_plan", saved_plan)
+
+	config.set_value("expedition", "expedition_active", expedition_active)
+	config.set_value("expedition", "progress", expedition_progress)
 	config.set_value("expedition", "current_bounty", current_bounty.bounty_name if current_bounty != null else "")
 	var merchant_face_save := []
 
@@ -5342,7 +5556,7 @@ func save_run():
 	config.set_value("unlock", "unlocked_food_tier", unlocked_food_tier)
 
 	var err := config.save(RUN_SAVE_PATH)
-
+	
 	if err == OK:
 		print("Run saved.")
 		print("Run save path: ", ProjectSettings.globalize_path(RUN_SAVE_PATH))
@@ -5463,8 +5677,10 @@ func load_run():
 	mulligems = config.get_value("run", "mulligems", mulligems)
 	volatile_cores = config.get_value("run", "volatile_cores", volatile_cores)
 	die_fragments = config.get_value("run", "die_fragments", die_fragments)
-
+	expedition_active = config.get_value("expedition", "expedition_active", false)
+	is_in_town = config.get_value("expedition", "is_in_town", true)
 	player_hp = config.get_value("player", "hp", player_hp)
+	player_hp_at_combat_start = config.get_value("player", "hp_at_combat_start", player_hp)
 	max_player_hp = config.get_value("player", "max_hp", max_player_hp)
 	combat_max_player_hp = max_player_hp
 	run_encounters_completed = config.get_value("run", "encounters_completed", run_encounters_completed)
@@ -5473,17 +5689,67 @@ func load_run():
 	expedition_is_boss_fight = config.get_value("expedition", "is_boss_fight", expedition_is_boss_fight)
 	reserve_slots = config.get_value("run", "reserve_slots", reserve_slots)
 	update_reserve_slots_label()
+	var encounter_path: String = config.get_value("expedition", "current_encounter", "")
+	if encounter_path != "":
+		var loaded_encounter = load(encounter_path)
+		if loaded_encounter is EncounterData:
+			current_encounter = loaded_encounter
+
+	is_in_town = config.get_value("expedition", "is_in_town", true)
+
 	var saved_bounty_name: String = config.get_value("expedition", "current_bounty", "")
+
+	current_bounty = null
+	expedition_active = config.get_value("expedition", "expedition_active", false)
+	expedition_progress = config.get_value("expedition", "progress", expedition_progress)
+
+	expedition_encounter_plan.clear()
+
+	expedition_encounter_plan.clear()
+
+	var saved_plan: Array = config.get_value("expedition", "encounter_plan", [])
+
+	for saved_node in saved_plan:
+		if !(saved_node is Dictionary):
+			continue
+
+		var node_type: String = saved_node.get("type", PLAN_COMBAT)
+
+		if node_type == PLAN_COMBAT:
+			var path: String = saved_node.get("encounter_path", "")
+			var encounter = load(path)
+
+			if encounter is EncounterData:
+				expedition_encounter_plan.append({
+					"type": PLAN_COMBAT,
+					"encounter": encounter
+				})
+
+		elif node_type == PLAN_WITCH:
+			expedition_encounter_plan.append({
+				"type": PLAN_WITCH,
+				"encounter": null
+			})
+
+	var node := get_current_plan_node()
+
+	if !node.is_empty() and node.get("type") == PLAN_COMBAT:
+		current_encounter = node["encounter"]
+	else:
+		current_encounter = null
 	if saved_bounty_name != "":
-		for bounty in completed_bounties:
+		for bounty in bounty_pool:
 			if bounty.bounty_name == saved_bounty_name:
 				current_bounty = bounty
 				break
-
+	if expedition_active and current_encounter != null:
+		loaded_pending_encounter = true
+		is_in_town = false
+		player_hp = player_hp_at_combat_start
 	completed_bounties.clear()
 	var completed_bounty_names: Array = config.get_value("progress", "completed_bounties", [])
 
-	for bounty in completed_bounties:
+	for bounty in bounty_pool:
 		bounty.completed = bounty.bounty_name in completed_bounty_names
 
 		if bounty.completed:
@@ -5644,3 +5910,103 @@ func end_demo():
 func continue_endless_mode():
 	endless_choice_overlay.visible = false
 	reset_bounties_for_endless_mode()
+
+func build_expedition_plan():
+	expedition_encounter_plan.clear()
+
+	if current_bounty == null:
+		return
+
+	for i in expedition_required_encounters:
+		expedition_encounter_plan.append({
+			"type": PLAN_COMBAT,
+			"encounter": current_bounty.expedition_encounter_pool.pick_random()
+		})
+
+	if expedition_encounter_plan.size() >= 2:
+		var witch_index := randi_range(1, expedition_encounter_plan.size() - 1)
+		expedition_encounter_plan[witch_index] = {
+			"type": PLAN_WITCH,
+			"encounter": null
+		}
+
+	expedition_encounter_plan.append({
+		"type": PLAN_COMBAT,
+		"encounter": current_bounty.boss_encounter
+	})
+
+	
+func get_current_plan_node() -> Dictionary:
+	if expedition_encounter_plan.is_empty():
+		return {}
+
+	if expedition_progress < 0:
+		expedition_progress = 0
+
+	if expedition_progress >= expedition_encounter_plan.size():
+		return expedition_encounter_plan.back()
+
+	return expedition_encounter_plan[expedition_progress]
+	
+func get_scaled_bounty_extra_encounters() -> int:
+	return completed_bounties.size()
+	
+func create_cursed_d6() -> DiceData:
+	var die := DiceData.new()
+	die.die_name = "Cursed D6"
+	die.sides = 6
+	die.editable = false
+
+	for i in 3:
+		die.faces.append(miss_face_template.duplicate(true))
+
+	for i in 3:
+		die.faces.append(pain_face_template.duplicate(true))
+
+	return die
+
+func consume_relic(relic_name: String):
+	for relic in owned_relics:
+		if relic.relic_name == relic_name:
+			owned_relics.erase(relic)
+			update_active_food_icons()
+			save_run()
+			return
+
+func accept_witch_offer():
+	print("Accepting witch offer")
+
+	if witch_charm_relic == null:
+		print("witch_charm_relic is NULL")
+	else:
+		print("Witch relic: ", witch_charm_relic.relic_name)
+
+	if witch_charm_relic != null and !has_relic_name(witch_charm_relic.relic_name):
+		owned_relics.append(witch_charm_relic)
+		print("Added relic. Owned relic count: ", owned_relics.size())
+
+	owned_dice.append(create_cursed_d6())
+
+	update_active_food_icons()
+	save_run()
+
+
+func ignore_witch_offer():
+	save_run()
+	
+func hide_all_major_panels():
+	town_panel.visible = false
+	merchant_panel.visible = false
+	food_craft_panel.visible = false
+	edit_dice_panel.visible = false
+	bounty_board_panel.visible = false
+	prepare_expedition_panel.visible = false
+	expedition_camp_panel.visible = false
+	shop_panel.visible = false
+	loot_panel.visible = false
+	encounter_panel.visible = false
+	death_overlay.visible = false
+	endless_choice_overlay.visible = false
+	begin_expedition_button.visible = false
+	end_round_button.visible = false
+	mulligem_button.visible = false

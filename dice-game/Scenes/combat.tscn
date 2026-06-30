@@ -370,7 +370,7 @@ alignment = 1
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 2
+mouse_filter = 0
 
 [node name="OwnedDiceTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox" unique_id=901338589]
 layout_mode = 2
@@ -382,7 +382,8 @@ text = "Owned Dice"
 custom_minimum_size = Vector2(260, 300)
 layout_mode = 2
 size_flags_vertical = 3
-mouse_filter = 2
+focus_mode = 2
+mouse_filter = 0
 horizontal_scroll_mode = 0
 
 [node name="OwnedDiceContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer" unique_id=41111104]
@@ -412,7 +413,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 2
+mouse_filter = 0
 
 [node name="InventoryFacesTitle" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=827871074]
 layout_mode = 2
@@ -423,7 +424,8 @@ text = "Face Inventory"
 [node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1493564940]
 custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
-mouse_filter = 2
+focus_mode = 2
+mouse_filter = 0
 horizontal_scroll_mode = 0
 
 [node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer" unique_id=1050298506]
@@ -485,9 +487,18 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_xu8d0")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel" unique_id=1611760063]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -176.0
+offset_top = -44.0
+offset_right = 176.0
+offset_bottom = 44.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 
@@ -504,6 +515,7 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="D4Button" type="TextureButton" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox" unique_id=839720889]
+visible = false
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -516,6 +528,7 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [node name="D4Label" type="Label" parent="EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/CraftButtonsHBox/D4Button" unique_id=232870229]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -680,20 +693,15 @@ size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Close"
 
-[node name="EditWarningLabel" type="Label" parent="EditDicePanel" unique_id=1622187622]
+[node name="EditWarningLabel" type="Label" parent="EditDicePanel/MarginContainer" unique_id=1622187622]
 visible = false
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -20.0
-offset_right = 20.0
-offset_bottom = 23.0
-grow_horizontal = 2
+layout_mode = 2
+size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("9_twsak")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 
 [node name="LootPanel" type="Panel" parent="." unique_id=759087292]
@@ -817,6 +825,7 @@ text = "player_hp_label.text = \"Player HP: \" + str(player_hp) + \"/\" + str(ma
 
 [node name="PlayerStatusContainer" type="HBoxContainer" parent="LeftMarginContainer/VBoxContainer" unique_id=463288000]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="PlayerBleedLabel" type="Label" parent="LeftMarginContainer/VBoxContainer/PlayerStatusContainer" unique_id=1704677475]
 layout_mode = 2
@@ -1813,10 +1822,6 @@ text = "Quit"
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Close"
-
-[node name="ContinueRunButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=2091718788]
-layout_mode = 2
-text = "Continue Run"
 
 [node name="RelicPanel" type="Panel" parent="." unique_id=573138754]
 visible = false

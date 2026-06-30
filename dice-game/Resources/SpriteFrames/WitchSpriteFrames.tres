@@ -1,0 +1,35 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://bhiq8v748ff8r"]
+
+[ext_resource type="Texture2D" uid="uid://q4egbroj5w4l" path="res://Assets/Sprites/SpriteSheets/WitchSpriteSheet.png" id="1_8xxdo"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ixoeh"]
+atlas = ExtResource("1_8xxdo")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tobps"]
+atlas = ExtResource("1_8xxdo")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wqliv"]
+atlas = ExtResource("1_8xxdo")
+region = Rect2(64, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ixoeh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tobps")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wqliv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tobps")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

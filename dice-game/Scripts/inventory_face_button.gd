@@ -49,6 +49,8 @@ func get_face_tooltip(face: DiceFace) -> String:
 			text += "\nReflects enemy Crit damage back at the chosen enemy."
 		"break_focus":
 			text += "\nCancels the chosen enemy's healing."
+		"vitality":
+			text += "\nPermanently increases maximum HP."
 		_:
 			text += "\n" + face.result_type
 

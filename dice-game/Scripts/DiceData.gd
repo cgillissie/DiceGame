@@ -6,3 +6,4 @@ class_name DiceData
 @export var sides: int = 6
 @export var sprite: Texture2D
 @export var faces: Array[DiceFace] = []
+@export var editable: bool = true

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://5v5w6urpctu6"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_6xeui"]
+[ext_resource type="Texture2D" uid="uid://cdduguq4s5qvu" path="res://Assets/Sprites/FaceIcons/PainDieIcon.png" id="1_hs4j3"]
+
+[resource]
+script = ExtResource("1_6xeui")
+face_name = "Pain"
+result_type = "pain"
+value = 2
+label = "Pain 2"
+icon = ExtResource("1_hs4j3")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

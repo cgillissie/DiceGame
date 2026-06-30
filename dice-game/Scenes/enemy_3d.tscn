@@ -66,11 +66,12 @@ font = ExtResource("3_6q30p")
 font_size = 24
 
 [node name="IntentLabel3D" type="Label3D" parent="." unique_id=1795677223]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4442399, 1.0524747)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4442399, 1.2172697)
 billboard = 1
 no_depth_test = true
 font = ExtResource("3_6q30p")
 font_size = 24
+outline_size = 2
 
 [node name="Area3D" type="Area3D" parent="." unique_id=1311500370]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.32293844)
