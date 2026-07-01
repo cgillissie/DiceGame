@@ -59,6 +59,9 @@
 [ext_resource type="Resource" uid="uid://ce4jsrai1w2sf" path="res://Resources/Traits/spiked_1.tres" id="52_6ml46"]
 [ext_resource type="Resource" uid="uid://d2sd5swvjv0m5" path="res://Resources/Traits/venomous_1.tres" id="53_qax2n"]
 [ext_resource type="Resource" uid="uid://ye7ajta4ldxx" path="res://Resources/Traits/venomous_3.tres" id="54_y86h7"]
+[ext_resource type="AudioStream" uid="uid://ilxu12j5kyf1" path="res://Assets/Sounds/AttackSFX/Freeze.wav" id="59_y86h7"]
+[ext_resource type="AudioStream" uid="uid://dpa2snrug8qa2" path="res://Assets/Sounds/AttackSFX/ShatterDeath.wav" id="60_my4ki"]
+[ext_resource type="AudioStream" uid="uid://cyh38a36oidwi" path="res://Assets/Sounds/AtmosphericSounds/Victory.wav" id="61_lx3vj"]
 
 [sub_resource type="Resource" id="Resource_hptm8"]
 script = ExtResource("5_344ge")
@@ -111,6 +114,9 @@ food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResou
 merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), ExtResource("24_kltya"), ExtResource("25_e08e2"), ExtResource("26_neg2b"), ExtResource("27_r33sp")])
 merchant_relic_pool = Array[ExtResource("39_s8vy0")]([ExtResource("40_jut3y"), ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 random_enemy_trait_pool = Array[ExtResource("47_bv80c")]([ExtResource("48_ptfg5"), ExtResource("49_2daye"), ExtResource("50_1semv"), ExtResource("51_2060n"), ExtResource("52_6ml46"), ExtResource("53_qax2n"), ExtResource("54_y86h7")])
+freeze_sound = ExtResource("59_y86h7")
+shatter_death_sound = ExtResource("60_my4ki")
+victory_sound = ExtResource("61_lx3vj")
 
 [node name="DiceRollSFX" type="AudioStreamPlayer" parent="CombatUI" unique_id=2019394322]
 stream = ExtResource("5_kry3j")

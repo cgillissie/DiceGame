@@ -14,6 +14,9 @@ const RUN_SAVE_PATH := "user://run_save.cfg"
 @export var twist_knife_face_template: DiceFace
 @export var pain_face_template: DiceFace
 
+@onready var top_ui_background: TextureRect = $TopUIBackground
+@onready var bottom_ui_background: TextureRect = $BottomUIBackground
+
 var enemy_3d_nodes: Array[Enemy3D] = []
 
 var reserve_slots: int = 2
@@ -335,6 +338,12 @@ var sell_face_value: int = 2
 @onready var endless_choice_overlay: ColorRect = $EndlessChoiceOverlay
 @onready var end_demo_button: Button = $EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer/EndDemoButton
 @onready var continue_endless_button: Button = $EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer/ContinueEndlessButton
+
+# Combat Stuff ################################
+@export var freeze_sound: AudioStream
+@export var shatter_death_sound: AudioStream
+@export var victory_sound: AudioStream
+@export var shatter_particles_scene: PackedScene
 
 const AVAILABLE_RESOLUTIONS := [
 	Vector2i(1280, 720),
@@ -1583,7 +1592,12 @@ func resolve_player_dice():
 				player_hp -= die.current_face.value
 				if player_hp < 0:
 						player_hp = 0
-
+				show_popup_text(
+					player_3d_node,
+					str(die.current_face.value),
+					1.8,
+					Color(0.95, 0.45, 0.85)
+				)
 				show_damage_popup(player_3d_node, die.current_face.value)
 				add_combat_log_entry("Pain dealt " + str(die.current_face.value) + " damage.")
 
@@ -1977,7 +1991,18 @@ func remove_defeated_enemies():
 
 		if index < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[index]):
 			AudioManager.play_one_shot(enemy_death_sound, 1.05, 1.4)
-			await enemy_3d_nodes[index].death_animation()
+			var enemy_node := enemy_3d_nodes[index]
+			var shattered: bool = false
+
+			if active_enemies[index].has("freeze_stacks"):
+				shattered = int(active_enemies[index]["freeze_stacks"]) > 0
+
+			if shattered:
+				cinematic_shatter_focus(enemy_node)
+				await enemy_node.play_shatter_death(shatter_death_sound)
+			else:
+				AudioManager.play_one_shot(enemy_death_sound, 1.05, 1.4)
+				await enemy_node.death_animation()
 
 		active_enemies.remove_at(index)
 		enemy_3d_nodes.remove_at(index)
@@ -2090,6 +2115,7 @@ func update_combat_log():
 
 func win_combat():
 	combat_over = true
+	AudioManager.play_one_shot(victory_sound)
 	player_health_bar.visible = false
 	player_health_label.visible = false
 	end_round_button.disabled = true
@@ -2839,6 +2865,9 @@ func fuse_selected_faces():
 	refresh_edit_dice_panel()
 	
 func select_edit_die(die_data: DiceData):
+	if !die_data.editable:
+		show_edit_message("Cursed dice cannot be edited.")
+		return
 	selected_edit_die = die_data
 	AudioManager.play_ui(ui_click_sound)
 	refresh_edit_dice_panel()
@@ -3774,7 +3803,7 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 		"freeze":
 			enemy["frozen"] = true
 			enemy["freeze_stacks"] += die.current_face.value
-
+			AudioManager.play_one_shot(freeze_sound)
 			show_popup_text(enemy_node, "Frozen +" + str(die.current_face.value), 1.2, Color.CYAN)
 			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " Freeze stacks.")
 
@@ -4143,7 +4172,8 @@ func show_expedition_camp():
 	$DiceArea/ReserveHBox.visible = false
 	player_health_bar.visible = false
 	player_health_label.visible = false
-
+	top_ui_background.visible = true
+	bottom_ui_background.visible = true
 	hide_combat_dice()
 	hide_all_groups()
 
@@ -4576,7 +4606,9 @@ func is_food_already_active(item: ConsumableItem) -> bool:
 	
 func handle_face_drop(data: Dictionary, target_slot_index: int):
 	clear_drag_fusion_preview()
-
+	if selected_edit_die != null and !selected_edit_die.editable:
+		show_edit_message("Cursed dice cannot be edited.")
+		return
 	if selected_edit_die == null:
 		return
 
@@ -5307,7 +5339,8 @@ func bind_world(world: Node3D):
 
 func set_combat_ui_enabled(enabled: bool):
 	is_in_town = !enabled
-
+	top_ui_background.visible = enabled
+	bottom_ui_background.visible = enabled
 	$DiceArea.visible = enabled
 	$LeftMarginContainer.visible = enabled
 	$RightMarginContainer.visible = enabled
@@ -5574,7 +5607,8 @@ func serialize_die(die: DiceData) -> Dictionary:
 		"sides": die.sides,
 		"can_explode": die.can_explode,
 		"sprite_path": die.sprite.resource_path if die.sprite != null else "",
-		"faces": faces
+		"faces": faces,
+		"editable": die.editable,
 	}
 	
 func serialize_face(face: DiceFace) -> Dictionary:
@@ -5623,7 +5657,7 @@ func deserialize_die(data: Dictionary) -> DiceData:
 	die.die_name = data.get("die_name", "Basic Die")
 	die.sides = data.get("sides", 6)
 	die.can_explode = data.get("can_explode", false)
-
+	die.editable = data.get("editable", true)
 	var sprite_path: String = data.get("sprite_path", "")
 	if sprite_path != "":
 		die.sprite = load(sprite_path)
@@ -5851,12 +5885,15 @@ func update_expedition_progress_labels():
 		]
 		
 func find_relic_by_name(relic_name: String) -> RelicData:
+	if witch_charm_relic != null and witch_charm_relic.relic_name == relic_name:
+		return witch_charm_relic
+
 	for relic in merchant_relic_pool:
-		if relic.relic_name == relic_name:
+		if relic != null and relic.relic_name == relic_name:
 			return relic
 
 	for relic in combat_relic_drop_pool:
-		if relic.relic_name == relic_name:
+		if relic != null and relic.relic_name == relic_name:
 			return relic
 
 	return null
@@ -6010,3 +6047,53 @@ func hide_all_major_panels():
 	begin_expedition_button.visible = false
 	end_round_button.visible = false
 	mulligem_button.visible = false
+
+func cinematic_shatter_focus(enemy_node: Node3D):
+	var camera := combat_camera
+
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera == null or !is_instance_valid(enemy_node):
+		return
+
+	var original_size := camera.size
+	var zoom_size := original_size * 0.60
+	var original_position := camera.global_position
+	var direction_to_enemy := (enemy_node.global_position - camera.global_position).normalized()
+	var zoom_position := original_position + direction_to_enemy * 18.0
+
+	var tween := create_tween()
+	tween.tween_property(camera, "global_position", zoom_position, 0.22)
+	tween.parallel().tween_property(camera, "size", zoom_size, 0.22)
+
+	await get_tree().create_timer(0.75).timeout
+
+	await shatter_camera_shake(camera, 0.32, 0.22)
+
+	var out := create_tween()
+	out.tween_property(camera, "global_position", original_position, 0.18)
+	out.parallel().tween_property(camera, "size", original_size, 0.18)
+	await out.finished
+
+func shatter_camera_shake(camera: Camera3D, duration: float = 0.28, strength: float = 0.18):
+	if camera == null:
+		return
+
+	var original_position := camera.global_position
+	var time := 0.0
+
+	while time < duration:
+		var falloff := 1.0 - (time / duration)
+		var offset := Vector3(
+			randf_range(-strength, strength) * falloff,
+			randf_range(-strength, strength) * falloff,
+			0.0
+		)
+
+		camera.global_position = original_position + offset
+
+		await get_tree().process_frame
+		time += get_process_delta_time()
+
+	camera.global_position = original_position

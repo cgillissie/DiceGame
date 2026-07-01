@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://c6rypv0jqt1jr" path="res://Assets/Sprites/HealthBar.png" id="4_dll1a"]
 [ext_resource type="Texture2D" uid="uid://dxdhj8d3cf7rl" path="res://Assets/Sprites/FaceIcons/FreezeIcon.png" id="4_lu3nb"]
 [ext_resource type="Texture2D" uid="uid://kcr0yucpg8re" path="res://Assets/Sprites/FaceIcons/BleedIcon.png" id="5_31v00"]
+[ext_resource type="PackedScene" uid="uid://boxgwjyifc3pm" path="res://Scenes/shatter_particles.tscn" id="6_40dlk"]
 [ext_resource type="FontFile" uid="uid://ikng2ikqxt7i" path="res://Assets/Fonts/PixelOperator8-Bold.ttf" id="6_fr5fv"]
 [ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="6_vnddw"]
 [ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="7_85npi"]
@@ -37,6 +38,7 @@ enemy_trait_icon_scene = ExtResource("2_85npi")
 exposed_icon_texture = ExtResource("9_vnddw")
 freeze_icon_texture = ExtResource("4_lu3nb")
 bleed_icon_texture = ExtResource("5_31v00")
+shatter_particles_scene = ExtResource("6_40dlk")
 ui_font = ExtResource("6_fr5fv")
 
 [node name="TraitIcons" type="Node3D" parent="." unique_id=2028826510]

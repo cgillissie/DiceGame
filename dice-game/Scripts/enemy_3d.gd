@@ -26,6 +26,7 @@ var active_status_icons: Array[Sprite3D] = []
 @export var exposed_icon_texture: Texture2D
 @export var freeze_icon_texture: Texture2D
 @export var bleed_icon_texture: Texture2D
+@export var shatter_particles_scene: PackedScene
 
 @export var ui_font: Font
 
@@ -89,6 +90,7 @@ func hit_flash():
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.15)
 	
 func death_animation():
+	
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector3.ZERO, 0.25)
 	await tween.finished
@@ -263,4 +265,30 @@ func clear_status_icons():
 
 	active_status_icons.clear()
 	status_icon_tooltips.clear()
+	
+func play_shatter_death(shatter_sound: AudioStream):
+	AudioManager.play_one_shot(shatter_sound)
+
+	sprite.modulate = Color(0.45, 0.85, 1.0)
+
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate", Color(0.8, 1.0, 1.0), 0.65)
+
+	await get_tree().create_timer(0.75).timeout
+
+	spawn_shatter_particles()
+
+	sprite.visible = false
+
+	await get_tree().create_timer(0.25).timeout
+	queue_free()
+
+func spawn_shatter_particles():
+	if shatter_particles_scene == null:
+		return
+
+	var particles := shatter_particles_scene.instantiate()
+	get_parent().add_child(particles)
+	particles.global_position = global_position + Vector3(0, 0.8, 0)
+	
 	

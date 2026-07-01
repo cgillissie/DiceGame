@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="3_ut0kg"]
 [ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="4_yt1oa"]
 [ext_resource type="PackedScene" uid="uid://bb6efoip4j802" path="res://Scenes/enemy_3d.tscn" id="5_f8ge6"]
+[ext_resource type="Resource" uid="uid://rbxr43hvypuo" path="res://Resources/Dice/freeze_d6.tres" id="5_vqjug"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="6_8xcd4"]
 [ext_resource type="PackedScene" uid="uid://bn5rpt5shg320" path="res://Scenes/InventoryFaceButton.tscn" id="6_e8ln5"]
 [ext_resource type="PackedScene" uid="uid://cxycx6mqq2suc" path="res://Scenes/OwnedDieButton.tscn" id="6_nar6d"]
@@ -62,6 +63,7 @@
 [ext_resource type="Resource" uid="uid://ce4jsrai1w2sf" path="res://Resources/Traits/spiked_1.tres" id="46_tqjuo"]
 [ext_resource type="Resource" uid="uid://d2sd5swvjv0m5" path="res://Resources/Traits/venomous_1.tres" id="47_fx8i1"]
 [ext_resource type="Resource" uid="uid://ye7ajta4ldxx" path="res://Resources/Traits/venomous_3.tres" id="48_fu7uk"]
+[ext_resource type="Texture2D" uid="uid://dptkefmk5w2c" path="res://Assets/Sprites/UI/Menus/TopBottomBar.png" id="51_tqjuo"]
 [ext_resource type="Texture2D" uid="uid://b4img0g2htlio" path="res://Assets/Sprites/UI/Menus/OptionsButtonIcon2.png" id="52_b4fdd"]
 [ext_resource type="Script" uid="uid://cf04t4ovmanqi" path="res://Scenes/sell_face_drop_area.gd" id="55_h6x2e"]
 
@@ -76,7 +78,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_7jmb3")
 dice_scene = ExtResource("2_ubpar")
-starting_dice = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa")])
+starting_dice = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("4_yt1oa"), ExtResource("5_vqjug"), ExtResource("5_vqjug")])
 enemy_3d_scene = ExtResource("5_f8ge6")
 inventory_face_button_scene = ExtResource("6_e8ln5")
 player_3d_scene = ExtResource("7_umvpd")
@@ -112,6 +114,29 @@ merchant_relic_pool = Array[ExtResource("38_g5yct")]([ExtResource("39_iyk1o"), E
 regenerating_icon_texture = ExtResource("32_1e1l8")
 random_enemy_trait_pool = Array[ExtResource("42_gib6t")]([ExtResource("43_h6x2e"), ExtResource("44_2rvx2"), ExtResource("45_vqjug"), ExtResource("46_tqjuo"), ExtResource("47_fx8i1"), ExtResource("48_fu7uk")])
 random_trait_scaling_threshold = 8
+
+[node name="TopUIBackground" type="TextureRect" parent="." unique_id=1064802434]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("51_tqjuo")
+stretch_mode = 1
+
+[node name="BottomUIBackground" type="TextureRect" parent="." unique_id=1480612667]
+custom_minimum_size = Vector2(0, 256)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("51_tqjuo")
+stretch_mode = 1
 
 [node name="DeathOverlay" type="ColorRect" parent="." unique_id=804734905]
 visible = false
@@ -1715,8 +1740,9 @@ expand_icon = true
 custom_minimum_size = Vector2(96, 96)
 layout_mode = 0
 offset_left = -32.0
+offset_top = -12.0
 offset_right = 64.0
-offset_bottom = 96.0
+offset_bottom = 84.0
 theme = ExtResource("36_47v24")
 texture = ExtResource("52_b4fdd")
 
