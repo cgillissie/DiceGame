@@ -20,3 +20,4 @@ class_name EnemyData
 @export var food_drop_chance: float = 0.15
 @export var food_drop_pool: Array[ConsumableItem]
 @export var immune_to_freeze_skip: bool = false
+@export var crowd_control_immune : bool = false

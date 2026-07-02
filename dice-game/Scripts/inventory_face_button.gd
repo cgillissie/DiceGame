@@ -94,4 +94,4 @@ func _drop_data(_position, data):
 	if combat == null:
 		return
 
-	combat.handle_inventory_face_drop(data, face_data)
+	combat.handle_face_drop(data, face_data, "inventory")

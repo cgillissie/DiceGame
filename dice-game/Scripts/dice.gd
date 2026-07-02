@@ -115,13 +115,13 @@ func get_face_tooltip(face: DiceFace) -> String:
 			return "Heal " + str(face.value) + "\nRestore " + str(face.value) + " HP."
 
 		"gold":
-			return "Gold %d\nGain %d gold after combat." % face.value
+			return "Gold " + str(face.value) +"\nGain " + str(face.value) + "gold after combat."
 
 		"bleed":
-			return "Bleed %d\nApply %d Bleed." % face.value
+			return "Bleed " + str(face.value) + "\nApply " + str(face.value) + " Bleed."
 
 		"freeze":
-			return "Freeze %d\nApply %d Freeze." % face.value
+			return "Freeze " + str(face.value) + "\nApply " + str(face.value) + " Freeze."
 
 		"dodge":
 			return "Dodge\nThe targeted enemy Critical Misses."

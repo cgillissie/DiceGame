@@ -66,7 +66,7 @@ func _ready():
 		if loaded and combat.expedition_active:
 			await load_saved_expedition()
 	music_player.bus = "Music"
-
+	
 	if !music_player.finished.is_connected(_on_music_finished):
 		music_player.finished.connect(_on_music_finished)
 	
@@ -492,5 +492,4 @@ func _on_witch_choice_made(accepted: bool):
 	combat.expedition_progress += 1
 	combat.save_run()
 	await fade_from_black()
-	
 	

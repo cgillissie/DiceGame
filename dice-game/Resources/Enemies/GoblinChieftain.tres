@@ -35,4 +35,5 @@ traits = Array[ExtResource("13_rw0gg")]([ExtResource("14_pn832")])
 food_drop_chance = 0.3
 food_drop_pool = Array[ExtResource("11_v80vh")]([ExtResource("12_jbaxx"), ExtResource("13_we6wh"), ExtResource("14_076xc")])
 immune_to_freeze_skip = true
+crowd_control_immune = true
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

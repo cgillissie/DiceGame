@@ -27,6 +27,7 @@ var active_status_icons: Array[Sprite3D] = []
 @export var freeze_icon_texture: Texture2D
 @export var bleed_icon_texture: Texture2D
 @export var shatter_particles_scene: PackedScene
+@export var cc_immune_icon_texture: Texture2D
 
 @export var ui_font: Font
 
@@ -213,6 +214,14 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 		icon_index += 1
 		sprite.modulate = Color.WHITE
 
+	if data.crowd_control_immune:
+		add_status_icon(
+			cc_immune_icon_texture,
+			icon_index,
+			"Crowd Control Immune\nCannot be Frozen or affected by crowd control.",
+			0
+		)
+		icon_index += 1
 		
 
 		if enemy.has("bleed") and enemy["bleed"] > 0:

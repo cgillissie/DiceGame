@@ -1165,7 +1165,6 @@ func update_enemy_3d_nodes():
 
 		if is_instance_valid(enemy_3d_nodes[i]):
 			enemy_3d_nodes[i].setup(i, active_enemies[i])
-			enemy_3d_nodes[i].setup(i, active_enemies[i])
 			enemy_3d_nodes[i].update_status_icons(
 	active_enemies[i]["data"],
 	active_enemies[i]
@@ -1592,7 +1591,8 @@ func resolve_player_dice():
 			"pain":
 				player_hp -= die.current_face.value
 				if player_hp < 0:
-						player_hp = 0
+					player_hp = 0
+					lose_combat()
 				show_popup_text(
 					player_3d_node,
 					str(die.current_face.value),
@@ -1709,6 +1709,11 @@ func end_round():
 
 	await resolve_player_dice()
 	
+	if combat_over:
+		is_resolving_turn = false
+		end_round_button.disabled = false
+		return
+		
 	mulligem_used_this_turn = false
 	update_mulligem_button()
 	
@@ -1991,7 +1996,6 @@ func remove_defeated_enemies():
 		defeated_enemies.append(active_enemies[index]["data"])
 
 		if index < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[index]):
-			AudioManager.play_one_shot(enemy_death_sound, 1.05, 1.4)
 			var enemy_node := enemy_3d_nodes[index]
 			var shattered: bool = false
 
@@ -2338,6 +2342,17 @@ func lose_combat():
 func restart_run():
 	delete_run_save()
 	get_tree().reload_current_scene()
+	completed_bounties.clear()
+	final_boss_unlocked = false
+	current_bounty = null
+
+	for bounty in bounty_pool:
+		bounty.completed = false
+
+	if final_boss_bounty != null:
+		final_boss_bounty.completed = false
+	if FileAccess.file_exists(RUN_SAVE_PATH):
+		DirAccess.remove_absolute(RUN_SAVE_PATH)
 	rebuild_bounty_board()
 	run_encounters_completed = 0
 	# refresh_relic_panel()
@@ -3804,9 +3819,17 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			return
 
 		"freeze":
+			if enemy["data"].crowd_control_immune:
+				show_popup_text(enemy_node, "Immune", 1.2, Color.ORANGE_RED)
+				add_combat_log_entry(enemy["data"].enemy_name + " is immune to Freeze.")
+				update_enemy_3d_nodes()
+				return
+
 			enemy["frozen"] = true
 			enemy["freeze_stacks"] += die.current_face.value
+
 			AudioManager.play_one_shot(freeze_sound)
+
 			show_popup_text(enemy_node, "Frozen +" + str(die.current_face.value), 1.2, Color.CYAN)
 			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " Freeze stacks.")
 
@@ -4607,7 +4630,19 @@ func is_food_already_active(item: ConsumableItem) -> bool:
 
 	return false
 	
-func handle_face_drop(data: Dictionary, target_slot_index: int):
+func handle_face_drop(data: Dictionary, target_face: DiceFace, target_source_type: String, target_slot_index: int = -1):
+	var dragged_face: DiceFace = data["face"]
+	var source_type: String = data.get("source_type", "")
+
+	# Inventory → Inventory fusion should NOT require selected_edit_die.
+	if source_type == "inventory" and target_source_type == "inventory":
+		try_fuse_inventory_faces(dragged_face, target_face)
+		return
+
+	# Everything involving equipped faces does require selected_edit_die.
+	if selected_edit_die == null:
+		show_edit_message("Select a die first.")
+		return
 	clear_drag_fusion_preview()
 	if selected_edit_die != null and !selected_edit_die.editable:
 		show_edit_message("Cursed dice cannot be edited.")
@@ -4621,11 +4656,8 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 	if target_slot_index < 0 or target_slot_index >= selected_edit_die.faces.size():
 		return
 
-	var source_type: String = data["source_type"]
-
 	match source_type:
 		"inventory":
-			var dragged_face: DiceFace = data["face"]
 
 			if dragged_face == null:
 				return
@@ -4649,7 +4681,7 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 				)
 				return
 			
-			var target_face: DiceFace = selected_edit_die.faces[target_slot_index]
+
 
 			if target_face == null:
 				target_face = create_basic_miss_face()
@@ -4698,7 +4730,6 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 				return
 
 			var source_face: DiceFace = selected_edit_die.faces[source_slot]
-			var target_face: DiceFace = selected_edit_die.faces[target_slot_index]
 
 			if source_face == null:
 				source_face = create_basic_miss_face()
@@ -4732,6 +4763,36 @@ func handle_face_drop(data: Dictionary, target_slot_index: int):
 			else:
 				selected_edit_die.faces[source_slot] = target_face
 				selected_edit_die.faces[target_slot_index] = source_face
+
+	refresh_edit_dice_panel()
+	save_run()
+	
+func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
+	var index_a := face_inventory.find(face_a)
+	var index_b := face_inventory.find(face_b)
+
+	if index_a == -1 or index_b == -1:
+		show_edit_message("Could not find both faces.")
+		return
+
+	if index_a == index_b:
+		return
+
+	var fused_face := create_fused_face(face_a, face_b)
+
+	if fused_face == null:
+		show_edit_message("Those faces cannot be fused.")
+		return
+
+	# Remove higher index first so the lower index does not shift.
+	var high_index: int = max(index_a, index_b)
+	var low_index: int = min(index_a, index_b)
+
+	face_inventory.remove_at(high_index)
+	face_inventory.remove_at(low_index)
+	face_inventory.append(fused_face)
+
+	AudioManager.play_one_shot(graft_face_sound)
 
 	refresh_edit_dice_panel()
 	save_run()
@@ -5040,7 +5101,8 @@ func show_status_tooltip(text: String):
 	status_tooltip_label.text = text
 	status_tooltip_panel.visible = true
 	status_tooltip_panel.global_position = get_viewport().get_mouse_position() + Vector2(16, 16)
-
+	status_tooltip_panel.z_index = 500
+	status_tooltip_panel.top_level = true
 	status_tooltip_label.custom_minimum_size = Vector2(240, 0)
 	status_tooltip_panel.custom_minimum_size = Vector2(260, 0)
 
@@ -5637,7 +5699,6 @@ func serialize_consumable(item: ConsumableItem) -> Dictionary:
 		"heal_amount": item.heal_amount,
 		"next_combat_block": item.next_combat_block,
 		"next_combat_damage": item.next_combat_damage,
-		"increase_max_hp": item.increase_max_hp,
 		"next_combat_max_hp": item.next_combat_max_hp,
 		"food_tier": item.food_tier,
 		"grants_trait_path": item.grants_trait.resource_path if item.grants_trait != null else ""
@@ -5691,7 +5752,6 @@ func deserialize_consumable(data: Dictionary) -> ConsumableItem:
 	item.heal_amount = data.get("heal_amount", 0)
 	item.next_combat_block = data.get("next_combat_block", 0)
 	item.next_combat_damage = data.get("next_combat_damage", 0)
-	item.increase_max_hp = data.get("increase_max_hp", 0)
 	item.next_combat_max_hp = data.get("next_combat_max_hp", 0)
 	item.food_tier = data.get("food_tier", 1)
 
@@ -6119,8 +6179,7 @@ func recalculate_active_food_bonuses():
 	next_combat_bonus_max_hp = 0
 
 	for item in active_food_items:
-		next_combat_bonus_damage += item.bonus_damage
-		next_combat_bonus_block += item.bonus_block
+		next_combat_bonus_damage += item.next_combat_damage
+		next_combat_bonus_block += item.next_combat_block
 		next_combat_heal += item.heal_amount
-		next_combat_bonus_max_hp += item.bonus_max_hp
-		
+		next_combat_bonus_max_hp += item.next_combat_max_hp

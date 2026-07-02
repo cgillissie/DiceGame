@@ -10,7 +10,6 @@ class_name ConsumableItem
 @export var heal_amount: int = 0
 @export var next_combat_block: int = 0
 @export var next_combat_damage: int = 0
-@export var increase_max_hp: int = 0
 @export var next_combat_max_hp: int = 0
 @export var food_tier: int = 1
 @export var grants_trait: EnemyTrait
