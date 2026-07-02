@@ -38,9 +38,11 @@ var town_camera_is_tweening := false
 @onready var fade_rect: ColorRect = $FadeRect
 @onready var music_player: AudioStreamPlayer = $MusicPlayer
 
+
 @export var town_music: AudioStream
 @export var boss_music: AudioStream
 @export var expedition_music: Array[AudioStream]
+@export var witch_music: AudioStream
 
 var active_world: Node3D = null
 
@@ -461,7 +463,7 @@ func fade_audio_in(player: AudioStreamPlayer, duration: float = 0.5):
 
 func start_witch_encounter_world():
 	await fade_to_black()
-
+	await play_music_fade(witch_music)
 	load_world(witch_encounter_scene)
 
 	combat.hide_all_major_panels()
@@ -481,7 +483,8 @@ func _on_witch_choice_made(accepted: bool):
 		combat.accept_witch_offer()
 	else:
 		combat.ignore_witch_offer()
-	
+		
+	await play_music_fade(expedition_music.pick_random())
 	load_world(combat_scene)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(false)

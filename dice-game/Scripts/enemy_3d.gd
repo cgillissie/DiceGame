@@ -73,6 +73,7 @@ func setup(index: int, enemy: Dictionary):
 	hp_label.outline_size = 2
 	hp_label.outline_modulate = Color.BLACK
 	
+	apply_enemy_modulate(enemy)
 	update_status_icons(data, enemy)
 	
 func _on_area_input_event(camera, event, position, normal, shape_idx):
@@ -141,18 +142,20 @@ func clear_trait_icons():
 		trait_icons_container.remove_child(child)
 		child.queue_free()
 		
-func update_status_icons(data: EnemyData, enemy: Dictionary):
-	clear_status_icons()
+func apply_enemy_modulate(enemy: Dictionary):
 	sprite.modulate = Color.WHITE
-
-	var icon_index := 0
 
 	if enemy.has("bleed") and enemy["bleed"] > 0:
 		sprite.modulate = Color(1.0, 0.3, 0.3)
 
 	if enemy.has("freeze_stacks") and enemy["freeze_stacks"] > 0:
 		sprite.modulate = Color(0.55, 0.85, 1.0)
-
+		
+		
+func update_status_icons(data: EnemyData, enemy: Dictionary):
+	clear_status_icons()
+	
+	var icon_index := 0
 	for enemy_trait in data.traits:
 		var display_name := enemy_trait.trait_name
 
@@ -208,7 +211,16 @@ func update_status_icons(data: EnemyData, enemy: Dictionary):
 			enemy["bleed"]
 		)
 		icon_index += 1
+		sprite.modulate = Color.WHITE
+
 		
+
+		if enemy.has("bleed") and enemy["bleed"] > 0:
+			sprite.modulate = Color(1.0, 0.3, 0.3)
+
+		if enemy.has("freeze_stacks") and enemy["freeze_stacks"] > 0:
+			sprite.modulate = Color(0.55, 0.85, 1.0)
+			
 func add_status_icon(texture: Texture2D, index: int, tooltip: String, value: int = 0):
 	if texture == null:
 		return

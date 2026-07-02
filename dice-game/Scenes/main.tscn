@@ -27,6 +27,7 @@
 [ext_resource type="AudioStream" uid="uid://dtqm580kideu7" path="res://Assets/Music/YouMustDieOST05.wav" id="12_kwxat"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="13_wsu2k"]
 [ext_resource type="Resource" uid="uid://0b5u3iojqwxq" path="res://Resources/Bounties/The Congregation.tres" id="14_k12tt"]
+[ext_resource type="AudioStream" uid="uid://ciqcjcxxptmui" path="res://Assets/Music/YouMustDieWitchTheme.wav" id="14_my4ki"]
 [ext_resource type="Resource" uid="uid://2a2hro5n2rmn" path="res://Resources/Bounties/The Chieftain.tres" id="15_h1bgf"]
 [ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="18_hibaj"]
 [ext_resource type="Resource" uid="uid://bwlxju11srbd1" path="res://Resources/FoodRecipes/Stew_recipe.tres" id="19_pdsj5"]
@@ -84,6 +85,7 @@ graft_face_sound = ExtResource("9_kqrg6")
 dice_smith_anvil_sound = ExtResource("10_nwwfm")
 town_music = ExtResource("34_neg2b")
 expedition_music = Array[AudioStream]([ExtResource("12_kwxat")])
+witch_music = ExtResource("14_my4ki")
 
 [node name="FadeRect" type="ColorRect" parent="." unique_id=1008730374]
 modulate = Color(1, 1, 1, 0)

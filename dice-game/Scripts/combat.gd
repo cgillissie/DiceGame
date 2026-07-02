@@ -238,6 +238,7 @@ var final_boss_unlocked: bool = false
 @export var dice_smith_crafting_sound: AudioStream
 @export var graft_face_sound: AudioStream
 @export var coin_purchase_sound: AudioStream
+@export var cooking_sound: AudioStream
 
 # Encounter choice panel
 
@@ -595,7 +596,7 @@ func update_player_health_bar_position():
 	player_health_bar.visible = true
 	player_health_label.visible = true
 func update_mulligem_button():
-	mulligem_button.text = "Mulligem (" + str(mulligems) + ")"
+	mulligem_button.text = str(mulligems) + "/" + str(MAX_MULLIGEMS)
 
 	mulligem_button.disabled = mulligems <= 0 \
 		or mulligem_used_this_turn \
@@ -2318,7 +2319,9 @@ func lose_combat():
 	is_resolving_turn = false
 	if has_relic("Witch's Charm"):
 		consume_relic("Witch's Charm")
-		player_hp = 1
+		player_hp = max_player_hp
+		combat_max_player_hp = max_player_hp
+		update_player_hp_label()
 		expedition_active = false
 		is_in_town = true
 		current_bounty = null
@@ -5182,7 +5185,7 @@ func craft_selected_food():
 
 	selected_food_craft_names.clear()
 	selected_food_craft_names.clear()
-
+	AudioManager.play_one_shot(cooking_sound, randf_range(0.96, 1.04), 1.0)
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
 	rebuild_prepare_consumables()
@@ -5584,7 +5587,12 @@ func save_run():
 	for relic in owned_relics:
 		if relic != null:
 			owned_relic_names.append(relic.relic_name)
+	var active_food_save_data: Array = []
 
+	for item in active_food_items:
+		active_food_save_data.append(serialize_consumable(item))
+
+	config.set_value("inventory", "active_food_items", active_food_save_data)
 	config.set_value("unlock", "owned_relics", owned_relic_names)
 	config.set_value("unlock", "unlocked_food_tier", unlocked_food_tier)
 
@@ -5804,7 +5812,13 @@ func load_run():
 		if item_data is Dictionary:
 			consumable_inventory.append(deserialize_consumable(item_data))
 	merchant_unlocked_faces.clear()
+	active_food_items.clear()
 
+	for item_data in config.get_value("inventory", "active_food_items", []):
+		if item_data is Dictionary:
+			active_food_items.append(deserialize_consumable(item_data))
+	recalculate_active_food_bonuses()
+	update_active_food_icons()
 	for face_data in config.get_value("merchant", "unlocked_faces", []):
 		if face_data is Dictionary:
 			merchant_unlocked_faces.append(deserialize_face(face_data))
@@ -6097,3 +6111,16 @@ func shatter_camera_shake(camera: Camera3D, duration: float = 0.28, strength: fl
 		time += get_process_delta_time()
 
 	camera.global_position = original_position
+
+func recalculate_active_food_bonuses():
+	next_combat_bonus_damage = 0
+	next_combat_bonus_block = 0
+	next_combat_heal = 0
+	next_combat_bonus_max_hp = 0
+
+	for item in active_food_items:
+		next_combat_bonus_damage += item.bonus_damage
+		next_combat_bonus_block += item.bonus_block
+		next_combat_heal += item.heal_amount
+		next_combat_bonus_max_hp += item.bonus_max_hp
+		
