@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://boxgwjyifc3pm"]
 
-[ext_resource type="Script" uid="uid://cnoinqbg2qyom" path="res://Scenes/shatter_particles.gd" id="1_7vps5"]
+[ext_resource type="Script" uid="uid://cnoinqbg2qyom" path="res://Scripts/shatter_particles.gd" id="1_7vps5"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_pq87v"]
 direction = Vector3(0, 1, 0)

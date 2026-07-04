@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BountyData" format=3 uid="uid://buwoxi0n03h4q"]
+
+[ext_resource type="Resource" uid="uid://b40i1xmoyv82t" path="res://Resources/Encounters/BeastMasterBossFight.tres" id="1_i80lr"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="1_nt1r6"]
+[ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_i80lr"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="3_0ry4k"]
+[ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="4_j68qb"]
+[ext_resource type="Resource" uid="uid://c4priatr1lxxg" path="res://Resources/Faces/bleed_1_face.tres" id="5_0ry4k"]
+[ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="5_k21ip"]
+
+[resource]
+script = ExtResource("2_i80lr")
+bounty_name = "The Beast Master"
+boss_encounter = ExtResource("1_i80lr")
+reward_volatile_cores = 1
+reward_gold = 300
+reward_reserve_slots = 1
+unlocked_merchant_faces = Array[ExtResource("3_0ry4k")]([ExtResource("5_0ry4k")])
+metadata/_custom_type_script = "uid://cj0xiilvtky86"

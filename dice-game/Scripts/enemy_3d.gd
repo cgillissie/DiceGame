@@ -312,4 +312,16 @@ func spawn_shatter_particles():
 	get_parent().add_child(particles)
 	particles.global_position = global_position + Vector3(0, 0.8, 0)
 	
-	
+func play_cutscene_animation():
+	if sprite.sprite_frames == null:
+		return
+
+	if !sprite.sprite_frames.has_animation("cutscene"):
+		return
+
+	sprite.play("cutscene")
+
+	await sprite.animation_finished
+
+	if enemy_data != null and sprite.sprite_frames.has_animation(enemy_data.idle_animation_name):
+		sprite.play(enemy_data.idle_animation_name)

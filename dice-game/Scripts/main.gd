@@ -54,6 +54,8 @@ func _ready():
 	load_town()
 	init_steam()
 	
+	combat.request_music_change.connect(_on_request_music_change)
+	combat.request_music_fade_out.connect(_on_request_music_fade_out)
 	combat.town_menu_closed.connect(reset_town_interaction)
 	combat.expedition_started.connect(start_expedition_world)
 	combat.return_to_town_requested.connect(return_to_town)
@@ -493,3 +495,8 @@ func _on_witch_choice_made(accepted: bool):
 	combat.save_run()
 	await fade_from_black()
 	
+func _on_request_music_fade_out():
+	await fade_audio_out(music_player, 1.0)
+
+func _on_request_music_change(track: AudioStream):
+	await play_music_fade(track)

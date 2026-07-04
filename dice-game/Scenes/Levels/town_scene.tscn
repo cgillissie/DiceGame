@@ -19,7 +19,7 @@
 [ext_resource type="AudioStream" uid="uid://bfark12vdqk0h" path="res://Assets/Sounds/Crafting/DiceSmithAnvil.wav" id="14_yfhdt"]
 [ext_resource type="AudioStream" uid="uid://byeld6w2elmgs" path="res://Assets/Sounds/AtmosphericSounds/DiceSmithSelected.wav" id="15_trvd2"]
 [ext_resource type="Texture2D" uid="uid://ck37jhmiowix" path="res://Assets/Sprites/TownSprites/BountyBoardSignPost.png" id="19_trvd2"]
-[ext_resource type="Script" uid="uid://d01qw428vp23k" path="res://Scenes/Levels/omni_light_3d.gd" id="20_1pqdl"]
+[ext_resource type="Script" uid="uid://d01qw428vp23k" path="res://Scripts/omni_light_3d.gd" id="20_1pqdl"]
 
 [sub_resource type="Sky" id="Sky_2n375"]
 

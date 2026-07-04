@@ -42,7 +42,8 @@
 [ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="25_e08e2"]
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="26_neg2b"]
 [ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="27_r33sp"]
-[ext_resource type="Resource" uid="uid://beq20pnxoa546" path="res://Resources/Relics/WitchCharm.tres" id="32_2060n"]
+[ext_resource type="Resource" uid="uid://buwoxi0n03h4q" path="res://Resources/Bounties/The Beast Master.tres" id="33_lx3vj"]
+[ext_resource type="AudioStream" uid="uid://ca7jmgf7hf50h" path="res://Assets/Music/YouMustDieBeastMasterTheme.wav" id="34_lx3vj"]
 [ext_resource type="AudioStream" uid="uid://ihx4cw7m2oft" path="res://Assets/Music/YouMustDieTownTheme.wav" id="34_neg2b"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="39_s8vy0"]
 [ext_resource type="Resource" uid="uid://cmx1h34g2m86g" path="res://Resources/Relics/IronCharm.tres" id="40_jut3y"]
@@ -109,8 +110,8 @@ twist_knife_face_template = ExtResource("19_ptfg5")
 pain_face_template = ExtResource("21_1semv")
 player_character_data = SubResource("Resource_hptm8")
 encounter_pool = Array[ExtResource("7_fdnlq")]([ExtResource("8_jkdf5"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
-bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf")])
-witch_charm_relic = ExtResource("32_2060n")
+bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf"), ExtResource("33_lx3vj")])
+beastmaster_phase2_music = ExtResource("34_lx3vj")
 combat_relic_drop_pool = Array[ExtResource("39_s8vy0")]([ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("40_jut3y"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResource("20_ueoa1"), ExtResource("21_6vcvc")])
 merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), ExtResource("24_kltya"), ExtResource("25_e08e2"), ExtResource("26_neg2b"), ExtResource("27_r33sp")])

@@ -239,6 +239,13 @@ var final_boss_unlocked: bool = false
 @export var graft_face_sound: AudioStream
 @export var coin_purchase_sound: AudioStream
 @export var cooking_sound: AudioStream
+@export var beastmaster_wind_sound: AudioStream
+@export var beastmaster_pant_sound: AudioStream
+@export var beastmaster_inhale_sound: AudioStream
+@export var beastmaster_horn_sound: AudioStream
+@export var beastmaster_phase2_music: AudioStream
+
+signal request_music_fade_out
 
 # Encounter choice panel
 
@@ -346,6 +353,7 @@ var sell_face_value: int = 2
 @export var victory_sound: AudioStream
 @export var shatter_particles_scene: PackedScene
 
+
 const AVAILABLE_RESOLUTIONS := [
 	Vector2i(1280, 720),
 	Vector2i(1600, 900),
@@ -356,9 +364,13 @@ const AVAILABLE_RESOLUTIONS := [
 signal expedition_started(event_type: String)
 signal return_to_town_requested
 signal town_menu_closed
+signal request_music_change(track: AudioStream)
 
 const PLAN_COMBAT := "combat"
 const PLAN_WITCH := "witch"
+
+var beastmaster_camera_original_position: Vector3
+var beastmaster_camera_original_size: float
 
 var expedition_encounter_plan: Array = []
 var loaded_pending_encounter: bool = false
@@ -801,7 +813,7 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 	var scaled_max_hp = enemy_data.max_hp + (run_encounters_completed * 3)
 
 	var bonus_traits: Array[EnemyTrait] = []
-
+	
 	if run_encounters_completed >= random_trait_scaling_threshold:
 		if randf() <= random_trait_chance:
 			var valid_traits: Array[EnemyTrait] = []
@@ -835,7 +847,8 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 		"bleed": 0,
 		"roll_text": "",
 		"rolled_faces": [],
-		"bonus_traits": bonus_traits
+		"bonus_traits": bonus_traits,
+		"phase_two_started": false,
 	}
 	
 func spawn_enemy_3d_nodes():
@@ -1979,7 +1992,7 @@ func reset_dice_for_next_roll():
 		
 func remove_defeated_enemies():
 	var defeated_indices: Array[int] = []
-
+	
 	for i in active_enemies.size():
 		if active_enemies[i]["hp"] <= 0:
 			defeated_indices.append(i)
@@ -1988,6 +2001,13 @@ func remove_defeated_enemies():
 	defeated_indices.reverse()
 
 	for index in defeated_indices:
+		var enemy = active_enemies[index]
+		var data: EnemyData = enemy["data"]
+
+		if data.is_beastmaster_boss and !enemy["phase_two_started"]:
+			enemy["hp"] = 1
+			await beastmaster_phase_transition(index)
+			continue
 		apply_shatter_from_enemy(index)
 		var defeated_name = active_enemies[index]["data"].enemy_name
 		add_combat_log_entry(defeated_name + " defeated!")
@@ -6183,3 +6203,113 @@ func recalculate_active_food_bonuses():
 		next_combat_bonus_block += item.next_combat_block
 		next_combat_heal += item.heal_amount
 		next_combat_bonus_max_hp += item.next_combat_max_hp
+
+func beastmaster_phase_transition(enemy_index: int):
+	if enemy_index < 0 or enemy_index >= active_enemies.size():
+		return
+
+	if enemy_index >= enemy_3d_nodes.size():
+		return
+	
+	var enemy = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+
+	enemy["phase_two_started"] = true
+
+	end_round_button.disabled = true
+	mulligem_button.disabled = true
+	clear_assigned_dice_ui()
+	set_combat_ui_enabled(false)
+
+	request_music_fade_out.emit()
+
+	await cinematic_beastmaster_focus(enemy_node)
+
+	var sprite := enemy_node.sprite
+
+	sprite.play("cutscene")
+
+	AudioManager.play_one_shot(beastmaster_pant_sound)
+
+	AudioManager.play_one_shot(beastmaster_wind_sound)
+
+	await wait_until_sprite_frame(sprite, 32)
+	AudioManager.play_one_shot(beastmaster_inhale_sound)
+
+	await wait_until_sprite_frame(sprite, 38)
+	AudioManager.play_one_shot(beastmaster_horn_sound)
+	await shatter_camera_shake(get_viewport().get_camera_3d(), 0.35, 0.28)
+		
+	await sprite.animation_finished
+	await get_tree().create_timer(0.8).timeout
+
+	request_music_change.emit(beastmaster_phase2_music)
+	if enemy_node.enemy_data != null and sprite.sprite_frames.has_animation(enemy_node.enemy_data.idle_animation_name):
+		sprite.play(enemy_node.enemy_data.idle_animation_name)
+
+	enemy["max_hp"] = enemy["data"].max_hp
+	enemy["hp"] = max(1, int(enemy["max_hp"] * enemy["data"].phase_two_hp_percent))
+	enemy["attack"] = 0
+	enemy["crit"] = 0
+	enemy["block"] = 0
+	enemy["heal"] = 0
+	enemy["rolled_faces"] = []
+	enemy["roll_text"] = "Recovering"
+	update_enemy_3d_nodes()
+	update_incoming_damage_label()
+	await shatter_camera_shake(get_viewport().get_camera_3d(), 0.35, 0.28)
+	await cinematic_beastmaster_zoom_out()
+	set_combat_ui_enabled(true)
+	update_mulligem_button()
+	end_round_button.disabled = false
+
+func cinematic_beastmaster_focus(enemy_node: Node3D):
+	var camera := combat_camera
+	beastmaster_camera_original_position = camera.global_position
+	beastmaster_camera_original_size = camera.size
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera == null or !is_instance_valid(enemy_node):
+		return
+
+	var original_position := camera.global_position
+	var original_size := camera.size
+	var zoom_size := original_size * 0.65
+
+	var direction_to_enemy := (enemy_node.global_position - camera.global_position).normalized()
+	var zoom_position := original_position + direction_to_enemy * 1.4
+
+	var tween := create_tween()
+	tween.tween_property(camera, "global_position", zoom_position, 0.35)
+	tween.parallel().tween_property(camera, "size", zoom_size, 0.35)
+
+	await tween.finished
+
+func wait_until_sprite_frame(sprite: AnimatedSprite3D, target_frame: int):
+	while sprite != null \
+		and sprite.is_playing() \
+		and sprite.animation == "cutscene" \
+		and sprite.frame < target_frame:
+		await get_tree().process_frame
+
+func cinematic_beastmaster_zoom_out():
+	var camera := combat_camera
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+	if camera == null:
+		return
+
+	var tween := create_tween()
+	tween.tween_property(camera, "global_position", beastmaster_camera_original_position, 0.35)
+	tween.parallel().tween_property(camera, "size", beastmaster_camera_original_size, 0.35)
+	await tween.finished
+	
+func clear_assigned_dice_ui():
+	rescue_assigned_dice()
+
+	for child in assigned_dice_overlay.get_children():
+		child.queue_free()
+
+	assigned_enemy_containers.clear()
+	update_assigned_panel_visibility()

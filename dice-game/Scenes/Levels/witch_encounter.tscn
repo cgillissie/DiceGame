@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cvo1axegmlc63"]
 
-[ext_resource type="Script" uid="uid://cfwm5aeahc36j" path="res://Scenes/Levels/witch_encounter.gd" id="1_jb8le"]
+[ext_resource type="Script" uid="uid://cfwm5aeahc36j" path="res://Scripts/witch_encounter.gd" id="1_jb8le"]
 [ext_resource type="PackedScene" uid="uid://cg2qfl0ux6xgj" path="res://Assets/3D Models/GrassFieldBackground.gltf" id="1_nybyb"]
 [ext_resource type="Texture2D" uid="uid://c4avywdnkcxwh" path="res://Assets/Sprites/TownSprites/WitchesHut.png" id="2_g5iiw"]
 [ext_resource type="Texture2D" uid="uid://cbtdxa4i0s53t" path="res://Assets/Sprites/WorldSprites/GrassSprite01.png" id="3_m2u85"]
@@ -14,7 +14,7 @@
 [ext_resource type="SpriteFrames" uid="uid://d3gw0dsh6yjy1" path="res://Resources/SpriteFrames/PlayerKnightSpriteFrames.tres" id="11_5d6b6"]
 [ext_resource type="FontFile" uid="uid://ikng2ikqxt7i" path="res://Assets/Fonts/PixelOperator8-Bold.ttf" id="13_6pcko"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="13_tstwn"]
-[ext_resource type="Script" uid="uid://d01qw428vp23k" path="res://Scenes/Levels/omni_light_3d.gd" id="15_x56n8"]
+[ext_resource type="Script" uid="uid://d01qw428vp23k" path="res://Scripts/omni_light_3d.gd" id="15_x56n8"]
 
 [sub_resource type="Environment" id="Environment_02ujh"]
 ambient_light_color = Color(0.16924527, 0.1692453, 0.16924527, 1)

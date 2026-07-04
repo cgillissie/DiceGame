@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://m8xs5hr5sfmr"]
+
+[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="1_87jll"]
+[ext_resource type="Texture2D" uid="uid://bn8papa0gw76b" path="res://Assets/Sprites/FaceIcons/CritFace.png" id="2_4yo7s"]
+[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="3_n6ny6"]
+[ext_resource type="Texture2D" uid="uid://b6upkl1qfj4bi" path="res://Assets/Sprites/FaceIcons/HealFace.png" id="4_4dex4"]
+
+[node name="EnemyIntentDisplay" type="HBoxContainer" unique_id=1157561656]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AttackIcon" type="TextureRect" parent="." unique_id=844912224]
+layout_mode = 2
+texture = ExtResource("1_87jll")
+
+[node name="AttackValue" type="Label" parent="AttackIcon" unique_id=899938273]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="CritIcon" type="TextureRect" parent="." unique_id=691450853]
+layout_mode = 2
+texture = ExtResource("2_4yo7s")
+
+[node name="CritValue" type="Label" parent="CritIcon" unique_id=351494468]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="BlockIcon" type="TextureRect" parent="." unique_id=1206441840]
+layout_mode = 2
+texture = ExtResource("3_n6ny6")
+
+[node name="BlockValue" type="Label" parent="BlockIcon" unique_id=1678556359]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="HealIcon" type="TextureRect" parent="." unique_id=115787617]
+layout_mode = 2
+texture = ExtResource("4_4dex4")
+
+[node name="HealValue" type="Label" parent="HealIcon" unique_id=591145988]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0

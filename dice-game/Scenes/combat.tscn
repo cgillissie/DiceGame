@@ -52,11 +52,16 @@
 [ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="36_xu8d0"]
 [ext_resource type="AudioStream" uid="uid://dqjvu2h4wi1dg" path="res://Assets/Sounds/Crafting/CookingSizzle.wav" id="37_fx8i1"]
 [ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="38_8is30"]
+[ext_resource type="AudioStream" uid="uid://dx7cwokc14qv4" path="res://Assets/Sounds/BeastMaster/BeastMasterWindHowling.wav" id="38_dmd4c"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="38_g5yct"]
+[ext_resource type="AudioStream" uid="uid://br7pd7kga6oj2" path="res://Assets/Sounds/BeastMaster/BeastMasterPanting.wav" id="39_avtp3"]
 [ext_resource type="Resource" uid="uid://cmx1h34g2m86g" path="res://Resources/Relics/IronCharm.tres" id="39_iyk1o"]
+[ext_resource type="AudioStream" uid="uid://qphvg665wn62" path="res://Assets/Sounds/BeastMaster/BeastMasterBreatheIn.wav" id="40_v78a8"]
 [ext_resource type="Resource" uid="uid://b5fukb2rrejry" path="res://Resources/Relics/MeditationBeads.tres" id="40_y1f24"]
+[ext_resource type="AudioStream" uid="uid://hyy5bgdkhmun" path="res://Assets/Sounds/BeastMaster/BeastMasterHorn.wav" id="41_cda1e"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="42_gib6t"]
 [ext_resource type="Resource" uid="uid://skl127pice4j" path="res://Resources/Traits/berserker_2.tres" id="43_h6x2e"]
+[ext_resource type="Resource" uid="uid://beq20pnxoa546" path="res://Resources/Relics/WitchCharm.tres" id="43_qp1s2"]
 [ext_resource type="Texture2D" uid="uid://7t4bfebwxxns" path="res://Assets/Sprites/UI/HealthBarBack.png" id="43_r4oui"]
 [ext_resource type="Texture2D" uid="uid://csyxss4fswjvp" path="res://Assets/Sprites/UI/HealthBarFront.png" id="44_1e1l8"]
 [ext_resource type="Resource" uid="uid://c0ojcob53cive" path="res://Resources/Traits/regenerating_1.tres" id="44_2rvx2"]
@@ -67,7 +72,7 @@
 [ext_resource type="Texture2D" uid="uid://b4img0g2htlio" path="res://Assets/Sprites/UI/Menus/OptionsButtonIcon2.png" id="52_b4fdd"]
 [ext_resource type="Texture2D" uid="uid://bm1rc6i7tiflb" path="res://Assets/Sprites/UI/Menus/UIFrameTop.png" id="54_fu7uk"]
 [ext_resource type="Texture2D" uid="uid://dsenmc6jkig6i" path="res://Assets/Sprites/UI/Menus/UIFrameBottom.png" id="55_fu7uk"]
-[ext_resource type="Script" uid="uid://cf04t4ovmanqi" path="res://Scenes/sell_face_drop_area.gd" id="55_h6x2e"]
+[ext_resource type="Script" uid="uid://cf04t4ovmanqi" path="res://Scripts/sell_face_drop_area.gd" id="55_h6x2e"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xu8d0"]
 
@@ -110,7 +115,12 @@ dice_smith_crafting_sound = ExtResource("28_7qqpw")
 graft_face_sound = ExtResource("29_j6ndf")
 coin_purchase_sound = ExtResource("30_1e1l8")
 cooking_sound = ExtResource("37_fx8i1")
+beastmaster_wind_sound = ExtResource("38_dmd4c")
+beastmaster_pant_sound = ExtResource("39_avtp3")
+beastmaster_inhale_sound = ExtResource("40_v78a8")
+beastmaster_horn_sound = ExtResource("41_cda1e")
 relic_icon_scene = ExtResource("33_b4fdd")
+witch_charm_relic = ExtResource("43_qp1s2")
 item_button_scene = ExtResource("25_iv3ie")
 active_buff_icon_scene = ExtResource("35_y3gh1")
 merchant_relic_pool = Array[ExtResource("38_g5yct")]([ExtResource("39_iyk1o"), ExtResource("40_y1f24")])
