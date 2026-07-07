@@ -54,7 +54,16 @@ func setup(index: int, enemy: Dictionary):
 		sprite.scale = data.sprite_scale
 		sprite.position = data.sprite_offset
 		sprite.sprite_frames = data.sprite_frames
-		sprite.play(data.idle_animation_name)
+		if data.sprite_frames != null:
+			sprite.scale = data.sprite_scale
+			sprite.position = data.sprite_offset
+			sprite.sprite_frames = data.sprite_frames
+
+			if enemy.has("downed") and enemy["downed"]:
+				if sprite.sprite_frames.has_animation("downed"):
+					sprite.play("downed")
+			else:
+				sprite.play(data.idle_animation_name)
 		
 	
 	name_label.text = data.enemy_name
@@ -76,7 +85,8 @@ func setup(index: int, enemy: Dictionary):
 	
 	apply_enemy_modulate(enemy)
 	update_status_icons(data, enemy)
-	
+	print(data.enemy_name, " intent: A", enemy["attack"], " C", enemy["crit"], " B", enemy["block"], " H", enemy["heal"])
+	print("Attack icon visible: ", attack_icon.visible)
 func _on_area_input_event(camera, event, position, normal, shape_idx):
 	print("Enemy clicked area event")
 
@@ -322,6 +332,24 @@ func play_cutscene_animation():
 	sprite.play("cutscene")
 
 	await sprite.animation_finished
+
+	if enemy_data != null and sprite.sprite_frames.has_animation(enemy_data.idle_animation_name):
+		sprite.play(enemy_data.idle_animation_name)
+
+func play_named_animation(animation_name: String, stay_on_last_frame: bool = false):
+	if sprite.sprite_frames == null:
+		return
+
+	if !sprite.sprite_frames.has_animation(animation_name):
+		return
+
+	sprite.play(animation_name)
+
+	await sprite.animation_finished
+
+	if stay_on_last_frame:
+		sprite.stop()
+		return
 
 	if enemy_data != null and sprite.sprite_frames.has_animation(enemy_data.idle_animation_name):
 		sprite.play(enemy_data.idle_animation_name)

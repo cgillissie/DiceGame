@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c26wqdhgllcov"
-path.s3tc="res://.godot/imported/Targeting.png-61d10b7de529563aaf7ae584f4aa78f4.s3tc.ctex"
+uid="uid://dfg516faav17s"
+path.s3tc="res://.godot/imported/WaterWell.png-ae3328b87ba7a3a7197519e6676434ea.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Assets/Sprites/SpriteSheets/Targeting.png"
-dest_files=["res://.godot/imported/Targeting.png-61d10b7de529563aaf7ae584f4aa78f4.s3tc.ctex"]
+source_file="res://Assets/Sprites/TownSprites/WaterWell.png"
+dest_files=["res://.godot/imported/WaterWell.png-ae3328b87ba7a3a7197519e6676434ea.s3tc.ctex"]
 
 [params]
 

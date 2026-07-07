@@ -4,10 +4,12 @@
 [ext_resource type="PackedScene" uid="uid://bgsgbcu5fnjsq" path="res://Scenes/combat.tscn" id="2_bo1nx"]
 [ext_resource type="PackedScene" uid="uid://bn2k8y4ettc0" path="res://Scenes/Levels/town_scene.tscn" id="2_hdf80"]
 [ext_resource type="PackedScene" uid="uid://u2wd2rtxq7p2" path="res://Scenes/Levels/forest_level.tscn" id="3_jwpg7"]
+[ext_resource type="PackedScene" uid="uid://bjbiwegffoc5j" path="res://Scenes/Levels/forest_level02.tscn" id="3_r7bbj"]
 [ext_resource type="PackedScene" uid="uid://cvo1axegmlc63" path="res://Scenes/Levels/witch_encounter.tscn" id="4_2daye"]
 [ext_resource type="AudioStream" uid="uid://chhkugptwmn5l" path="res://Assets/Sounds/AtmosphericSounds/CameraZoomWind.wav" id="4_r33sp"]
 [ext_resource type="AudioStream" uid="uid://cegwg2epimtwl" path="res://Assets/Sounds/AttackSFX/CriticalHit01.wav" id="5_8cuat"]
 [ext_resource type="Script" uid="uid://rk2mjb2mygmu" path="res://Scripts/PlayerCharacterData.gd" id="5_344ge"]
+[ext_resource type="PackedScene" uid="uid://dcvoa7toewuoq" path="res://Scenes/Levels/beastmaster_level.tscn" id="5_e5peh"]
 [ext_resource type="AudioStream" uid="uid://bak86wjrblxki" path="res://Assets/Sounds/DiceSFX/DiceRoll02.wav" id="5_kry3j"]
 [ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="6_6vcvc"]
 [ext_resource type="AudioStream" uid="uid://dpmiivcqxm1nk" path="res://Assets/Sounds/AttackSFX/CriticalDieRoll.wav" id="6_o1aky"]
@@ -17,12 +19,12 @@
 [ext_resource type="AudioStream" uid="uid://dr8h7a71m3sxt" path="res://Assets/Sounds/Consumables/FoodEat.wav" id="7_kwxat"]
 [ext_resource type="AudioStream" uid="uid://cl55mrxix8ta3" path="res://Assets/Sounds/Crafting/DiceSmithItemCrafting.wav" id="8_aa8k8"]
 [ext_resource type="Resource" uid="uid://dy3ws0w57a5eq" path="res://Resources/Faces/reversal_face.tres" id="8_hpc6h"]
-[ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/bandit_acolyte_encounter.tres" id="8_jkdf5"]
+[ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/The Congregation/bandit_acolyte_encounter.tres" id="8_jkdf5"]
 [ext_resource type="AudioStream" uid="uid://bgmo0w5xr83h3" path="res://Assets/Sounds/Crafting/ClothTear.wav" id="9_kqrg6"]
-[ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/goblin_encounter.tres" id="9_wsu2k"]
-[ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/knight_priest_encounter.tres" id="10_k12tt"]
+[ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/The Chieftain/goblin_encounter.tres" id="9_wsu2k"]
+[ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/The Congregation/knight_priest_encounter.tres" id="10_k12tt"]
 [ext_resource type="AudioStream" uid="uid://bfark12vdqk0h" path="res://Assets/Sounds/Crafting/DiceSmithAnvil.wav" id="10_nwwfm"]
-[ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/bandit_ambush.tres" id="11_h1bgf"]
+[ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/The Chieftain/bandit_ambush.tres" id="11_h1bgf"]
 [ext_resource type="Theme" uid="uid://m4nfa8q8nfv" path="res://Resources/Themes/GameUITheme.tres" id="12_536cc"]
 [ext_resource type="AudioStream" uid="uid://dtqm580kideu7" path="res://Assets/Music/YouMustDieOST05.wav" id="12_kwxat"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="13_wsu2k"]
@@ -33,15 +35,20 @@
 [ext_resource type="Resource" uid="uid://bwlxju11srbd1" path="res://Resources/FoodRecipes/Stew_recipe.tres" id="19_pdsj5"]
 [ext_resource type="Resource" uid="uid://crlf7hdas1kqh" path="res://Resources/Faces/twist_knife_face.tres" id="19_ptfg5"]
 [ext_resource type="Resource" uid="uid://dxx5utuffbx3w" path="res://Resources/Faces/break_focus_face.tres" id="20_nwwfm"]
+[ext_resource type="Resource" uid="uid://ce8oostx4uebq" path="res://Resources/Dice/PlayerKnightCritD6.tres" id="20_pfx1i"]
+[ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="20_sasc4"]
 [ext_resource type="Resource" uid="uid://coeiua8kqh4r6" path="res://Resources/FoodRecipes/RegenerationTonic_recipe.tres" id="20_ueoa1"]
 [ext_resource type="Resource" uid="uid://b36t3rtj3bgip" path="res://Resources/Faces/pain_1_face.tres" id="21_1semv"]
 [ext_resource type="Resource" uid="uid://dtgk20cmtnd8t" path="res://Resources/FoodRecipes/Ale_recipe.tres" id="21_6vcvc"]
+[ext_resource type="Resource" uid="uid://ce7mugms5kks4" path="res://Resources/Dice/basic_d8.tres" id="21_pfx1i"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="22_7k868"]
 [ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="23_hpc6h"]
 [ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="24_kltya"]
 [ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="25_e08e2"]
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="26_neg2b"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="27_e5peh"]
 [ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="27_r33sp"]
+[ext_resource type="Resource" uid="uid://kxjc8nvytsp4" path="res://Resources/Faces/shield_bash.tres" id="29_fg68e"]
 [ext_resource type="Resource" uid="uid://buwoxi0n03h4q" path="res://Resources/Bounties/The Beast Master.tres" id="33_lx3vj"]
 [ext_resource type="AudioStream" uid="uid://ca7jmgf7hf50h" path="res://Assets/Music/YouMustDieBeastMasterTheme.wav" id="34_lx3vj"]
 [ext_resource type="AudioStream" uid="uid://ihx4cw7m2oft" path="res://Assets/Music/YouMustDieTownTheme.wav" id="34_neg2b"]
@@ -64,6 +71,11 @@
 [ext_resource type="AudioStream" uid="uid://ilxu12j5kyf1" path="res://Assets/Sounds/AttackSFX/Freeze.wav" id="59_y86h7"]
 [ext_resource type="AudioStream" uid="uid://dpa2snrug8qa2" path="res://Assets/Sounds/AttackSFX/ShatterDeath.wav" id="60_my4ki"]
 [ext_resource type="AudioStream" uid="uid://cyh38a36oidwi" path="res://Assets/Sounds/AtmosphericSounds/Victory.wav" id="61_lx3vj"]
+[ext_resource type="Resource" uid="uid://xkfgg8vudns" path="res://Resources/Traits/agile.tres" id="61_ynmfv"]
+[ext_resource type="PackedScene" uid="uid://boxgwjyifc3pm" path="res://Scenes/shatter_particles.tscn" id="65_owhal"]
+[ext_resource type="Resource" uid="uid://b6v15ssegjgtc" path="res://Resources/Enemies/Exvellus.tres" id="66_uv6w5"]
+[ext_resource type="Resource" uid="uid://bltcnld87vhte" path="res://Resources/Enemies/Nigel.tres" id="67_r7bbj"]
+[ext_resource type="Resource" uid="uid://b5t7lmuntohbm" path="res://Resources/Enemies/Noir.tres" id="68_e5peh"]
 
 [sub_resource type="Resource" id="Resource_hptm8"]
 script = ExtResource("5_344ge")
@@ -75,7 +87,8 @@ metadata/_custom_type_script = "uid://rk2mjb2mygmu"
 [node name="Main" type="Node" unique_id=697850224]
 script = ExtResource("1_b3802")
 town_scene = ExtResource("2_hdf80")
-combat_scene = ExtResource("3_jwpg7")
+combat_scenes = Array[PackedScene]([ExtResource("3_r7bbj"), ExtResource("3_jwpg7")])
+beastmaster_combat_scene = ExtResource("5_e5peh")
 witch_encounter_scene = ExtResource("4_2daye")
 camera_zoom_sound = ExtResource("4_r33sp")
 critical_hit_sound = ExtResource("5_8cuat")
@@ -102,24 +115,31 @@ color = Color(0, 0, 0, 1)
 
 [node name="CombatUI" parent="." unique_id=1112470734 instance=ExtResource("2_bo1nx")]
 theme = ExtResource("12_536cc")
+starting_dice = Array[ExtResource("27_e5peh")]([ExtResource("20_pfx1i"), ExtResource("20_pfx1i"), ExtResource("20_sasc4"), ExtResource("21_pfx1i")])
 miss_face_template = ExtResource("6_6vcvc")
 dodge_face_template = ExtResource("7_7k868")
 reversal_face_template = ExtResource("8_hpc6h")
 break_focus_face_template = ExtResource("20_nwwfm")
 twist_knife_face_template = ExtResource("19_ptfg5")
 pain_face_template = ExtResource("21_1semv")
+shield_bash_face_template = ExtResource("29_fg68e")
 player_character_data = SubResource("Resource_hptm8")
 encounter_pool = Array[ExtResource("7_fdnlq")]([ExtResource("8_jkdf5"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
 bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf"), ExtResource("33_lx3vj")])
 beastmaster_phase2_music = ExtResource("34_lx3vj")
 combat_relic_drop_pool = Array[ExtResource("39_s8vy0")]([ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("40_jut3y"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
+combat_relic_drop_chance = 0.03
 food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResource("20_ueoa1"), ExtResource("21_6vcvc")])
 merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), ExtResource("24_kltya"), ExtResource("25_e08e2"), ExtResource("26_neg2b"), ExtResource("27_r33sp")])
 merchant_relic_pool = Array[ExtResource("39_s8vy0")]([ExtResource("40_jut3y"), ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
-random_enemy_trait_pool = Array[ExtResource("47_bv80c")]([ExtResource("48_ptfg5"), ExtResource("49_2daye"), ExtResource("50_1semv"), ExtResource("51_2060n"), ExtResource("52_6ml46"), ExtResource("53_qax2n"), ExtResource("54_y86h7")])
+random_enemy_trait_pool = Array[ExtResource("47_bv80c")]([ExtResource("48_ptfg5"), ExtResource("49_2daye"), ExtResource("50_1semv"), ExtResource("51_2060n"), ExtResource("52_6ml46"), ExtResource("53_qax2n"), ExtResource("54_y86h7"), ExtResource("61_ynmfv")])
 freeze_sound = ExtResource("59_y86h7")
 shatter_death_sound = ExtResource("60_my4ki")
 victory_sound = ExtResource("61_lx3vj")
+shatter_particles_scene = ExtResource("65_owhal")
+beastmaster_exvellus_enemy = ExtResource("66_uv6w5")
+beastmaster_nigel_enemy = ExtResource("67_r7bbj")
+beastmaster_noir_enemy = ExtResource("68_e5peh")
 
 [node name="DiceRollSFX" type="AudioStreamPlayer" parent="CombatUI" unique_id=2019394322]
 stream = ExtResource("5_kry3j")

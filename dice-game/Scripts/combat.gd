@@ -13,6 +13,7 @@ const RUN_SAVE_PATH := "user://run_save.cfg"
 @export var break_focus_face_template: DiceFace
 @export var twist_knife_face_template: DiceFace
 @export var pain_face_template: DiceFace
+@export var shield_bash_face_template: DiceFace
 
 @onready var top_ui_background: TextureRect = $TopUIBackground
 @onready var bottom_ui_background: TextureRect = $BottomUIBackground
@@ -138,7 +139,7 @@ var dropped_face: DiceFace
 @onready var sell_face_panel: Control = $EditDicePanel/MarginContainer/MainVBox/SellFacePanel
 @onready var sell_drop_area: Control = $EditDicePanel/MarginContainer/MainVBox/SellFacePanel/SellDropArea
 @onready var sell_value_label: Label = $EditDicePanel/MarginContainer/MainVBox/SellFacePanel/SellValueLabel
-
+@onready var edit_dice_title_label: Label = $EditDicePanel/MarginContainer/MainVBox/EditTitleLabel
 var die_fragments: int = 0
 var last_die_fragments_gained: int = 0
 
@@ -292,6 +293,12 @@ var food_crafting_return_context: String = ""
 var unlocked_food_tier: int = 1
 @export var food_recipes: Array[FoodRecipe]
 
+# Dice Bag ###################################
+@onready var dice_bag_button: Button = $DiceBagButton
+@onready var dice_bag_panel: Panel = $DiceBagPanel
+@onready var dice_bag_close_button: Button = $DiceBagPanel/MarginContainer/VBoxContainer/HeaderHBox/CloseButton
+@onready var dice_bag_list: VBoxContainer = $DiceBagPanel/MarginContainer/VBoxContainer/ScrollContainer/DiceBagList
+var dice_panel_read_only: bool = false
 
 # Merchant #####################################
 @onready var merchant_panel: Panel = $MerchantPanel
@@ -353,6 +360,11 @@ var sell_face_value: int = 2
 @export var victory_sound: AudioStream
 @export var shatter_particles_scene: PackedScene
 
+# Beast Master stuff ############################
+@export var beastmaster_exvellus_enemy: EnemyData
+@export var beastmaster_nigel_enemy: EnemyData
+@export var beastmaster_noir_enemy: EnemyData
+@export var beastmaster_phase2_support_die: DiceData
 
 const AVAILABLE_RESOLUTIONS := [
 	Vector2i(1280, 720),
@@ -511,6 +523,12 @@ func _ready():
 	sfx_volume_slider.max_value = 1.0
 	sfx_volume_slider.step = 0.01
 	load_settings()
+	if dice_bag_button.pressed.is_connected(open_dice_bag_read_only):
+		dice_bag_button.pressed.disconnect(open_dice_bag_read_only)
+
+	dice_bag_button.pressed.connect(open_dice_bag_read_only)
+	dice_bag_close_button.pressed.connect(close_dice_bag)
+	dice_bag_panel.visible = false
 	# load_encounter(current_encounter)
 	death_overlay.visible = false
 	death_restart_button.pressed.connect(restart_run)
@@ -774,6 +792,8 @@ func update_enemy_hover_preview():
 # RELIC INVENTORY VARIABLES ####################
 
 func apply_volatile_core():
+	if dice_panel_read_only:
+		return
 	if volatile_cores <= 0:
 		return
 
@@ -810,8 +830,8 @@ func get_encounter_text(encounter: EncounterData) -> String:
 	return encounter.encounter_name
 	
 func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
-	var scaled_max_hp = enemy_data.max_hp + (run_encounters_completed * 3)
-
+	var scaled_max_hp = enemy_data.max_hp + (run_encounters_completed * 2)
+	
 	var bonus_traits: Array[EnemyTrait] = []
 	
 	if run_encounters_completed >= random_trait_scaling_threshold:
@@ -849,6 +869,8 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 		"rolled_faces": [],
 		"bonus_traits": bonus_traits,
 		"phase_two_started": false,
+		"agile_used": false,
+		"downed": false,
 	}
 	
 func spawn_enemy_3d_nodes():
@@ -879,26 +901,31 @@ func spawn_enemy_3d_nodes():
 		enemy_node.status_unhovered.connect(hide_status_tooltip)
 		
 func roll_enemy_intents():
-	var rolled_hit := false
 	for enemy in active_enemies:
+		var rolled_hit := false
+
 		enemy["attack"] = 0
 		enemy["crit"] = 0
 		enemy["block"] = 0
 		enemy["heal"] = 0
 		enemy["crit_rolls"] = []
 		enemy["rolled_faces"] = []
-	
+
+		if enemy.has("downed") and enemy["downed"]:
+			enemy["roll_text"] = "Downed"
+			continue
+
 		if enemy["frozen"]:
 			enemy["roll_text"] = "Frozen"
 			continue
 
 		enemy["roll_text"] = ""
-		
+
 		var data: EnemyData = enemy["data"]
 
 		for die_data in data.dice_pool:
 			var face: DiceFace = die_data.faces.pick_random()
-			var face_index := die_data.faces.find(face)
+			var face_index: int = die_data.faces.find(face)
 
 			enemy["roll_text"] += get_face_text(face) + " "
 
@@ -912,19 +939,53 @@ func roll_enemy_intents():
 				"hit":
 					enemy["attack"] += face.value
 					rolled_hit = true
-					
+
 				"crit":
 					enemy["crit"] += face.value
 					enemy["crit_rolls"].append(face.value)
+
 				"block":
 					enemy["block"] += face.value
+
 				"heal":
 					enemy["heal"] += face.value
+
+		if enemy.has("phase_two_support_die") and enemy["phase_two_support_die"] != null:
+			var support_die: DiceData = enemy["phase_two_support_die"]
+
+			for die_data in [support_die]:
+				var face: DiceFace = die_data.faces.pick_random()
+				var face_index: int = die_data.faces.find(face)
+
+				enemy["roll_text"] += get_face_text(face) + " "
+
+				enemy["rolled_faces"].append({
+					"face": face,
+					"face_index": face_index,
+					"sides": die_data.faces.size()
+				})
+
+				match face.result_type:
+					"hit":
+						enemy["attack"] += face.value
+						rolled_hit = true
+
+					"crit":
+						enemy["crit"] += face.value
+						enemy["crit_rolls"].append(face.value)
+
+					"block":
+						enemy["block"] += face.value
+
+					"heal":
+						enemy["heal"] += face.value
+
 		var berserker_value := get_active_berserker_bonus(enemy)
 
 		if berserker_value > 0 and rolled_hit:
 			enemy["attack"] += berserker_value
 			enemy["roll_text"] += "Berserker +" + str(berserker_value) + " "
+
 		var armored_value := get_enemy_trait_value(enemy, "armored")
 
 		if armored_value > 0:
@@ -1150,8 +1211,8 @@ func is_offensive_die(die: DiceNode) -> bool:
 		or die.current_face.result_type == "freeze" \
 		or die.current_face.result_type == "bleed" \
 		or die.current_face.result_type == "twist_knife" \
-		or die.current_face.result_type == "break_focus"
-	
+		or die.current_face.result_type == "break_focus" \
+		or die.current_face.result_type == "shield_bash"
 	##############################################################################
 	
 func load_encounter(encounter_data: EncounterData):
@@ -1280,7 +1341,7 @@ func get_container_for_die(die: DiceNode) -> GridContainer:
 		"heal", "vitality":
 			return healing_container
 
-		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus", "pain":
+		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus", "pain", "shield_bash":
 			return actions_container
 			
 		
@@ -1977,6 +2038,8 @@ func get_active_berserker_bonus(enemy: Dictionary) -> int:
 	return value
 	
 func reset_dice_for_next_roll():
+	for enemy in active_enemies:
+		enemy["agile_used"] = false
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
@@ -1992,7 +2055,7 @@ func reset_dice_for_next_roll():
 		
 func remove_defeated_enemies():
 	var defeated_indices: Array[int] = []
-	
+
 	for i in active_enemies.size():
 		if active_enemies[i]["hp"] <= 0:
 			defeated_indices.append(i)
@@ -2001,26 +2064,54 @@ func remove_defeated_enemies():
 	defeated_indices.reverse()
 
 	for index in defeated_indices:
-		var enemy = active_enemies[index]
+		if index < 0 or index >= active_enemies.size():
+			continue
+
+		var enemy: Dictionary = active_enemies[index]
 		var data: EnemyData = enemy["data"]
 
+		# Ignore already-downed Beastmaster until all phase 1 allies are dead.
+		if data.is_beastmaster_boss and !enemy["phase_two_started"] and enemy.has("downed") and enemy["downed"]:
+			continue
+
+		# First time Beastmaster hits 0 HP.
 		if data.is_beastmaster_boss and !enemy["phase_two_started"]:
+			if beastmaster_has_living_phase1_allies(index):
+				enemy["downed"] = true
+				enemy["hp"] = 1
+				enemy["attack"] = 0
+				enemy["crit"] = 0
+				enemy["block"] = 0
+				enemy["heal"] = 0
+				enemy["rolled_faces"] = []
+				enemy["roll_text"] = "Downed"
+
+				clear_assignments_for_enemy(index)
+
+				if index < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[index]):
+					enemy_3d_nodes[index].sprite.play("downed")
+
+				update_enemy_3d_nodes()
+				continue
+
 			enemy["hp"] = 1
 			await beastmaster_phase_transition(index)
-			continue
+			return
+
 		apply_shatter_from_enemy(index)
-		var defeated_name = active_enemies[index]["data"].enemy_name
+
+		var defeated_name: String = data.enemy_name
 		add_combat_log_entry(defeated_name + " defeated!")
-		
+
 		clear_assignments_for_enemy(index)
-		defeated_enemies.append(active_enemies[index]["data"])
+		defeated_enemies.append(data)
 
 		if index < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[index]):
-			var enemy_node := enemy_3d_nodes[index]
+			var enemy_node: Enemy3D = enemy_3d_nodes[index]
 			var shattered: bool = false
 
-			if active_enemies[index].has("freeze_stacks"):
-				shattered = int(active_enemies[index]["freeze_stacks"]) > 0
+			if enemy.has("freeze_stacks"):
+				shattered = int(enemy["freeze_stacks"]) > 0
 
 			if shattered:
 				cinematic_shatter_focus(enemy_node)
@@ -2030,20 +2121,37 @@ func remove_defeated_enemies():
 				await enemy_node.death_animation()
 
 		active_enemies.remove_at(index)
-		enemy_3d_nodes.remove_at(index)
-	var chained_death := false
 
+		if index < enemy_3d_nodes.size():
+			enemy_3d_nodes.remove_at(index)
+
+	# If Beastmaster is downed and all phase 1 allies are gone, start phase 2 now.
 	for i in active_enemies.size():
-		if active_enemies[i]["hp"] <= 0:
-			chained_death = true
-			break
+		var enemy: Dictionary = active_enemies[i]
+		var data: EnemyData = enemy["data"]
 
-	if chained_death:
-		await remove_defeated_enemies()
-		return
+		if data.is_beastmaster_boss \
+			and !enemy["phase_two_started"] \
+			and enemy.has("downed") \
+			and enemy["downed"] \
+			and !beastmaster_has_living_phase1_allies(i):
+				enemy["hp"] = 1
+				await beastmaster_phase_transition(i)
+				return
+
 	refresh_enemy_buttons()
-	update_enemy_3d_nodes()	
+	update_enemy_3d_nodes()
+	
+func beastmaster_has_living_phase1_allies(beastmaster_index: int) -> bool:
+	for i in active_enemies.size():
+		if i == beastmaster_index:
+			continue
 
+		if active_enemies[i]["hp"] > 0:
+			return true
+
+	return false
+	
 func clear_used_assigned_dice():
 	for die in dice_nodes:
 		if !is_instance_valid(die):
@@ -2634,8 +2742,11 @@ func handle_inventory_face_click(index: int):
 	refresh_edit_dice_panel()
 	
 func open_edit_dice_panel():
+	reset_edit_panel_to_normal_mode()
 	if shop_panel.visible == false:
 		return
+		
+	edit_dice_title_label.text = "Edit Faces"
 	edit_dice_panel.set_anchors_preset(Control.PRESET_CENTER)
 	edit_dice_panel.position = Vector2.ZERO
 	edit_dice_panel.anchor_left = 0.5
@@ -2658,6 +2769,13 @@ func open_edit_dice_panel():
 
 
 func close_edit_dice_panel():
+	if edit_dice_return_context == "dice_bag":
+		dice_panel_read_only = false
+		edit_dice_panel.visible = false
+		edit_dice_return_context = ""
+		assigned_dice_overlay.visible = true
+		edit_dice_title_label.text = "Edit Faces"
+		return
 	edit_dice_panel.visible = false
 
 	if edit_dice_return_context == "camp":
@@ -2671,6 +2789,13 @@ func close_edit_dice_panel():
 	selected_die_face_index = -1
 	selected_inventory_face_indices.clear()
 	fusion_mode = false
+	dice_panel_read_only = false
+	fuse_faces_button.visible = true
+	apply_volatile_core_button.visible = true
+	die_crafting_panel.visible = true
+	sell_face_panel.visible = true
+	inventory_faces_container.get_parent().get_parent().visible = true
+	close_edit_button.text = "Close"
 	update_begin_expedition_button_visibility()
 	update_fuse_button_text()
 	
@@ -2783,6 +2908,10 @@ func rebuild_owned_dice_grid():
 				category_index,
 				owned_dice[global_index] == selected_edit_die
 			)
+
+			button.set_cursed(!owned_dice[global_index].editable)
+
+			button.pressed.connect(select_edit_die.bind(owned_dice[global_index]))
 
 			button.pressed.connect(select_edit_die.bind(owned_dice[global_index]))
 
@@ -2902,14 +3031,22 @@ func fuse_selected_faces():
 	end_fusion_mode()
 	refresh_edit_dice_panel()
 	
-func select_edit_die(die_data: DiceData):
-	if !die_data.editable:
-		show_edit_message("Cursed dice cannot be edited.")
-		return
-	selected_edit_die = die_data
+func select_edit_die(die: DiceData):
+	selected_edit_die = die
+	selected_die_face_index = -1
+	selected_die_face_index_2 = -1
+
 	AudioManager.play_ui(ui_click_sound)
+
 	refresh_edit_dice_panel()
 	update_volatile_core_button()
+
+	if !die.editable:
+		edit_warning_label.text = "Cursed Die\nThis die cannot be edited."
+	elif dice_panel_read_only:
+		edit_warning_label.text = "Dice Bag - View your dice."
+	else:
+		edit_warning_label.text = ""
 	
 func update_volatile_core_button():
 	var base_text := "Apply Volatile Core (" + str(volatile_cores) + ")"
@@ -2988,6 +3125,10 @@ func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 	or (face_a.result_type == "heal" and face_b.result_type == "crit"):
 		return true
 		
+	if (face_a.result_type == "hit" and face_b.result_type == "block") \
+	or (face_a.result_type == "block" and face_b.result_type == "hit"):
+		return true
+	
 	if face_a.result_type != face_b.result_type:
 		return false
 
@@ -3008,6 +3149,11 @@ func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
 	or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
 		return create_twist_knife_face()
 
+	if face_a.result_type == "shield_bash" or face_b.result_type == "shield_bash":
+		show_edit_message("Shield Bash cannot be fused.")
+		AudioManager.play_ui(ui_fail_sound)
+		return null
+		
 	var new_face: DiceFace = face_a.duplicate(true)
 	new_face.value += 1
 	new_face.face_name = "Face"
@@ -3015,7 +3161,9 @@ func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
 	if (face_a.result_type == "crit" and face_b.result_type == "heal") \
 	or (face_a.result_type == "heal" and face_b.result_type == "crit"):
 		return create_break_focus_face()
-	
+	if (face_a.result_type == "hit" and face_b.result_type == "block") \
+		or (face_a.result_type == "block" and face_b.result_type == "hit"):
+		return shield_bash_face_template.duplicate(true)
 	return new_face
 
 func create_upgraded_face(face: DiceFace) -> DiceFace:
@@ -3053,6 +3201,8 @@ func update_craft_button(button: TextureButton, cost: int):
 		
 		
 func craft_empty_die(sides: int):
+	if dice_panel_read_only:
+		return
 	if die_fragments < sides:
 		show_edit_message(
 			"Need %d Die Fragments (%d/%d)"
@@ -3809,7 +3959,9 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 	var enemy = active_enemies[enemy_index]
 	var enemy_node = enemy_3d_nodes[enemy_index]
-
+	if enemy.has("downed") and enemy["downed"]:
+		show_popup_text(enemy_3d_nodes[enemy_index], "Downed", 1.2, Color.GRAY)
+		return
 	if !is_instance_valid(enemy_node):
 		return
 
@@ -3891,9 +4043,18 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 			update_enemy_3d_nodes()
 			return
-
+		
 		"crit":
-			var damage := die.current_face.value
+			var damage: int = die.current_face.value
+
+			if get_enemy_trait_value(enemy, "agile") > 0 and !enemy["agile_used"]:
+				enemy["agile_used"] = true
+				show_popup_text(enemy_node, "Dodged Crit!", 1.3, Color.CORNFLOWER_BLUE)
+				add_combat_log_entry(enemy["data"].enemy_name + " avoided a Crit with Agile.")
+				update_enemy_3d_nodes()
+				return
+
+			damage = apply_guardian_split(enemy_index, damage, true)
 
 			enemy["hp"] -= damage
 			enemy["exposed"] = true
@@ -3912,58 +4073,93 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 			update_enemy_3d_nodes()
 			return
+		"shield_bash":
+			var damage: int = player_block
 
+			if damage <= 0:
+				show_popup_text(enemy_node, "No Block", 1.2, Color.GRAY)
+				add_combat_log_entry("Shield Bash failed. No Block to consume.")
+				return
+
+			player_block = 0
+			update_player_block_label()
+
+			damage = apply_guardian_split(enemy_index, damage, false)
+
+			var blocked_amount: int = min(damage, int(enemy["block"]))
+			enemy["block"] -= blocked_amount
+			damage -= blocked_amount
+
+			if blocked_amount > 0:
+				await show_enemy_hit_sequence(enemy_index, blocked_amount, 0)
+
+			if damage > 0:
+				enemy["hp"] -= damage
+				last_player_damage += damage
+
+				if enemy["hp"] < 0:
+					enemy["hp"] = 0
+
+				await show_enemy_hit_sequence(enemy_index, 0, damage)
+
+			add_combat_log_entry("Shield Bash consumed Block and dealt damage.")
+			update_enemy_3d_nodes()
+			return
 		"hit":
-			var hit_value: int = die.current_face.value + active_combat_bonus_damage
-			var exposed_bonus := 0
+			var damage: int = die.current_face.value + active_combat_bonus_damage
 
 			if enemy["exposed"]:
-				exposed_bonus = 1
+				damage += 1
 				enemy["exposed"] = false
 				show_popup_text(enemy_node, "EXPOSED +1", 2.2, Color.YELLOW)
-			if has_relic("Bloodstone"):
-				enemy["bleed"] += 1
-			if has_relic("Frozen Heart"):
-				enemy["freeze_stacks"] += 1
-			var blocked_amount: int = min(hit_value, enemy["block"])
-			var normal_damage_after_block: int = hit_value - blocked_amount
-			var total_damage_to_hp: int = normal_damage_after_block + exposed_bonus
-			var damage := hit_value
 
 			if has_relic("Executioner's Axe") and enemy["bleed"] > 0:
 				damage += 2
+
+			if has_relic("Bloodstone"):
+				enemy["bleed"] += 1
+
+			if has_relic("Frozen Heart"):
+				enemy["freeze_stacks"] += 1
+
+			# Guardian splits raw damage first.
+			damage = apply_guardian_split(enemy_index, damage, false)
+
+			# Then target block absorbs only the remaining damage.
+			var blocked_amount: int = min(damage, int(enemy["block"]))
 			enemy["block"] -= blocked_amount
+			damage -= blocked_amount
+
 			if enemy["block"] < 0:
 				enemy["block"] = 0
 
 			if blocked_amount > 0:
 				await show_enemy_hit_sequence(enemy_index, blocked_amount, 0)
 
-			if total_damage_to_hp > 0:
-				enemy["hp"] -= total_damage_to_hp
-				last_player_damage += total_damage_to_hp
+			if damage > 0:
+				enemy["hp"] -= damage
+				last_player_damage += damage
 
 				if enemy["hp"] < 0:
 					enemy["hp"] = 0
 
-				await show_enemy_hit_sequence(enemy_index, 0, total_damage_to_hp)
+				await show_enemy_hit_sequence(enemy_index, 0, damage)
 
-				if normal_damage_after_block > 0:
-					var spiked_value := get_enemy_trait_value(enemy, "spiked")
+				var spiked_value := get_enemy_trait_value(enemy, "spiked")
 
-					if spiked_value > 0:
-						player_hp -= spiked_value
+				if spiked_value > 0:
+					player_hp -= spiked_value
 
-						if player_hp < 0:
-							player_hp = 0
+					if player_hp < 0:
+						player_hp = 0
 
-						show_damage_popup(player_3d_node, spiked_value)
-						add_combat_log_entry(enemy["data"].enemy_name + "'s spikes dealt " + str(spiked_value) + " damage.")
-						update_player_hp_label()
+					show_damage_popup(player_3d_node, spiked_value)
+					add_combat_log_entry(enemy["data"].enemy_name + "'s spikes dealt " + str(spiked_value) + " damage.")
+					update_player_hp_label()
 
-						if player_hp <= 0:
-							lose_combat()
-							return
+					if player_hp <= 0:
+						lose_combat()
+						return
 
 			update_enemy_3d_nodes()
 			return
@@ -3972,6 +4168,57 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			update_enemy_3d_nodes()
 			return
 			
+func apply_guardian_split(target_index: int, damage: int, ignores_block: bool) -> int:
+	if damage <= 0:
+		return damage
+
+	var guardian_index := get_living_guardian_index(target_index)
+
+	if guardian_index == -1:
+		return damage
+
+	var redirected := int(ceil(float(damage) / 2.0))
+	var remaining := damage - redirected
+
+	var guardian_damage := redirected
+
+	if !ignores_block:
+		var guardian_block: int = active_enemies[guardian_index]["block"]
+		var blocked : int = min(guardian_damage, guardian_block)
+
+		active_enemies[guardian_index]["block"] -= blocked
+		guardian_damage -= blocked
+
+		if blocked > 0:
+			show_popup_text(enemy_3d_nodes[guardian_index], "Block -" + str(blocked), 1.2, Color.CORNFLOWER_BLUE)
+
+	if guardian_damage > 0:
+		active_enemies[guardian_index]["hp"] -= guardian_damage
+
+		if active_enemies[guardian_index]["hp"] < 0:
+			active_enemies[guardian_index]["hp"] = 0
+
+		show_damage_popup(enemy_3d_nodes[guardian_index], guardian_damage)
+
+	show_popup_text(enemy_3d_nodes[guardian_index], "Guardian", 1.4, Color.CORNFLOWER_BLUE)
+
+	update_enemy_3d_nodes()
+
+	return remaining
+	
+func get_living_guardian_index(target_index: int) -> int:
+	for i in active_enemies.size():
+		if i == target_index:
+			continue
+
+		if active_enemies[i]["hp"] <= 0:
+			continue
+
+		if get_enemy_trait_value(active_enemies[i], "guardian") > 0:
+			return i
+
+	return -1
+
 func apply_enemy_bleed():
 	for i in active_enemies.size():
 		var enemy = active_enemies[i]
@@ -4050,6 +4297,7 @@ func launch_enemy_die_at_player(enemy_index: int, face: DiceFace):
 	flying_die.queue_free()
 
 func open_edit_dice_panel_from_town():
+	reset_edit_panel_to_normal_mode()
 	edit_dice_return_context = "town"
 	town_panel.visible = false
 	edit_dice_panel.visible = true
@@ -4238,6 +4486,7 @@ func hide_combat_dice():
 	hide_all_groups()
 	
 func open_edit_dice_panel_from_camp():
+	reset_edit_panel_to_normal_mode()
 	edit_dice_return_context = "camp"
 	expedition_camp_panel.visible = false
 	edit_dice_panel.visible = true
@@ -4485,6 +4734,8 @@ func buy_merchant_face(face: DiceFace):
 	rebuild_merchant()
 
 func sell_face(face: DiceFace):
+	if dice_panel_read_only:
+		return
 	if face == null:
 		return
 
@@ -4653,7 +4904,8 @@ func is_food_already_active(item: ConsumableItem) -> bool:
 func handle_face_drop(data: Dictionary, target_face: DiceFace, target_source_type: String, target_slot_index: int = -1):
 	var dragged_face: DiceFace = data["face"]
 	var source_type: String = data.get("source_type", "")
-
+	if dice_panel_read_only:
+		return
 	# Inventory → Inventory fusion should NOT require selected_edit_die.
 	if source_type == "inventory" and target_source_type == "inventory":
 		try_fuse_inventory_faces(dragged_face, target_face)
@@ -4790,7 +5042,8 @@ func handle_face_drop(data: Dictionary, target_face: DiceFace, target_source_typ
 func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
 	var index_a := face_inventory.find(face_a)
 	var index_b := face_inventory.find(face_b)
-
+	if dice_panel_read_only:
+		return
 	if index_a == -1 or index_b == -1:
 		show_edit_message("Could not find both faces.")
 		return
@@ -4839,7 +5092,8 @@ func would_remove_last_miss(die_data: DiceData, slot_index: int) -> bool:
 	
 func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFace):
 	clear_drag_fusion_preview()
-
+	if dice_panel_read_only:
+		return
 	if selected_edit_die == null:
 		return
 
@@ -6141,6 +6395,7 @@ func hide_all_major_panels():
 	begin_expedition_button.visible = false
 	end_round_button.visible = false
 	mulligem_button.visible = false
+	dice_bag_panel.visible = false
 
 func cinematic_shatter_focus(enemy_node: Node3D):
 	var camera := combat_camera
@@ -6213,9 +6468,9 @@ func beastmaster_phase_transition(enemy_index: int):
 	
 	var enemy = active_enemies[enemy_index]
 	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
-
+	enemy["downed"] = false
 	enemy["phase_two_started"] = true
-
+	
 	end_round_button.disabled = true
 	mulligem_button.disabled = true
 	clear_assigned_dice_ui()
@@ -6249,6 +6504,8 @@ func beastmaster_phase_transition(enemy_index: int):
 
 	enemy["max_hp"] = enemy["data"].max_hp
 	enemy["hp"] = max(1, int(enemy["max_hp"] * enemy["data"].phase_two_hp_percent))
+
+	spawn_beastmaster_phase2_pack(enemy_index)
 	enemy["attack"] = 0
 	enemy["crit"] = 0
 	enemy["block"] = 0
@@ -6305,6 +6562,32 @@ func cinematic_beastmaster_zoom_out():
 	tween.parallel().tween_property(camera, "size", beastmaster_camera_original_size, 0.35)
 	await tween.finished
 	
+func spawn_beastmaster_phase2_pack(beastmaster_index: int):
+	if beastmaster_index < 0 or beastmaster_index >= active_enemies.size():
+		return
+
+	var beastmaster_enemy : Dictionary = active_enemies[beastmaster_index]
+
+	# Remove all other enemies.
+	active_enemies.clear()
+	active_enemies.append(create_enemy_instance(beastmaster_exvellus_enemy))
+	active_enemies.append(create_enemy_instance(beastmaster_nigel_enemy))
+	active_enemies.append(beastmaster_enemy)
+	active_enemies.append(create_enemy_instance(beastmaster_noir_enemy))
+
+	for i in active_enemies.size():
+		active_enemies[i]["attack"] = 0
+		active_enemies[i]["crit"] = 0
+		active_enemies[i]["block"] = 0
+		active_enemies[i]["heal"] = 0
+		active_enemies[i]["rolled_faces"] = []
+		active_enemies[i]["roll_text"] = ""
+
+	beastmaster_enemy["phase_two_support_die"] = beastmaster_phase2_support_die
+
+	refresh_enemy_buttons()
+	spawn_enemy_3d_nodes()
+	update_enemy_3d_nodes()
 func clear_assigned_dice_ui():
 	rescue_assigned_dice()
 
@@ -6313,3 +6596,142 @@ func clear_assigned_dice_ui():
 
 	assigned_enemy_containers.clear()
 	update_assigned_panel_visibility()
+
+func open_dice_bag_read_only():
+	print("Dice Bag button clicked")
+
+	dice_panel_read_only = true
+	edit_dice_panel.z_index = 100
+	edit_dice_panel.move_to_front()
+	edit_dice_return_context = "dice_bag"
+	edit_dice_title_label.text = "Dice Bag"
+	edit_dice_panel.set_anchors_preset(Control.PRESET_CENTER)
+	edit_dice_panel.position = Vector2.ZERO
+	edit_dice_panel.anchor_left = 0.5
+	edit_dice_panel.anchor_top = 0.5
+	edit_dice_panel.anchor_right = 0.5
+	edit_dice_panel.anchor_bottom = 0.5
+	edit_dice_panel.offset_left = -550
+	edit_dice_panel.offset_top = -350
+	edit_dice_panel.offset_right = 550
+	edit_dice_panel.offset_bottom = 350
+
+	edit_dice_panel.visible = true
+	shop_panel.visible = false
+	
+	refresh_edit_dice_panel()
+	assigned_dice_overlay.visible = false
+	fuse_faces_button.visible = false
+	apply_volatile_core_button.visible = false
+	die_crafting_panel.visible = false
+	sell_face_panel.visible = false
+	inventory_faces_container.get_parent().get_parent().visible = false
+
+	edit_warning_label.text = "Dice Bag - View your dice."
+	close_edit_button.text = "Close"
+	
+func close_dice_bag():
+	dice_bag_panel.visible = false
+	assigned_dice_overlay.visible = true
+	if edit_dice_return_context == "dice_bag":
+		edit_dice_panel.visible = false
+		edit_dice_return_context = ""
+		reset_edit_panel_to_normal_mode()
+		assigned_dice_overlay.visible = true
+		edit_dice_title_label.text = "Edit Faces"
+		return
+func populate_dice_bag():
+	print("Owned dice:", owned_dice.size())
+	for child in dice_bag_list.get_children():
+		child.queue_free()
+
+	for die in owned_dice:
+		print("Adding", die.die_name)
+		var die_box := VBoxContainer.new()
+		die_box.add_theme_constant_override("separation", 4)
+
+		var title := Label.new()
+		title.text = die.die_name + "  D" + str(die.sides)
+
+		if !die.editable:
+			title.text += "  [Cursed]"
+
+		die_box.add_child(title)
+
+		var face_row := HBoxContainer.new()
+		face_row.add_theme_constant_override("separation", 6)
+		print("Children:", dice_bag_list.get_child_count())
+		for face in die.faces:
+			var face_box := VBoxContainer.new()
+			face_box.custom_minimum_size = Vector2(56, 70)
+
+			var icon := TextureRect.new()
+			icon.texture = face.icon
+			icon.custom_minimum_size = Vector2(40, 40)
+			icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.tooltip_text = get_face_tooltip_text(face)
+
+			var value := Label.new()
+			value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			value.text = str(face.value) if face.value > 0 else ""
+
+			face_box.add_child(icon)
+			face_box.add_child(value)
+			face_row.add_child(face_box)
+
+		die_box.add_child(face_row)
+
+		var separator := HSeparator.new()
+		die_box.add_child(separator)
+		
+		dice_bag_list.add_child(die_box)
+		await get_tree().process_frame
+		dice_bag_list.queue_sort()
+		
+func get_face_tooltip_text(face: DiceFace) -> String:
+	var title := face.face_name
+
+	if title == "":
+		title = face.result_type.capitalize()
+
+	var text := title
+
+	match face.result_type:
+		"hit":
+			text += "\nDeals " + str(face.value) + " damage."
+		"crit":
+			text += "\nDeals " + str(face.value) + " damage that ignores Block."
+		"block":
+			text += "\nGain " + str(face.value) + " Block."
+		"heal":
+			text += "\nRestore " + str(face.value) + " HP."
+		"gold":
+			text += "\nGain " + str(face.value) + " Gold."
+		"miss":
+			text += "\nDoes nothing."
+		"freeze":
+			text += "\nApply " + str(face.value) + " Freeze."
+		"bleed":
+			text += "\nApply " + str(face.value) + " Bleed."
+		"shield_bash":
+			text += "\nConsumes all Block and deals that much damage."
+		"pain":
+			text += "\nDeals damage to the player."
+		_:
+			text += "\n" + face.result_type
+
+	return text
+
+func reset_edit_panel_to_normal_mode():
+	dice_panel_read_only = false
+
+	fuse_faces_button.visible = true
+	apply_volatile_core_button.visible = true
+	die_crafting_panel.visible = true
+	sell_face_panel.visible = true
+	inventory_faces_container.get_parent().get_parent().visible = true
+
+	edit_warning_label.text = ""
+	close_edit_button.text = "Close"
+	

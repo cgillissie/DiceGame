@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://cvkofa3fdpxj2"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_25vfm"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_63t7j"]
+[ext_resource type="Resource" uid="uid://bds7opqw1dm4k" path="res://Resources/Enemies/raven.tres" id="2_t4dmt"]
+
+[resource]
+script = ExtResource("2_63t7j")
+encounter_name = "Raven Flock"
+enemies = Array[ExtResource("1_25vfm")]([ExtResource("2_t4dmt"), ExtResource("2_t4dmt"), ExtResource("2_t4dmt")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

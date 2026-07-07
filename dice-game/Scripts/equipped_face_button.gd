@@ -38,7 +38,7 @@ func _drop_data(_position, data):
 	if combat == null:
 		return
 
-	combat.handle_face_drop(data, slot_index)
+	combat.handle_face_drop(data, face_data, "equipped", slot_index)
 
 func _get_drag_data(_position):
 	if face_data == null:

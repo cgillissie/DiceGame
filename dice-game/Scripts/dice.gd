@@ -128,7 +128,8 @@ func get_face_tooltip(face: DiceFace) -> String:
 
 		"twist_knife":
 			return "Twist Knife\nTriggers Bleed immediately."
-
+		"shield_bash":
+			return "Shield Bash\nConsumes all Block. Deals damage equal to Block consumed."
 		_:
 			return face.face_name
 		
@@ -226,6 +227,8 @@ func get_face_text(face: DiceFace) -> String:
 			return ""
 		"pain":
 			return "Pain " + str(face.value)
+		"shield_bash":
+			return "Shield Bash"
 		_:
 			return face.result_type
 

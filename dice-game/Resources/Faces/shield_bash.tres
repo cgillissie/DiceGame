@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://kxjc8nvytsp4"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_6ehp0"]
+[ext_resource type="Texture2D" uid="uid://bflmwwiny3sm2" path="res://Assets/Sprites/FaceIcons/ShieldBashFace.png" id="1_jmu3n"]
+
+[resource]
+script = ExtResource("1_6ehp0")
+face_name = "Shield Bash"
+result_type = "shield_bash"
+icon = ExtResource("1_jmu3n")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://b40i1xmoyv82t"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_ybsro"]
+[ext_resource type="Resource" uid="uid://cgmygl3qq5rtb" path="res://Resources/Enemies/BeastMaster.tres" id="2_emb7e"]
+[ext_resource type="Resource" uid="uid://s3ne27gglccl" path="res://Resources/Enemies/wolf.tres" id="3_6fhx2"]
+[ext_resource type="PackedScene" uid="uid://dcvoa7toewuoq" path="res://Scenes/Levels/beastmaster_level.tscn" id="4_emb7e"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="4_uis4e"]
+
+[resource]
+script = ExtResource("4_uis4e")
+encounter_name = "The Beast Master"
+enemies = Array[ExtResource("1_ybsro")]([ExtResource("2_emb7e"), ExtResource("3_6fhx2"), ExtResource("3_6fhx2")])
+override_combat_scene = ExtResource("4_emb7e")
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

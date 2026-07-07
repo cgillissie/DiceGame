@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://bltcnld87vhte"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_j8vy0"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_rbwac"]
+[ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="2_s2u7n"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="3_kf1uu"]
+[ext_resource type="Resource" uid="uid://ce7mugms5kks4" path="res://Resources/Dice/basic_d8.tres" id="3_lkqng"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="4_shgtm"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="5_mu0mj"]
+[ext_resource type="Resource" uid="uid://sqmtv632iip5" path="res://Resources/Faces/block_2_face.tres" id="5_wtruy"]
+[ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="7_6jm12"]
+[ext_resource type="SpriteFrames" uid="uid://bccpggexuubqt" path="res://Resources/SpriteFrames/BoarSpriteFrames.tres" id="9_0lkqr"]
+[ext_resource type="Resource" uid="uid://bwbi3gxuvko65" path="res://Resources/Traits/guardian.tres" id="11_k2duq"]
+[ext_resource type="Resource" uid="uid://cg5c1owbkijmy" path="res://Resources/Traits/armored_2.tres" id="12_lkqng"]
+
+[resource]
+script = ExtResource("4_shgtm")
+enemy_name = "Nigel"
+dice_pool = Array[ExtResource("1_j8vy0")]([ExtResource("2_s2u7n"), ExtResource("3_lkqng"), ExtResource("3_lkqng")])
+face_drop_pool = Array[ExtResource("2_rbwac")]([ExtResource("5_wtruy")])
+sprite_frames = ExtResource("9_0lkqr")
+sprite_scale = Vector3(4, 4, 4)
+traits = Array[ExtResource("5_mu0mj")]([ExtResource("11_k2duq"), ExtResource("12_lkqng")])
+food_drop_chance = 0.3
+food_drop_pool = Array[ExtResource("3_kf1uu")]([ExtResource("7_6jm12")])
+immune_to_freeze_skip = true
+crowd_control_immune = true
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

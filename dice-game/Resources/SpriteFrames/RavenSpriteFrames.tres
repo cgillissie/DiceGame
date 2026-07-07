@@ -1,0 +1,40 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://c7yg1b7wow15e"]
+
+[ext_resource type="Texture2D" uid="uid://ldtboev42twl" path="res://Assets/Sprites/SpriteSheets/RavenSpriteSheet.png" id="1_tnoq0"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ltnww"]
+atlas = ExtResource("1_tnoq0")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ur5x0"]
+atlas = ExtResource("1_tnoq0")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rilfn"]
+atlas = ExtResource("1_tnoq0")
+region = Rect2(32, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ltnww")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ltnww")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ur5x0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rilfn")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

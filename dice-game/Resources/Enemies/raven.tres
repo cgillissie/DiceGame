@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://bds7opqw1dm4k"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_tdw4d"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_db1nj"]
+[ext_resource type="Resource" uid="uid://bt473umyfyfit" path="res://Resources/Dice/raven_d6.tres" id="2_ue45b"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="3_elb43"]
+[ext_resource type="Resource" uid="uid://c14idgf8wxtoa" path="res://Resources/Dice/basic_d6.tres" id="3_o325x"]
+[ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="4_db1nj"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="4_pdn1d"]
+[ext_resource type="Resource" uid="uid://qbtg018y6l3c" path="res://Resources/Faces/heal_1_face.tres" id="5_4sx3h"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="5_ue45b"]
+[ext_resource type="SpriteFrames" uid="uid://c7yg1b7wow15e" path="res://Resources/SpriteFrames/RavenSpriteFrames.tres" id="6_elb43"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="6_re5kk"]
+[ext_resource type="Resource" uid="uid://xkfgg8vudns" path="res://Resources/Traits/agile.tres" id="12_re5kk"]
+
+[resource]
+script = ExtResource("4_pdn1d")
+enemy_name = "Raven"
+max_hp = 8
+dice_pool = Array[ExtResource("1_tdw4d")]([ExtResource("2_ue45b"), ExtResource("3_o325x")])
+face_drop_pool = Array[ExtResource("2_db1nj")]([ExtResource("5_4sx3h"), ExtResource("5_4sx3h"), ExtResource("6_re5kk"), ExtResource("6_re5kk"), ExtResource("6_re5kk")])
+sprite_frames = ExtResource("6_elb43")
+sprite_scale = Vector3(3, 3, 3)
+sprite_offset = Vector3(0, 0.1, 0)
+traits = Array[ExtResource("5_ue45b")]([ExtResource("12_re5kk")])
+food_drop_chance = 0.3
+food_drop_pool = Array[ExtResource("3_elb43")]([ExtResource("4_db1nj")])
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

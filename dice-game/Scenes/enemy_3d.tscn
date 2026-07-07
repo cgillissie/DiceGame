@@ -111,6 +111,7 @@ region_rect = Rect2(32.004593, 12.984228, 31.995407, 5.0194874)
 [node name="AttackIcon3D" type="Sprite3D" parent="IntentIcons3D" unique_id=1374906562]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.20728397, -0.15399253, 1.6680908)
 billboard = 1
+no_depth_test = true
 texture = ExtResource("6_vnddw")
 
 [node name="AttackValue3D" type="Label3D" parent="IntentIcons3D" unique_id=1705288472]
@@ -120,6 +121,7 @@ font = ExtResource("3_6q30p")
 [node name="CritIcon3D" type="Sprite3D" parent="IntentIcons3D" unique_id=504185857]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.09965658, -0.15399253, 1.6680908)
 billboard = 1
+no_depth_test = true
 texture = ExtResource("7_85npi")
 
 [node name="CritValue3D" type="Label3D" parent="IntentIcons3D" unique_id=227672035]
@@ -129,6 +131,7 @@ font = ExtResource("3_6q30p")
 [node name="BlockIcon3D" type="Sprite3D" parent="IntentIcons3D" unique_id=1069754094]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45841765, -0.1500063, 1.6680908)
 billboard = 1
+no_depth_test = true
 texture = ExtResource("8_lu3nb")
 
 [node name="BlockValue3D" type="Label3D" parent="IntentIcons3D" unique_id=1272259181]
@@ -138,6 +141,7 @@ font = ExtResource("3_6q30p")
 [node name="HealIcon3D" type="Sprite3D" parent="IntentIcons3D" unique_id=1067613270]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42254162, -0.14602005, 1.6680908)
 billboard = 1
+no_depth_test = true
 texture = ExtResource("9_31v00")
 
 [node name="HealValue3D" type="Label3D" parent="IntentIcons3D" unique_id=1818928583]

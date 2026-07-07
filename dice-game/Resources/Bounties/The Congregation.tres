@@ -1,11 +1,12 @@
 [gd_resource type="Resource" script_class="BountyData" format=3 uid="uid://0b5u3iojqwxq"]
 
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="1_dtjmy"]
-[ext_resource type="Resource" uid="uid://cxeewbisch2k7" path="res://Resources/Encounters/HighPriestBossFight.tres" id="1_nbqgd"]
+[ext_resource type="Resource" uid="uid://cxeewbisch2k7" path="res://Resources/Encounters/The Congregation/HighPriestBossFight.tres" id="1_nbqgd"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_61cr2"]
-[ext_resource type="Resource" uid="uid://dq0i40tubry03" path="res://Resources/Encounters/lone_acolyte.tres" id="3_bkxrh"]
-[ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/knight_priest_encounter.tres" id="4_w1n20"]
-[ext_resource type="Resource" uid="uid://dcran6njk6egl" path="res://Resources/Encounters/knight2_encounter.tres" id="5_nbqgd"]
+[ext_resource type="Resource" uid="uid://dq0i40tubry03" path="res://Resources/Encounters/The Congregation/lone_acolyte.tres" id="3_bkxrh"]
+[ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/The Congregation/knight_priest_encounter.tres" id="4_w1n20"]
+[ext_resource type="Resource" uid="uid://dcran6njk6egl" path="res://Resources/Encounters/The Congregation/knight2_encounter.tres" id="5_nbqgd"]
+[ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/The Congregation/bandit_acolyte_encounter.tres" id="6_st8j2"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="7_w1n20"]
 [ext_resource type="Resource" uid="uid://qbtg018y6l3c" path="res://Resources/Faces/heal_1_face.tres" id="8_waqwh"]
 [ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="9_ch3sf"]
@@ -16,9 +17,9 @@
 script = ExtResource("2_61cr2")
 bounty_name = "The Congregation"
 boss_encounter = ExtResource("1_nbqgd")
-expedition_encounter_pool = Array[ExtResource("1_dtjmy")]([ExtResource("3_bkxrh"), ExtResource("4_w1n20"), ExtResource("5_nbqgd")])
-min_encounters_before_boss = 5
-max_encounters_before_boss = 7
+expedition_encounter_pool = Array[ExtResource("1_dtjmy")]([ExtResource("3_bkxrh"), ExtResource("4_w1n20"), ExtResource("5_nbqgd"), ExtResource("6_st8j2")])
+min_encounters_before_boss = 4
+max_encounters_before_boss = 6
 reward_volatile_cores = 1
 reward_gold = 100
 reward_reserve_slots = 1

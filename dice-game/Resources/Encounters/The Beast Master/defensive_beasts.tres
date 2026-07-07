@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://dqbuaf26widgv"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_ojuop"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_5mk10"]
+[ext_resource type="Resource" uid="uid://ccv6wb6d5gsol" path="res://Resources/Enemies/porcupine.tres" id="2_smeeh"]
+[ext_resource type="Resource" uid="uid://b5ubr8cbvy1go" path="res://Resources/Enemies/boar.tres" id="3_8g42r"]
+[ext_resource type="Resource" uid="uid://bds7opqw1dm4k" path="res://Resources/Enemies/raven.tres" id="4_qcsnd"]
+
+[resource]
+script = ExtResource("2_5mk10")
+encounter_name = "Defensive Beasts"
+enemies = Array[ExtResource("1_ojuop")]([ExtResource("2_smeeh"), ExtResource("3_8g42r"), ExtResource("4_qcsnd")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

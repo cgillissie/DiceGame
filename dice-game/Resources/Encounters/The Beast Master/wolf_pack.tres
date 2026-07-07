@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://bf23o57mj8xi2"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_5fb88"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_8rddc"]
+[ext_resource type="Resource" uid="uid://s3ne27gglccl" path="res://Resources/Enemies/wolf.tres" id="2_nrns3"]
+
+[resource]
+script = ExtResource("2_8rddc")
+encounter_name = "Wolf Pack"
+enemies = Array[ExtResource("1_5fb88")]([ExtResource("2_nrns3"), ExtResource("2_nrns3"), ExtResource("2_nrns3")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

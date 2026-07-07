@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ccv6wb6d5gsol"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_ed5k6"]
+[ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="2_5t2hs"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_yn66r"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="3_2bvtx"]
+[ext_resource type="Resource" uid="uid://daexndfltroac" path="res://Resources/Dice/enemy_defense_d6.tres" id="3_85iyo"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="4_b3plb"]
+[ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="4_milny"]
+[ext_resource type="Resource" uid="uid://c4priatr1lxxg" path="res://Resources/Faces/bleed_1_face.tres" id="5_3xlc6"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="5_milny"]
+[ext_resource type="SpriteFrames" uid="uid://vy122by022kr" path="res://Resources/SpriteFrames/PorcupineSpriteSheet.tres" id="6_2upn5"]
+[ext_resource type="Resource" uid="uid://sqmtv632iip5" path="res://Resources/Faces/block_2_face.tres" id="6_igwmt"]
+[ext_resource type="Resource" uid="uid://ce4jsrai1w2sf" path="res://Resources/Traits/spiked_1.tres" id="8_5t2hs"]
+[ext_resource type="Resource" uid="uid://c0ojcob53cive" path="res://Resources/Traits/regenerating_1.tres" id="9_85iyo"]
+
+[resource]
+script = ExtResource("4_b3plb")
+enemy_name = "Porcupine"
+max_hp = 12
+dice_pool = Array[ExtResource("1_ed5k6")]([ExtResource("2_5t2hs"), ExtResource("3_85iyo")])
+face_drop_pool = Array[ExtResource("2_yn66r")]([ExtResource("5_3xlc6"), ExtResource("6_igwmt"), ExtResource("6_igwmt"), ExtResource("6_igwmt")])
+sprite_frames = ExtResource("6_2upn5")
+sprite_scale = Vector3(4, 4, 4)
+traits = Array[ExtResource("5_milny")]([ExtResource("8_5t2hs"), ExtResource("9_85iyo")])
+food_drop_chance = 0.3
+food_drop_pool = Array[ExtResource("3_2bvtx")]([ExtResource("4_milny")])
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

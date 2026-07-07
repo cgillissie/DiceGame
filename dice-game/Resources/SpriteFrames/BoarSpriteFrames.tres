@@ -1,0 +1,50 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://bccpggexuubqt"]
+
+[ext_resource type="Texture2D" uid="uid://cvvt0gnvl8q18" path="res://Assets/Sprites/SpriteSheets/BoarSpriteSheet.png" id="1_plopb"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_plopb"]
+atlas = ExtResource("1_plopb")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rleei"]
+atlas = ExtResource("1_plopb")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nj20a"]
+atlas = ExtResource("1_plopb")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c58l2"]
+atlas = ExtResource("1_plopb")
+region = Rect2(64, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_plopb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_plopb")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rleei")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nj20a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c58l2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nj20a")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

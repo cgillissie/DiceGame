@@ -1,0 +1,50 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://vy122by022kr"]
+
+[ext_resource type="Texture2D" uid="uid://cjygro320agbk" path="res://Assets/Sprites/SpriteSheets/PorcupineSpriteSheet.png" id="1_v6myp"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uqcho"]
+atlas = ExtResource("1_v6myp")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j1ae8"]
+atlas = ExtResource("1_v6myp")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dw5ms"]
+atlas = ExtResource("1_v6myp")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mei4s"]
+atlas = ExtResource("1_v6myp")
+region = Rect2(64, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uqcho")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uqcho")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j1ae8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dw5ms")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mei4s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dw5ms")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://b6v15ssegjgtc"]
+
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_bbbgj"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_dhik5"]
+[ext_resource type="Resource" uid="uid://cip0r1wht8x4h" path="res://Resources/Dice/acolyte_d10.tres" id="2_gktwq"]
+[ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="3_ebmd8"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="4_gd8pt"]
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="5_gktwq"]
+[ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="5_rg5ed"]
+[ext_resource type="SpriteFrames" uid="uid://cploobw2y5utp" path="res://Resources/SpriteFrames/WolfSpriteFrames.tres" id="7_u5rpa"]
+[ext_resource type="Resource" uid="uid://d2sd5swvjv0m5" path="res://Resources/Traits/venomous_1.tres" id="9_b4iim"]
+[ext_resource type="Resource" uid="uid://skl127pice4j" path="res://Resources/Traits/berserker_2.tres" id="10_rg5ed"]
+
+[resource]
+script = ExtResource("4_gd8pt")
+enemy_name = "Exvellus"
+max_hp = 17
+dice_pool = Array[ExtResource("1_bbbgj")]([ExtResource("2_gktwq"), ExtResource("2_gktwq")])
+sprite_frames = ExtResource("7_u5rpa")
+sprite_scale = Vector3(4, 4, 4)
+traits = Array[ExtResource("5_gktwq")]([ExtResource("9_b4iim"), ExtResource("10_rg5ed")])
+food_drop_chance = 0.3
+food_drop_pool = Array[ExtResource("3_ebmd8")]([ExtResource("5_rg5ed")])
+immune_to_freeze_skip = true
+crowd_control_immune = true
+metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

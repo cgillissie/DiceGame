@@ -1,19 +1,30 @@
 [gd_resource type="Resource" script_class="BountyData" format=3 uid="uid://buwoxi0n03h4q"]
 
-[ext_resource type="Resource" uid="uid://b40i1xmoyv82t" path="res://Resources/Encounters/BeastMasterBossFight.tres" id="1_i80lr"]
+[ext_resource type="Resource" uid="uid://b40i1xmoyv82t" path="res://Resources/Encounters/The Beast Master/BeastMasterBossFight.tres" id="1_i80lr"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="1_nt1r6"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_i80lr"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="3_0ry4k"]
+[ext_resource type="Resource" uid="uid://8cxgvqfafhnw" path="res://Resources/Encounters/The Beast Master/apex_predators.tres" id="3_oc61x"]
+[ext_resource type="Resource" uid="uid://dqbuaf26widgv" path="res://Resources/Encounters/The Beast Master/defensive_beasts.tres" id="4_2mnrm"]
 [ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="4_j68qb"]
-[ext_resource type="Resource" uid="uid://c4priatr1lxxg" path="res://Resources/Faces/bleed_1_face.tres" id="5_0ry4k"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="5_k21ip"]
+[ext_resource type="Resource" uid="uid://cwal0ten4xf21" path="res://Resources/Encounters/The Beast Master/forest_patrol.tres" id="5_tppt8"]
+[ext_resource type="Resource" uid="uid://ceq7u1jrbi2jy" path="res://Resources/Encounters/The Beast Master/hunting_party.tres" id="6_1awwd"]
+[ext_resource type="Resource" uid="uid://cuuscy54b8xo4" path="res://Resources/Encounters/The Beast Master/porcupine_nest.tres" id="7_rsvif"]
+[ext_resource type="Resource" uid="uid://cvkofa3fdpxj2" path="res://Resources/Encounters/The Beast Master/raven_flock.tres" id="8_kwqcf"]
+[ext_resource type="Resource" uid="uid://6hqvuwyfp4aw" path="res://Resources/Encounters/The Beast Master/stampede.tres" id="9_bkmbr"]
+[ext_resource type="Resource" uid="uid://bf23o57mj8xi2" path="res://Resources/Encounters/The Beast Master/wolf_pack.tres" id="10_vyxp2"]
+[ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="13_oc61x"]
 
 [resource]
 script = ExtResource("2_i80lr")
 bounty_name = "The Beast Master"
 boss_encounter = ExtResource("1_i80lr")
+expedition_encounter_pool = Array[ExtResource("1_nt1r6")]([ExtResource("3_oc61x"), ExtResource("4_2mnrm"), ExtResource("5_tppt8"), ExtResource("6_1awwd"), ExtResource("7_rsvif"), ExtResource("8_kwqcf"), ExtResource("9_bkmbr"), ExtResource("10_vyxp2")])
+min_encounters_before_boss = 6
+max_encounters_before_boss = 8
 reward_volatile_cores = 1
 reward_gold = 300
 reward_reserve_slots = 1
-unlocked_merchant_faces = Array[ExtResource("3_0ry4k")]([ExtResource("5_0ry4k")])
+unlocked_merchant_faces = Array[ExtResource("3_0ry4k")]([ExtResource("13_oc61x")])
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

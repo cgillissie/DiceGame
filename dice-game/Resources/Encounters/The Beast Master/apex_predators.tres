@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://8cxgvqfafhnw"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_t2uec"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_eeete"]
+[ext_resource type="Resource" uid="uid://s3ne27gglccl" path="res://Resources/Enemies/wolf.tres" id="2_hprof"]
+[ext_resource type="Resource" uid="uid://ccv6wb6d5gsol" path="res://Resources/Enemies/porcupine.tres" id="3_5qy8q"]
+[ext_resource type="Resource" uid="uid://bds7opqw1dm4k" path="res://Resources/Enemies/raven.tres" id="4_suxj4"]
+
+[resource]
+script = ExtResource("2_eeete")
+encounter_name = "Apex Predators"
+enemies = Array[ExtResource("1_t2uec")]([ExtResource("2_hprof"), ExtResource("3_5qy8q"), ExtResource("4_suxj4")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

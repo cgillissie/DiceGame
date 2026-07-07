@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://bt473umyfyfit"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_gdv77"]
+[ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="2_0irct"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_jk5pa"]
+[ext_resource type="Resource" uid="uid://d26iud6qeexv5" path="res://Resources/Faces/block_1_face.tres" id="3_fn4ub"]
+[ext_resource type="Resource" uid="uid://qbtg018y6l3c" path="res://Resources/Faces/heal_1_face.tres" id="4_6wf5u"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="5_uuv2q"]
+[ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="6_kowbj"]
+
+[resource]
+script = ExtResource("2_jk5pa")
+die_name = "Raven D6"
+faces = Array[ExtResource("1_gdv77")]([ExtResource("2_0irct"), ExtResource("3_fn4ub"), ExtResource("4_6wf5u"), ExtResource("4_6wf5u"), ExtResource("5_uuv2q"), ExtResource("6_kowbj")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

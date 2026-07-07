@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyTrait" format=3 uid="uid://bwbi3gxuvko65"]
+
+[ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="1_m2kcx"]
+[ext_resource type="Texture2D" uid="uid://bb4hlfbftxvn1" path="res://Assets/Sprites/UI/Traits/GuardianIcon.png" id="1_txs8f"]
+
+[resource]
+script = ExtResource("1_m2kcx")
+trait_id = "guardian"
+trait_name = "Guardian"
+value = 50
+icon = ExtResource("1_txs8f")
+description = "Redirects half of damage dealt  to allies to this enemy."
+metadata/_custom_type_script = "uid://dfpvpxr31s7ak"

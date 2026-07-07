@@ -20,7 +20,8 @@ var town_camera_is_tweening := false
 
 
 @export var town_scene: PackedScene
-@export var combat_scene: PackedScene
+@export var combat_scenes: Array[PackedScene]
+@export var beastmaster_combat_scene: PackedScene
 @export var witch_encounter_scene: PackedScene
 
 
@@ -93,23 +94,47 @@ func _process(delta):
 func load_saved_expedition():
 	await fade_to_black()
 
-	load_world(combat_scene)
+	var scene_to_load := get_combat_scene_for_current_encounter()
+
+	if scene_to_load == null:
+		push_error("No combat scene found for saved expedition.")
+		await fade_from_black()
+		return
+
+	load_world(scene_to_load)
+
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(false)
-
 	combat.show_expedition_camp()
 
 	await play_music_fade(expedition_music.pick_random())
-
 	await fade_from_black()
 	
 func load_world(scene: PackedScene):
+	if scene == null:
+		push_error("load_world() got null scene.")
+		return
+
 	if active_world != null and is_instance_valid(active_world):
 		active_world.queue_free()
 
 	active_world = scene.instantiate()
+
+	if active_world == null:
+		push_error("Failed to instantiate world scene.")
+		return
+
 	current_world_3d.add_child(active_world)
 	
+func get_combat_scene_for_current_encounter() -> PackedScene:
+	if combat.current_encounter != null and combat.current_encounter.override_combat_scene != null:
+		return combat.current_encounter.override_combat_scene
+
+	if combat_scenes.size() > 0:
+		return combat_scenes.pick_random()
+
+	return null
+
 func play_music(track: AudioStream):
 	if track == null:
 		return
@@ -314,7 +339,14 @@ func start_expedition_world(event_type: String = "combat"):
 	await fade_to_black()
 	await play_music_fade(expedition_music.pick_random())
 
-	load_world(combat_scene)
+	var scene_to_load := get_combat_scene_for_current_encounter()
+
+	if scene_to_load == null:
+		push_error("No combat scene found.")
+		await fade_from_black()
+		return
+
+	load_world(scene_to_load)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(true)
 	combat.start_expedition()
@@ -487,7 +519,15 @@ func _on_witch_choice_made(accepted: bool):
 		combat.ignore_witch_offer()
 		
 	await play_music_fade(expedition_music.pick_random())
-	load_world(combat_scene)
+
+	var scene_to_load := get_combat_scene_for_current_encounter()
+
+	if scene_to_load == null:
+		push_error("No combat scene found after Witch encounter.")
+		await fade_from_black()
+		return
+
+	load_world(scene_to_load)
 	combat.bind_world(active_world)
 	combat.set_combat_ui_enabled(false)
 	combat.show_expedition_camp()

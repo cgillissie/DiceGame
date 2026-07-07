@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://cwal0ten4xf21"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_r6hwi"]
+[ext_resource type="Resource" uid="uid://b5ubr8cbvy1go" path="res://Resources/Enemies/boar.tres" id="2_hel5j"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_kwhi8"]
+[ext_resource type="Resource" uid="uid://bds7opqw1dm4k" path="res://Resources/Enemies/raven.tres" id="3_nibmo"]
+
+[resource]
+script = ExtResource("2_kwhi8")
+encounter_name = "Forest Patrol"
+enemies = Array[ExtResource("1_r6hwi")]([ExtResource("2_hel5j"), ExtResource("3_nibmo")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"
