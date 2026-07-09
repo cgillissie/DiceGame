@@ -6,7 +6,6 @@
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_8417e"]
 [ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/The Chieftain/bandit_ambush.tres" id="3_0ials"]
 [ext_resource type="Resource" uid="uid://bsbwvg4keah8q" path="res://Resources/Encounters/The Chieftain/lone_goblin.tres" id="4_jgeje"]
-[ext_resource type="Resource" uid="uid://bf23o57mj8xi2" path="res://Resources/Encounters/The Beast Master/wolf_pack.tres" id="6_p0ykb"]
 [ext_resource type="Resource" uid="uid://b3jlupekp6fkb" path="res://Resources/Encounters/The Chieftain/goblin_wolf.tres" id="7_8ielu"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="7_luwip"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="8_ilsuq"]
@@ -17,7 +16,7 @@
 script = ExtResource("2_8417e")
 bounty_name = "The Chieftain"
 boss_encounter = ExtResource("1_0ials")
-expedition_encounter_pool = Array[ExtResource("1_4cakj")]([ExtResource("2_7eg0c"), ExtResource("3_0ials"), ExtResource("4_jgeje"), ExtResource("6_p0ykb"), ExtResource("7_8ielu")])
+expedition_encounter_pool = Array[ExtResource("1_4cakj")]([ExtResource("2_7eg0c"), ExtResource("3_0ials"), ExtResource("4_jgeje"), ExtResource("7_8ielu")])
 min_encounters_before_boss = 5
 max_encounters_before_boss = 7
 reward_volatile_cores = 1

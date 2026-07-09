@@ -5,7 +5,9 @@
 
 [resource]
 script = ExtResource("2_8mt3u")
+face_name = "Bleed"
 result_type = "bleed"
 value = 1
+label = "Bleed 1"
 icon = ExtResource("1_wapp0")
 metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

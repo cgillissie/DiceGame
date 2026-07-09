@@ -15,11 +15,11 @@
 [ext_resource type="AudioStream" uid="uid://dpmiivcqxm1nk" path="res://Assets/Sounds/AttackSFX/CriticalDieRoll.wav" id="6_o1aky"]
 [ext_resource type="SpriteFrames" uid="uid://d3gw0dsh6yjy1" path="res://Resources/SpriteFrames/PlayerKnightSpriteFrames.tres" id="6_ynf5e"]
 [ext_resource type="Resource" uid="uid://bwg810kbjv25b" path="res://Resources/Faces/dodge_face.tres" id="7_7k868"]
+[ext_resource type="PackedScene" uid="uid://dywn3gutocbmo" path="res://Scenes/Levels/water_well_encounter.tscn" id="7_fd3ed"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="7_fdnlq"]
 [ext_resource type="AudioStream" uid="uid://dr8h7a71m3sxt" path="res://Assets/Sounds/Consumables/FoodEat.wav" id="7_kwxat"]
 [ext_resource type="AudioStream" uid="uid://cl55mrxix8ta3" path="res://Assets/Sounds/Crafting/DiceSmithItemCrafting.wav" id="8_aa8k8"]
 [ext_resource type="Resource" uid="uid://dy3ws0w57a5eq" path="res://Resources/Faces/reversal_face.tres" id="8_hpc6h"]
-[ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/The Congregation/bandit_acolyte_encounter.tres" id="8_jkdf5"]
 [ext_resource type="AudioStream" uid="uid://bgmo0w5xr83h3" path="res://Assets/Sounds/Crafting/ClothTear.wav" id="9_kqrg6"]
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/The Chieftain/goblin_encounter.tres" id="9_wsu2k"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/The Congregation/knight_priest_encounter.tres" id="10_k12tt"]
@@ -50,8 +50,11 @@
 [ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="27_r33sp"]
 [ext_resource type="Resource" uid="uid://kxjc8nvytsp4" path="res://Resources/Faces/shield_bash.tres" id="29_fg68e"]
 [ext_resource type="Resource" uid="uid://buwoxi0n03h4q" path="res://Resources/Bounties/The Beast Master.tres" id="33_lx3vj"]
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="33_v1mrv"]
+[ext_resource type="Resource" uid="uid://dgh00weyr8smo" path="res://Resources/Enemies/bandit.tres" id="34_fd3ed"]
 [ext_resource type="AudioStream" uid="uid://ca7jmgf7hf50h" path="res://Assets/Music/YouMustDieBeastMasterTheme.wav" id="34_lx3vj"]
 [ext_resource type="AudioStream" uid="uid://ihx4cw7m2oft" path="res://Assets/Music/YouMustDieTownTheme.wav" id="34_neg2b"]
+[ext_resource type="Resource" uid="uid://5gpwcvp6nbm4" path="res://Resources/Enemies/acolyte.tres" id="35_qnggo"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="39_s8vy0"]
 [ext_resource type="Resource" uid="uid://cmx1h34g2m86g" path="res://Resources/Relics/IronCharm.tres" id="40_jut3y"]
 [ext_resource type="Resource" uid="uid://h6v128lalype" path="res://Resources/Relics/Bloodstone.tres" id="41_v2nl5"]
@@ -76,6 +79,8 @@
 [ext_resource type="Resource" uid="uid://b6v15ssegjgtc" path="res://Resources/Enemies/Exvellus.tres" id="66_uv6w5"]
 [ext_resource type="Resource" uid="uid://bltcnld87vhte" path="res://Resources/Enemies/Nigel.tres" id="67_r7bbj"]
 [ext_resource type="Resource" uid="uid://b5t7lmuntohbm" path="res://Resources/Enemies/Noir.tres" id="68_e5peh"]
+[ext_resource type="AudioStream" uid="uid://4n10yy51fa3v" path="res://Assets/Sounds/AtmosphericSounds/DeathSound.wav" id="75_tab3y"]
+[ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="79_qnggo"]
 
 [sub_resource type="Resource" id="Resource_hptm8"]
 script = ExtResource("5_344ge")
@@ -84,12 +89,19 @@ sprite_scale = Vector3(4, 4, 4)
 sprite_offset = Vector3(0, 0.7, 0)
 metadata/_custom_type_script = "uid://rk2mjb2mygmu"
 
+[sub_resource type="Resource" id="Resource_v3f3w"]
+script = ExtResource("7_fdnlq")
+encounter_name = "Outcasts"
+enemies = Array[ExtResource("33_v1mrv")]([ExtResource("34_fd3ed"), ExtResource("35_qnggo")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"
+
 [node name="Main" type="Node" unique_id=697850224]
 script = ExtResource("1_b3802")
 town_scene = ExtResource("2_hdf80")
 combat_scenes = Array[PackedScene]([ExtResource("3_r7bbj"), ExtResource("3_jwpg7")])
 beastmaster_combat_scene = ExtResource("5_e5peh")
 witch_encounter_scene = ExtResource("4_2daye")
+water_well_scene = ExtResource("7_fd3ed")
 camera_zoom_sound = ExtResource("4_r33sp")
 critical_hit_sound = ExtResource("5_8cuat")
 critical_roll_sound = ExtResource("6_o1aky")
@@ -124,8 +136,11 @@ twist_knife_face_template = ExtResource("19_ptfg5")
 pain_face_template = ExtResource("21_1semv")
 shield_bash_face_template = ExtResource("29_fg68e")
 player_character_data = SubResource("Resource_hptm8")
-encounter_pool = Array[ExtResource("7_fdnlq")]([ExtResource("8_jkdf5"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
+enemy_dice = null
+encounter_pool = Array[ExtResource("7_fdnlq")]([SubResource("Resource_v3f3w"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
+enemy_face_drop_pool = null
 bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf"), ExtResource("33_lx3vj")])
+required_bounties_for_final_boss = null
 beastmaster_phase2_music = ExtResource("34_lx3vj")
 combat_relic_drop_pool = Array[ExtResource("39_s8vy0")]([ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("40_jut3y"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 combat_relic_drop_chance = 0.03
@@ -133,13 +148,16 @@ food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResou
 merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), ExtResource("24_kltya"), ExtResource("25_e08e2"), ExtResource("26_neg2b"), ExtResource("27_r33sp")])
 merchant_relic_pool = Array[ExtResource("39_s8vy0")]([ExtResource("40_jut3y"), ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 random_enemy_trait_pool = Array[ExtResource("47_bv80c")]([ExtResource("48_ptfg5"), ExtResource("49_2daye"), ExtResource("50_1semv"), ExtResource("51_2060n"), ExtResource("52_6ml46"), ExtResource("53_qax2n"), ExtResource("54_y86h7"), ExtResource("61_ynmfv")])
+random_trait_chance = null
 freeze_sound = ExtResource("59_y86h7")
 shatter_death_sound = ExtResource("60_my4ki")
 victory_sound = ExtResource("61_lx3vj")
+player_death_sound = ExtResource("75_tab3y")
 shatter_particles_scene = ExtResource("65_owhal")
 beastmaster_exvellus_enemy = ExtResource("66_uv6w5")
 beastmaster_nigel_enemy = ExtResource("67_r7bbj")
 beastmaster_noir_enemy = ExtResource("68_e5peh")
+beastmaster_phase2_support_die = ExtResource("79_qnggo")
 
 [node name="DiceRollSFX" type="AudioStreamPlayer" parent="CombatUI" unique_id=2019394322]
 stream = ExtResource("5_kry3j")

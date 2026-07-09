@@ -6,7 +6,7 @@
 [ext_resource type="Resource" uid="uid://dq0i40tubry03" path="res://Resources/Encounters/The Congregation/lone_acolyte.tres" id="3_bkxrh"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/The Congregation/knight_priest_encounter.tres" id="4_w1n20"]
 [ext_resource type="Resource" uid="uid://dcran6njk6egl" path="res://Resources/Encounters/The Congregation/knight2_encounter.tres" id="5_nbqgd"]
-[ext_resource type="Resource" uid="uid://ej4nfffm6gl8" path="res://Resources/Encounters/The Congregation/bandit_acolyte_encounter.tres" id="6_st8j2"]
+[ext_resource type="Resource" uid="uid://c5nx4qgaeu8kx" path="res://Resources/Encounters/The Congregation/acolyte_priest_encounter.tres" id="6_st8j2"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="7_w1n20"]
 [ext_resource type="Resource" uid="uid://qbtg018y6l3c" path="res://Resources/Faces/heal_1_face.tres" id="8_waqwh"]
 [ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="9_ch3sf"]

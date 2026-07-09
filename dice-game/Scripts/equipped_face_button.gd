@@ -74,7 +74,7 @@ func set_drop_state(state: String):
 			
 			
 func get_face_tooltip(face: DiceFace) -> String:
-	var title := face.face_name
+	var title := get_face_display_name(face)
 	if title == "":
 		title = face.result_type.capitalize()
 
@@ -107,7 +107,32 @@ func get_face_tooltip(face: DiceFace) -> String:
 			text += "\nCancels the chosen enemy's healing."
 		"vitality":
 			text += "\nPermanently increases max HP."
+		"shield_bash":
+			text += "\nConsumes all Block and deals that much damage to the target."
 		_:
 			text += "\n" + face.result_type
 
 	return text
+
+func get_face_display_name(face: DiceFace) -> String:
+	match face.result_type:
+		"hit":
+			return "Hit " + str(face.value)
+		"crit":
+			return "Crit " + str(face.value)
+		"block":
+			return "Block " + str(face.value)
+		"heal":
+			return "Heal " + str(face.value)
+		"gold":
+			return "Gold " + str(face.value)
+		"bleed":
+			return "Bleed " + str(face.value)
+		"freeze":
+			return "Freeze " + str(face.value)
+		"shield_bash":
+			return "Shield Bash"
+		"miss":
+			return "Miss"
+		_:
+			return face.result_type.capitalize()

@@ -1,17 +1,24 @@
 [gd_scene format=3 uid="uid://dywn3gutocbmo"]
 
 [ext_resource type="PackedScene" uid="uid://cg2qfl0ux6xgj" path="res://Assets/3D Models/GrassFieldBackground.gltf" id="1_kyprp"]
+[ext_resource type="Script" uid="uid://bp7qo2pin8qu7" path="res://Scenes/Levels/water_well_encounter.gd" id="1_rou6i"]
+[ext_resource type="AudioStream" uid="uid://doluhcisg0yen" path="res://Assets/Sounds/AtmosphericSounds/WindHowling.wav" id="2_3dhqf"]
 [ext_resource type="Texture2D" uid="uid://cbtdxa4i0s53t" path="res://Assets/Sprites/WorldSprites/GrassSprite01.png" id="2_tlth5"]
 [ext_resource type="Texture2D" uid="uid://dqe5hdo5rj0ds" path="res://Assets/Sprites/WorldSprites/GrassSprite02.png" id="3_rou6i"]
 [ext_resource type="Texture2D" uid="uid://dfs0r3qo8ehm5" path="res://Assets/Sprites/WorldSprites/Pine Tree01.png" id="4_5j5di"]
 [ext_resource type="Texture2D" uid="uid://c5xnnpd3o3tsb" path="res://Assets/Sprites/WorldSprites/Pine Tree02.png" id="5_32ls3"]
 [ext_resource type="PackedScene" uid="uid://cdcdwe1yru18y" path="res://Scenes/EnemyPositions.tscn" id="6_x3c2y"]
 [ext_resource type="PackedScene" uid="uid://bes0na0diuqsl" path="res://Scenes/player_3d.tscn" id="7_3dhqf"]
+[ext_resource type="Script" uid="uid://caxovqr0srfds" path="res://Scenes/Levels/well_camera.gd" id="7_5j5di"]
 [ext_resource type="Texture2D" uid="uid://dfg516faav17s" path="res://Assets/Sprites/TownSprites/WaterWell.png" id="8_tlth5"]
+[ext_resource type="FontFile" uid="uid://ikng2ikqxt7i" path="res://Assets/Fonts/PixelOperator8-Bold.ttf" id="11_x3c2y"]
+[ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="12_3dhqf"]
 
 [sub_resource type="Environment" id="Environment_tlth5"]
 
 [node name="ForestLevel" type="Node3D" unique_id=1838685095]
+script = ExtResource("1_rou6i")
+wind_sound = ExtResource("2_3dhqf")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1078373154]
 environment = SubResource("Environment_tlth5")
@@ -20,256 +27,28 @@ environment = SubResource("Environment_tlth5")
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.3357073, 0, -3.4459643)
 
 [node name="grass" type="Node3D" parent="default" unique_id=11465596]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
-
-[node name="Sprite3D" type="Sprite3D" parent="default/grass" unique_id=1571530992]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17277098, 4.773886)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D2" type="Sprite3D" parent="default/grass" unique_id=171256369]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.2, 5)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D3" type="Sprite3D" parent="default/grass" unique_id=1020499253]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.62401, 0.17277098, 6.0392575)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D4" type="Sprite3D" parent="default/grass" unique_id=28341165]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.62401, 0.2, 6.2653713)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D5" type="Sprite3D" parent="default/grass" unique_id=894750429]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.790973, 0.17277098, 5.205869)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D6" type="Sprite3D" parent="default/grass" unique_id=1158212856]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.7909718, 0.2, 5.431983)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D7" type="Sprite3D" parent="default/grass" unique_id=1516628699]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.576653, 0.17277098, 4.9082875)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D8" type="Sprite3D" parent="default/grass" unique_id=1362836873]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5766525, 0.2, 5.1344013)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D9" type="Sprite3D" parent="default/grass" unique_id=286346756]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.456506, 0.17277098, 4.9082875)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D10" type="Sprite3D" parent="default/grass" unique_id=1380921230]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.456506, 0.2, 5.1344013)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D11" type="Sprite3D" parent="default/grass" unique_id=628170282]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.480003, 0.17277098, 4.9082875)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D12" type="Sprite3D" parent="default/grass" unique_id=1856048659]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.480003, 0.2, 5.1344013)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D13" type="Sprite3D" parent="default/grass" unique_id=695712042]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.729145, 0.17277098, 4.6637483)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D14" type="Sprite3D" parent="default/grass" unique_id=2145768664]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.729145, 0.2, 4.889862)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D31" type="Sprite3D" parent="default/grass" unique_id=1699030641]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.851427, 0.17277098, 4.6637483)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D32" type="Sprite3D" parent="default/grass" unique_id=89148417]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.851427, 0.2, 4.889862)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D33" type="Sprite3D" parent="default/grass" unique_id=394051899]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.164314, 0.17277098, 4.6637483)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D34" type="Sprite3D" parent="default/grass" unique_id=2055231225]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.164314, 0.2, 4.889862)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D35" type="Sprite3D" parent="default/grass" unique_id=1828883327]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8588759, 0.17277098, 4.6637483)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D36" type="Sprite3D" parent="default/grass" unique_id=1935843428]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14112413, 0.2, 4.889862)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D37" type="Sprite3D" parent="default/grass" unique_id=326581764]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1411241, 0.17277098, 4.6637483)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D38" type="Sprite3D" parent="default/grass" unique_id=1639074842]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1411242, 0.2, 4.889862)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D39" type="Sprite3D" parent="default/grass" unique_id=334098581]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.213138, 0.17277098, 4.6637483)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D40" type="Sprite3D" parent="default/grass" unique_id=1400260992]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.213138, 0.2, 4.889862)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D41" type="Sprite3D" parent="default/grass" unique_id=20170120]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.8034782, 0.17277098, 4.6637483)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D42" type="Sprite3D" parent="default/grass" unique_id=123016212]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8034782, 0.2, 4.889862)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
+transform = Transform3D(-0.9821759, 0, 0.1879641, 0, 1, 0, -0.1879641, 0, -0.9821759, 7.256889, 1.4773324, -17.571533)
 
 [node name="Sprite3D15" type="Sprite3D" parent="default/grass" unique_id=1438543537]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.729145, 0.17277098, -3.0987477)
+transform = Transform3D(1, 0, 7.4505806e-08, 0, 1, 0, -7.4505806e-08, 0, 1, 8.201111, 0.17277098, -2.240182)
 billboard = 1
 shaded = true
 texture = ExtResource("2_tlth5")
 
 [node name="Sprite3D16" type="Sprite3D" parent="default/grass" unique_id=593437537]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.729145, 0.2, -2.872634)
+transform = Transform3D(0.69438237, 0, -0.71960664, 0, 1, 0, 0.71960664, 0, 0.69438237, 9.55853, 0.20000005, -2.6911764)
 billboard = 1
 shaded = true
 texture = ExtResource("3_rou6i")
 
 [node name="Sprite3D17" type="Sprite3D" parent="default/grass" unique_id=1582216520]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.4455805, 0.17277098, -3.550774)
+transform = Transform3D(0.69438237, 0, -0.71960664, 0, 1, 0, 0.71960664, 0, 0.69438237, 9.849619, 0.17277098, -3.3661194)
 billboard = 1
 shaded = true
 texture = ExtResource("2_tlth5")
 
 [node name="Sprite3D18" type="Sprite3D" parent="default/grass" unique_id=1717944871]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.4455805, 0.2, -3.3246603)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D19" type="Sprite3D" parent="default/grass" unique_id=923383547]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.4995704, 0.17277098, -3.550774)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D20" type="Sprite3D" parent="default/grass" unique_id=1166321076]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4995704, 0.2, -3.3246603)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D21" type="Sprite3D" parent="default/grass" unique_id=1932733390]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2206445, 0.17277098, -2.8648686)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D22" type="Sprite3D" parent="default/grass" unique_id=1478067581]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2206445, 0.2, -2.6387548)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D23" type="Sprite3D" parent="default/grass" unique_id=919141236]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4019837, 0.17277098, -2.8648686)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D24" type="Sprite3D" parent="default/grass" unique_id=2145549081]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.4019837, 0.2, -2.6387548)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D25" type="Sprite3D" parent="default/grass" unique_id=721231041]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.642772, 0.17277098, -3.192799)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D26" type="Sprite3D" parent="default/grass" unique_id=1104981230]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.642772, 0.2, -2.9666853)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D27" type="Sprite3D" parent="default/grass" unique_id=991574600]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.22441, 0.17277098, -3.192799)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D28" type="Sprite3D" parent="default/grass" unique_id=1289587122]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.22441, 0.2, -2.9666853)
-billboard = 1
-shaded = true
-texture = ExtResource("3_rou6i")
-
-[node name="Sprite3D29" type="Sprite3D" parent="default/grass" unique_id=815868208]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.976107, 0.17277098, -2.7723813)
-billboard = 1
-shaded = true
-texture = ExtResource("2_tlth5")
-
-[node name="Sprite3D30" type="Sprite3D" parent="default/grass" unique_id=383761275]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.976107, 0.2, -2.5462675)
+transform = Transform3D(0.69438237, 0, -0.71960664, 0, 1, 0, 0.71960664, 0, 0.69438237, 8.992524, 0.20000005, -3.9287167)
 billboard = 1
 shaded = true
 texture = ExtResource("3_rou6i")
@@ -886,10 +665,11 @@ texture_filter = 0
 texture = ExtResource("5_32ls3")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=694660686]
-transform = Transform3D(0.054223653, -0.14160497, 0.98843706, -0.0091186855, 0.9897819, 0.14229786, -0.99848723, -0.016729157, 0.052378334, 12.192245, 3.6758647, 13.359137)
-projection = 1
+transform = Transform3D(0.054223653, -0.14160497, 0.98843706, -0.0091186855, 0.9897819, 0.14229786, -0.99848723, -0.016729157, 0.052378334, 12.192245, 3.3159842, 13.359137)
 current = true
+fov = 7.5
 size = 2.0
+script = ExtResource("7_5j5di")
 
 [node name="EnemyPositions" parent="." unique_id=445007235 instance=ExtResource("6_x3c2y")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 2.5198846, 1.5112716, -0.5426519)
@@ -910,7 +690,7 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -3.6
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1523307192]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 2.7009976, 5.2340336, 12.808561)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 3.2852805, 3.4466238, 12.808561)
 light_color = Color(0.87918305, 0.96683055, 0.71925193, 1)
 light_energy = 0.992
 light_specular = 0.905
@@ -923,6 +703,71 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8481145, 1.6914451, 12.7359
 transform = Transform3D(4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0.44473886, 0)
 billboard = 1
 shaded = true
-no_depth_test = true
 texture_filter = 0
 texture = ExtResource("8_tlth5")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=413489351]
+
+[node name="WellPanel" type="PanelContainer" parent="CanvasLayer" unique_id=1068901973]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = -305.0
+offset_right = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/WellPanel" unique_id=597686168]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/WellPanel/MarginContainer" unique_id=645574089]
+layout_mode = 2
+
+[node name="TheWell" type="Label" parent="CanvasLayer/WellPanel/MarginContainer/VBoxContainer" unique_id=432304252]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("11_x3c2y")
+theme_override_font_sizes/font_size = 36
+text = "The Well"
+
+[node name="DescriptionLabel" type="RichTextLabel" parent="CanvasLayer/WellPanel/MarginContainer/VBoxContainer" unique_id=1849976269]
+layout_mode = 2
+theme_override_fonts/normal_font = ExtResource("12_3dhqf")
+theme_override_font_sizes/normal_font_size = 24
+bbcode_enabled = true
+text = "An old abandoned well rests under the moonlight.
+
+It whispers to you, calling you by name."
+fit_content = true
+horizontal_alignment = 1
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="CanvasLayer/WellPanel/MarginContainer/VBoxContainer" unique_id=1087261042]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/WellPanel/MarginContainer/VBoxContainer" unique_id=1668475360]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 32
+
+[node name="PullBucketButton" type="Button" parent="CanvasLayer/WellPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2127843617]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_3dhqf")
+theme_override_font_sizes/font_size = 24
+text = "Draw from The Well"
+
+[node name="LeaveButton" type="Button" parent="CanvasLayer/WellPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=313168563]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_3dhqf")
+theme_override_font_sizes/font_size = 24
+text = "Walk Away"
+
+[node name="WindPlayer" type="AudioStreamPlayer" parent="." unique_id=910919246]
+bus = &"SFX"

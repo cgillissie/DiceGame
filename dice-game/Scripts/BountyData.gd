@@ -16,3 +16,4 @@ class_name BountyData
 @export var mulligem_reward: int = 1
 @export var unlocked_relics: Array[RelicData]
 @export var unlocked_recipes: Array[FoodRecipe]
+@export var reward_max_hp: int = 2

@@ -5,6 +5,7 @@
 
 [resource]
 script = ExtResource("1_wp66o")
+face_name = "Dodge"
 result_type = "dodge"
 label = "Dodge"
 icon = ExtResource("1_da271")

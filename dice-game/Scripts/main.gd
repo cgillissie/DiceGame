@@ -23,7 +23,7 @@ var town_camera_is_tweening := false
 @export var combat_scenes: Array[PackedScene]
 @export var beastmaster_combat_scene: PackedScene
 @export var witch_encounter_scene: PackedScene
-
+@export var water_well_scene: PackedScene
 
 
 @export var camera_zoom_sound: AudioStream
@@ -52,7 +52,9 @@ func _init():
 	OS.set_environment("SteamGameID", AppID)
 
 func _ready():
+	
 	load_town()
+	
 	init_steam()
 	
 	combat.request_music_change.connect(_on_request_music_change)
@@ -336,6 +338,10 @@ func start_expedition_world(event_type: String = "combat"):
 		await start_witch_encounter_world()
 		return
 
+	if event_type == "well":
+		await start_water_well_world()
+		return
+
 	await fade_to_black()
 	await play_music_fade(expedition_music.pick_random())
 
@@ -533,6 +539,51 @@ func _on_witch_choice_made(accepted: bool):
 	combat.show_expedition_camp()
 	combat.expedition_progress += 1
 	combat.save_run()
+	await fade_from_black()
+	
+func start_water_well_world():
+	await fade_to_black()
+	load_world(water_well_scene)
+
+	combat.hide_all_major_panels()
+	combat.visible = false
+
+	if active_world.has_signal("well_choice_made"):
+		active_world.well_choice_made.connect(_on_well_choice_made)
+
+	await fade_from_black()
+	
+func _on_well_choice_made(pulled_bucket: bool):
+	await fade_to_black()
+
+	combat.visible = true
+
+	if pulled_bucket:
+		combat.claim_well_relic()
+
+	await play_music_fade(expedition_music.pick_random())
+
+	if combat.current_bounty == null or !combat.expedition_active:
+		load_town()
+		combat.set_combat_ui_enabled(false)
+		await fade_from_black()
+		return
+
+	var scene_to_load := get_combat_scene_for_current_encounter()
+
+	if scene_to_load == null:
+		push_error("No combat scene found after Well encounter.")
+		await fade_from_black()
+		return
+
+	load_world(scene_to_load)
+	combat.bind_world(active_world)
+	combat.set_combat_ui_enabled(false)
+	combat.show_expedition_camp()
+
+	combat.expedition_progress += 1
+	combat.save_run()
+
 	await fade_from_black()
 	
 func _on_request_music_fade_out():

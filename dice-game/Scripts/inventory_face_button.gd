@@ -18,7 +18,7 @@ func setup(face: DiceFace, is_selected: bool = false):
 	modulate = Color.YELLOW if is_selected else Color.WHITE
 	
 func get_face_tooltip(face: DiceFace) -> String:
-	var title := face.face_name
+	var title := get_face_display_name(face)
 	if title == "":
 		title = face.result_type.capitalize()
 
@@ -51,6 +51,8 @@ func get_face_tooltip(face: DiceFace) -> String:
 			text += "\nCancels the chosen enemy's healing."
 		"vitality":
 			text += "\nPermanently increases maximum HP."
+		"shield_bash":
+			text += "\n Consume all your block and deal that much damage to the target."
 		_:
 			text += "\n" + face.result_type
 
@@ -62,6 +64,29 @@ func _notification(what):
 
 		if combat != null:
 			combat.clear_drag_fusion_preview()
+
+func get_face_display_name(face: DiceFace) -> String:
+	match face.result_type:
+		"hit":
+			return "Hit " + str(face.value)
+		"crit":
+			return "Crit " + str(face.value)
+		"block":
+			return "Block " + str(face.value)
+		"heal":
+			return "Heal " + str(face.value)
+		"gold":
+			return "Gold " + str(face.value)
+		"bleed":
+			return "Bleed " + str(face.value)
+		"freeze":
+			return "Freeze " + str(face.value)
+		"shield_bash":
+			return "Shield Bash"
+		"miss":
+			return "Miss"
+		_:
+			return face.result_type.capitalize()
 			
 func _get_drag_data(_position):
 	if face_data == null:

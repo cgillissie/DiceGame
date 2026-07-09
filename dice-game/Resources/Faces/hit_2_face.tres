@@ -5,6 +5,7 @@
 
 [resource]
 script = ExtResource("1_nqnpx")
+face_name = "Hit"
 result_type = "hit"
 value = 2
 label = "Hit 2"

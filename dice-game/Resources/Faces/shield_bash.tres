@@ -7,5 +7,6 @@
 script = ExtResource("1_6ehp0")
 face_name = "Shield Bash"
 result_type = "shield_bash"
+label = "Shield Bash"
 icon = ExtResource("1_jmu3n")
 metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

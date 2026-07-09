@@ -5,6 +5,7 @@
 
 [resource]
 script = ExtResource("1_je01a")
+face_name = "Block"
 result_type = "block"
 value = 2
 label = "Block 2"

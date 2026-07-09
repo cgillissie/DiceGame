@@ -5,6 +5,7 @@
 
 [resource]
 script = ExtResource("1_vuj3n")
+face_name = "Reversal"
 result_type = "reversal"
 label = "Reversal"
 icon = ExtResource("1_2ci6u")

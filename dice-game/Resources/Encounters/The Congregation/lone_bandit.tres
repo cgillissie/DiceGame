@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://bdcgmel43bopi"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_qildt"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_aghpf"]
+[ext_resource type="Resource" uid="uid://dgh00weyr8smo" path="res://Resources/Enemies/bandit.tres" id="2_h1ks6"]
+
+[resource]
+script = ExtResource("2_aghpf")
+encounter_name = "Lone Bandit"
+enemies = Array[ExtResource("1_qildt")]([ExtResource("2_h1ks6")])
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

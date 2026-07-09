@@ -34,7 +34,7 @@ var active_status_icons: Array[Sprite3D] = []
 var status_icon_tooltips := {}
 var enemy_index: int = -1
 var enemy_data: EnemyData
-
+var current_enemy: Dictionary = {}
 var home_position: Vector3
 var hurt_tween: Tween
 
@@ -47,7 +47,7 @@ func _ready():
 	
 func setup(index: int, enemy: Dictionary):
 	enemy_index = index
-	
+	current_enemy = enemy
 	var data: EnemyData = enemy["data"]
 	enemy_data = data
 	if data.sprite_frames != null:
@@ -87,6 +87,7 @@ func setup(index: int, enemy: Dictionary):
 	update_status_icons(data, enemy)
 	print(data.enemy_name, " intent: A", enemy["attack"], " C", enemy["crit"], " B", enemy["block"], " H", enemy["heal"])
 	print("Attack icon visible: ", attack_icon.visible)
+	
 func _on_area_input_event(camera, event, position, normal, shape_idx):
 	print("Enemy clicked area event")
 
@@ -95,11 +96,23 @@ func _on_area_input_event(camera, event, position, normal, shape_idx):
 			print("Selected enemy index: ", enemy_index)
 			selected.emit(enemy_index)
 	
+func get_current_status_modulate() -> Color:
+	if enemy_data == null:
+		return Color.WHITE
+
+	# Freeze should win visually over bleed.
+	if sprite != null:
+		pass
+
+	return Color.WHITE
+	
 func hit_flash():
+	var return_color := get_current_status_modulate()
+
 	sprite.modulate = Color.RED
 
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color.WHITE, 0.15)
+	tween.tween_property(sprite, "modulate", return_color, 0.15)
 	
 func death_animation():
 	
@@ -154,15 +167,9 @@ func clear_trait_icons():
 		child.queue_free()
 		
 func apply_enemy_modulate(enemy: Dictionary):
-	sprite.modulate = Color.WHITE
-
-	if enemy.has("bleed") and enemy["bleed"] > 0:
-		sprite.modulate = Color(1.0, 0.3, 0.3)
-
-	if enemy.has("freeze_stacks") and enemy["freeze_stacks"] > 0:
-		sprite.modulate = Color(0.55, 0.85, 1.0)
-		
-		
+	current_enemy = enemy
+	sprite.modulate = get_current_status_modulate()
+	
 func update_status_icons(data: EnemyData, enemy: Dictionary):
 	clear_status_icons()
 	

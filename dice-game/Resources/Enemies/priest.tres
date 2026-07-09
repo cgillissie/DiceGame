@@ -1,7 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://bsq715u8lxlwo"]
 
 [ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_twtam"]
-[ext_resource type="Resource" uid="uid://daexndfltroac" path="res://Resources/Dice/enemy_defense_d6.tres" id="2_hbgdn"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_os3lu"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="3_ive2j"]
 [ext_resource type="Resource" uid="uid://bxhdjt8rdci25" path="res://Resources/Dice/priest_d8.tres" id="3_wuu4g"]
@@ -17,7 +16,7 @@
 script = ExtResource("3_ive2j")
 enemy_name = "Priest"
 max_hp = 4
-dice_pool = Array[ExtResource("1_twtam")]([ExtResource("2_hbgdn"), ExtResource("3_wuu4g")])
+dice_pool = Array[ExtResource("1_twtam")]([ExtResource("3_wuu4g")])
 face_drop_pool = Array[ExtResource("2_os3lu")]([ExtResource("5_rvi0j"), ExtResource("5_rvi0j"), ExtResource("5_rvi0j"), ExtResource("6_iaovh"), ExtResource("7_uo67f"), ExtResource("5_rvi0j"), ExtResource("5_rvi0j")])
 dice_drop_chance = 0.1
 gold_reward = 12

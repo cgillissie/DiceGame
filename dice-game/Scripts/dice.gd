@@ -103,10 +103,10 @@ func get_face_tooltip(face: DiceFace) -> String:
 		"miss":
 			return "Miss"
 		"hit":
-			return "Hit %d\nDeals %d damage." % [face.value, face.value]
+			return "Hit " + str(face.value) + "\nDeals " + str(face.value) + " damage." % [face.value, face.value]
 
 		"crit":
-			return "Critical %d\nIgnores Block." % face.value
+			return "Critical " + str(face.value) + "\nIgnores Block." % face.value
 
 		"block":
 			return "Block " + str(face.value) + "\nGain " + str(face.value) + " Block."
@@ -121,15 +121,19 @@ func get_face_tooltip(face: DiceFace) -> String:
 			return "Bleed " + str(face.value) + "\nApply " + str(face.value) + " Bleed."
 
 		"freeze":
-			return "Freeze " + str(face.value) + "\nApply " + str(face.value) + " Freeze."
+			return "Freeze " + str(face.value) + "\nApply " + str(face.value) + " Freeze. Target skips this turn."
 
 		"dodge":
 			return "Dodge\nThe targeted enemy Critical Misses."
 
 		"twist_knife":
 			return "Twist Knife\nTriggers Bleed immediately."
+			
 		"shield_bash":
 			return "Shield Bash\nConsumes all Block. Deals damage equal to Block consumed."
+			
+		"pain":
+			return "\nDeals damage to the player."
 		_:
 			return face.face_name
 		

@@ -8,5 +8,5 @@
 [resource]
 script = ExtResource("2_34idh")
 encounter_name = "Prayerful Procession"
-enemies = Array[ExtResource("1_amwcq")]([ExtResource("2_qguug"), ExtResource("3_2yn5b"), ExtResource("3_2yn5b")])
+enemies = Array[ExtResource("1_amwcq")]([ExtResource("2_qguug"), ExtResource("3_2yn5b")])
 metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

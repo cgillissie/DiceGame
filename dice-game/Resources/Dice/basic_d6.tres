@@ -2,46 +2,14 @@
 
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_bdwlu"]
 [ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="1_lgnks"]
-[ext_resource type="Texture2D" uid="uid://sa55dtophb4v" path="res://Assets/Sprites/FaceIcons/MissFace.png" id="2_7era2"]
-[ext_resource type="Texture2D" uid="uid://ceguf48xaycrw" path="res://Assets/Sprites/FaceIcons/BlockFace.png" id="2_k51dg"]
-[ext_resource type="Texture2D" uid="uid://dtdo0k7h3sm47" path="res://Assets/Sprites/FaceIcons/HitFace.png" id="3_87vh8"]
+[ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="2_4r2fd"]
+[ext_resource type="Resource" uid="uid://d26iud6qeexv5" path="res://Resources/Faces/block_1_face.tres" id="3_7jxt2"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="4_8ul0g"]
+[ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="5_3uwww"]
 [ext_resource type="Resource" uid="uid://kxjc8nvytsp4" path="res://Resources/Faces/shield_bash.tres" id="5_7era2"]
-
-[sub_resource type="Resource" id="Resource_j8io2"]
-script = ExtResource("1_bdwlu")
-icon = ExtResource("2_7era2")
-metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
-
-[sub_resource type="Resource" id="Resource_mpvj5"]
-script = ExtResource("1_bdwlu")
-result_type = "block"
-value = 1
-icon = ExtResource("2_k51dg")
-metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
-
-[sub_resource type="Resource" id="Resource_ib4p8"]
-script = ExtResource("1_bdwlu")
-result_type = "hit"
-value = 1
-icon = ExtResource("3_87vh8")
-metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
-
-[sub_resource type="Resource" id="Resource_vf8qh"]
-script = ExtResource("1_bdwlu")
-result_type = "hit"
-value = 1
-icon = ExtResource("3_87vh8")
-metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
-
-[sub_resource type="Resource" id="Resource_ivtpr"]
-script = ExtResource("1_bdwlu")
-result_type = "hit"
-value = 1
-icon = ExtResource("3_87vh8")
-metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
 
 [resource]
 script = ExtResource("1_lgnks")
 die_name = "Basic D6"
-faces = Array[ExtResource("1_bdwlu")]([SubResource("Resource_j8io2"), SubResource("Resource_mpvj5"), SubResource("Resource_ib4p8"), SubResource("Resource_vf8qh"), SubResource("Resource_ivtpr"), ExtResource("5_7era2")])
+faces = Array[ExtResource("1_bdwlu")]([ExtResource("2_4r2fd"), ExtResource("3_7jxt2"), ExtResource("4_8ul0g"), ExtResource("4_8ul0g"), ExtResource("5_3uwww"), ExtResource("5_7era2")])
 metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

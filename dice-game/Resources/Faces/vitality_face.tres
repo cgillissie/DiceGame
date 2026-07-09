@@ -5,6 +5,7 @@
 
 [resource]
 script = ExtResource("1_j1q5l")
+face_name = "Vitality"
 result_type = "vitality"
 value = 1
 label = "Vitality 1"

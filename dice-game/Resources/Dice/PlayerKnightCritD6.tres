@@ -5,9 +5,10 @@
 [ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_x13e4"]
 [ext_resource type="Resource" uid="uid://d26iud6qeexv5" path="res://Resources/Faces/block_1_face.tres" id="3_dajxq"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="4_fgbl8"]
+[ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="5_dajxq"]
 [ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="5_vlk44"]
 
 [resource]
 script = ExtResource("2_x13e4")
-faces = Array[ExtResource("1_j34ub")]([ExtResource("2_kmbwp"), ExtResource("3_dajxq"), ExtResource("4_fgbl8"), ExtResource("4_fgbl8"), ExtResource("4_fgbl8"), ExtResource("5_vlk44")])
+faces = Array[ExtResource("1_j34ub")]([ExtResource("2_kmbwp"), ExtResource("3_dajxq"), ExtResource("4_fgbl8"), ExtResource("4_fgbl8"), ExtResource("5_dajxq"), ExtResource("5_vlk44")])
 metadata/_custom_type_script = "uid://2s2qkfsmu0bc"
