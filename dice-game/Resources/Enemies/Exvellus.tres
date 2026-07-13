@@ -14,7 +14,7 @@
 [resource]
 script = ExtResource("4_gd8pt")
 enemy_name = "Exvellus"
-max_hp = 17
+max_hp = 18
 dice_pool = Array[ExtResource("1_bbbgj")]([ExtResource("2_gktwq"), ExtResource("2_gktwq")])
 sprite_frames = ExtResource("7_u5rpa")
 sprite_scale = Vector3(4, 4, 4)

@@ -383,7 +383,7 @@ const PLAN_COMBAT := "combat"
 const PLAN_WITCH := "witch"
 const PLAN_WELL := "well"
 
-var beastmaster_camera_original_position: Vector3
+var beastmaster_camera_original_transform: Transform3D
 var beastmaster_camera_original_size: float
 
 var expedition_encounter_plan: Array = []
@@ -835,7 +835,7 @@ func get_encounter_text(encounter: EncounterData) -> String:
 	return encounter.encounter_name
 	
 func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
-	var scaled_max_hp = enemy_data.max_hp + (run_encounters_completed * 2)
+	var scaled_max_hp = enemy_data.max_hp
 	
 	var bonus_traits: Array[EnemyTrait] = []
 	
@@ -2341,12 +2341,10 @@ func win_combat():
 				update_active_food_icons()
 	run_encounters_completed += 1
 
-	if expedition_is_boss_fight:
-		complete_current_bounty()
-		return
-
-	expedition_progress += 1
-	expedition_is_boss_fight = false
+	# Only normal encounters advance expedition progress here.
+	# Boss completion happens after the player closes the loot panel.
+	if !expedition_is_boss_fight:
+		expedition_progress += 1
 
 	save_run()
 	show_loot_panel()
@@ -2504,17 +2502,18 @@ func restart_run():
 	# refresh_relic_panel()
 	
 func clear_food_buffs():
-	active_food_items.clear()
-	update_active_food_icons()
-
 	next_combat_bonus_damage = 0
 	next_combat_bonus_block = 0
 	next_combat_heal = 0
 	next_combat_bonus_max_hp = 0
-
 	active_combat_bonus_block = 0
 	active_combat_bonus_damage = 0
-	combat_max_player_hp = max_player_hp
+
+	player_statuses["regenerating"] = 0
+
+	active_food_items.clear()
+	update_active_food_icons()
+	update_player_status_icons()
 	
 func start_new_combat():
 	combat_over = false
@@ -3091,89 +3090,82 @@ func face_fits_die(die_data: DiceData, face: DiceFace) -> bool:
 	return face.value <= get_max_face_value_for_die(die_data, face)
 	
 func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
-	if face_a.result_type == "dodge" and face_b.result_type == "dodge":
+	if face_a == null or face_b == null:
 		return false
-	
-	
-	if face_a.result_type == "reversal" and face_b.result_type == "reversal":
+
+	var type_a := face_a.result_type
+	var type_b := face_b.result_type
+
+	# Special recipe: Hit + Block = Shield Bash
+	if (type_a == "hit" and type_b == "block") \
+	or (type_a == "block" and type_b == "hit"):
+		return true
+
+	# Shield Bash itself cannot fuse with anything.
+	if type_a == "shield_bash" or type_b == "shield_bash":
 		return false
-		
-	if face_a.result_type == "twist_knife" and face_b.result_type == "twist_knife":
-		return false	
-		
+
 	if face_a.result_type == "miss" and face_b.result_type == "miss":
-		if selected_edit_die != null:
-			for face in selected_edit_die.faces:
-				if face.result_type == "dodge":
-					print("This die already has a Dodge face.")
-					return false
-
-		return true
-		
-	if face_a.result_type == "break_focus" and face_b.result_type == "break_focus":
-		return false
-		
-	if (face_a.result_type == "dodge" and face_b.result_type == "crit") or (face_a.result_type == "crit" and face_b.result_type == "dodge"):
 		return true
 
-	if face_a.result_type == "miss" or face_b.result_type == "miss":
+	if type_a == "miss" or type_b == "miss":
 		return false
-		
-	if (face_a.result_type == "crit" and face_b.result_type == "bleed") \
-		or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
-			return true
-	
-	if (face_a.result_type == "crit" and face_b.result_type == "heal") \
-		or (face_a.result_type == "heal" and face_b.result_type == "crit"):
-			return true
-			
-	if (face_a.result_type == "crit" and face_b.result_type == "heal") \
-	or (face_a.result_type == "heal" and face_b.result_type == "crit"):
+
+	if (type_a == "dodge" and type_b == "crit") \
+	or (type_a == "crit" and type_b == "dodge"):
 		return true
-		
-	if (face_a.result_type == "hit" and face_b.result_type == "block") \
-	or (face_a.result_type == "block" and face_b.result_type == "hit"):
+
+	if (type_a == "crit" and type_b == "bleed") \
+	or (type_a == "bleed" and type_b == "crit"):
 		return true
-	
-	if face_a.result_type != face_b.result_type:
+
+	if (type_a == "crit" and type_b == "heal") \
+	or (type_a == "heal" and type_b == "crit"):
+		return true
+
+	if type_a in ["dodge", "reversal", "twist_knife", "break_focus"]:
+		return false
+
+	if type_a != type_b:
 		return false
 
 	if face_a.value != face_b.value:
 		return false
-	
+
 	return true
 
 func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
 	if !can_fuse_faces(face_a, face_b):
 		show_edit_message("These faces cannot be fused.")
 		AudioManager.play_ui(ui_fail_sound)
-		return
-	if face_a.result_type == "miss" and face_b.result_type == "miss":
+		return null
+
+	var type_a := face_a.result_type
+	var type_b := face_b.result_type
+
+	if (type_a == "hit" and type_b == "block") \
+	or (type_a == "block" and type_b == "hit"):
+		return shield_bash_face_template.duplicate(true)
+
+	if type_a == "miss" and type_b == "miss":
 		return create_dodge_face()
 
-	if (face_a.result_type == "dodge" and face_b.result_type == "crit") \
-	or (face_a.result_type == "crit" and face_b.result_type == "dodge"):
+	if (type_a == "dodge" and type_b == "crit") \
+	or (type_a == "crit" and type_b == "dodge"):
 		return create_reversal_face()
 
-	if (face_a.result_type == "crit" and face_b.result_type == "bleed") \
-	or (face_a.result_type == "bleed" and face_b.result_type == "crit"):
+	if (type_a == "crit" and type_b == "bleed") \
+	or (type_a == "bleed" and type_b == "crit"):
 		return create_twist_knife_face()
 
-	if face_a.result_type == "shield_bash" or face_b.result_type == "shield_bash":
-		show_edit_message("Shield Bash cannot be fused.")
-		AudioManager.play_ui(ui_fail_sound)
-		return null
-		
+	if (type_a == "crit" and type_b == "heal") \
+	or (type_a == "heal" and type_b == "crit"):
+		return create_break_focus_face()
+
 	var new_face: DiceFace = face_a.duplicate(true)
 	new_face.value += 1
 	new_face.face_name = get_face_display_name(new_face)
-	
-	if (face_a.result_type == "crit" and face_b.result_type == "heal") \
-	or (face_a.result_type == "heal" and face_b.result_type == "crit"):
-		return create_break_focus_face()
-	if (face_a.result_type == "hit" and face_b.result_type == "block") \
-		or (face_a.result_type == "block" and face_b.result_type == "hit"):
-		return shield_bash_face_template.duplicate(true)
+
 	return new_face
 
 
@@ -4091,21 +4083,33 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			update_enemy_3d_nodes()
 			return
 		"shield_bash":
-			var damage: int = player_block
+			var starting_block: int = player_block
+			var damage: int = starting_block
 
 			if damage <= 0:
 				show_popup_text(enemy_node, "No Block", 1.2, Color.GRAY)
 				add_combat_log_entry("Shield Bash failed. No Block to consume.")
 				return
 
-			player_block = 0
+			# Each Shield Bash consumes half of the player's current Block,
+			# rounded up so repeated bashes still have value.
+			player_block = int(ceil(float(player_block) / 2.0))
+
+			# If only 1 Block remained, consume it completely.
+			if starting_block == 1:
+				player_block = 0
+
 			update_player_block_label()
+			update_player_3d_node()
 
 			damage = apply_guardian_split(enemy_index, damage, false)
 
 			var blocked_amount: int = min(damage, int(enemy["block"]))
 			enemy["block"] -= blocked_amount
 			damage -= blocked_amount
+
+			if enemy["block"] < 0:
+				enemy["block"] = 0
 
 			if blocked_amount > 0:
 				await show_enemy_hit_sequence(enemy_index, blocked_amount, 0)
@@ -4119,7 +4123,23 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 
 				await show_enemy_hit_sequence(enemy_index, 0, damage)
 
-			add_combat_log_entry("Shield Bash consumed Block and dealt damage.")
+			show_popup_text(
+				player_3d_node,
+				"Block " + str(starting_block) + " → " + str(player_block),
+				1.4,
+				Color.CORNFLOWER_BLUE
+			)
+
+			add_combat_log_entry(
+				"Shield Bash dealt "
+				+ str(damage)
+				+ " damage and reduced Block from "
+				+ str(starting_block)
+				+ " to "
+				+ str(player_block)
+				+ "."
+			)
+
 			update_enemy_3d_nodes()
 			return
 		"hit":
@@ -4413,6 +4433,18 @@ func complete_current_bounty():
 	apply_bounty_reward(current_bounty)
 	roll_merchant_stock()
 	current_bounty.completed = true
+	if current_bounty.reward_max_hp > 0:
+		max_player_hp += current_bounty.reward_max_hp
+		player_hp += current_bounty.reward_max_hp
+
+		if player_hp > max_player_hp:
+			player_hp = max_player_hp
+
+		show_edit_message(
+			"Maximum HP permanently increased by "
+			+ str(current_bounty.reward_max_hp)
+			+ "!"
+		)
 	for face in current_bounty.unlocked_merchant_faces:
 		if !merchant_unlocked_faces.has(face):
 			merchant_unlocked_faces.append(face)
@@ -4436,18 +4468,7 @@ func complete_current_bounty():
 	selected_bounty_label.text = "No Bounty Selected"
 	
 	print("Bounty completed. Returned to town.")
-	if current_bounty.reward_max_hp > 0:
-		max_player_hp += current_bounty.reward_max_hp
-		player_hp += current_bounty.reward_max_hp
-
-		if player_hp > max_player_hp:
-			player_hp = max_player_hp
-
-		show_edit_message(
-			"Maximum HP permanently increased by "
-			+ str(current_bounty.reward_max_hp)
-			+ "!"
-		)
+	
 	expedition_active = false
 	is_in_town = true
 	current_bounty = null
@@ -4963,87 +4984,116 @@ func is_food_already_active(item: ConsumableItem) -> bool:
 
 	return false
 	
-func handle_face_drop(data: Dictionary, target_face: DiceFace, target_source_type: String, target_slot_index: int = -1):
-	var dragged_face: DiceFace = data["face"]
-	var source_type: String = data.get("source_type", "")
+func handle_face_drop(
+	data: Dictionary,
+	target_face: DiceFace,
+	target_source_type: String,
+	target_slot_index: int = -1
+):
 	if dice_panel_read_only:
-		return
-	# Inventory → Inventory fusion should NOT require selected_edit_die.
-	if source_type == "inventory" and target_source_type == "inventory":
-		try_fuse_inventory_faces(dragged_face, target_face)
-		return
-
-	# Everything involving equipped faces does require selected_edit_die.
-	if selected_edit_die == null:
-		show_edit_message("Select a die first.")
-		return
-	clear_drag_fusion_preview()
-	if selected_edit_die != null and !selected_edit_die.editable:
-		show_edit_message("Cursed dice cannot be edited.")
-		return
-	if selected_edit_die == null:
 		return
 
 	if !data.has("source_type") or !data.has("face"):
 		return
 
+	var dragged_face: DiceFace = data["face"]
+	var source_type: String = data.get("source_type", "")
+
+	if dragged_face == null:
+		return
+
+	clear_drag_fusion_preview()
+
+	# Inventory -> Inventory fusion does not require a selected die.
+	if source_type == "inventory" and target_source_type == "inventory":
+		try_fuse_inventory_faces(dragged_face, target_face)
+		return
+
+	# Anything involving an equipped face requires a selected die.
+	if selected_edit_die == null:
+		show_edit_message("Select a die first.")
+		return
+
+	if !selected_edit_die.editable:
+		show_edit_message("Cursed dice cannot be edited.")
+		return
+
 	if target_slot_index < 0 or target_slot_index >= selected_edit_die.faces.size():
 		return
 
+	if target_face == null:
+		target_face = create_basic_miss_face()
+
 	match source_type:
 		"inventory":
-
-			if dragged_face == null:
-				return
-
 			if !face_inventory.has(dragged_face):
 				return
-			if would_exceed_dodge_limit(selected_edit_die, dragged_face, target_slot_index):
-				show_edit_message("Each die can only have 1 Dodge face.")
-				return
+
+			# Prevent replacing the final required Miss.
 			if is_last_miss_slot(selected_edit_die, target_slot_index):
 				if dragged_face.result_type != "miss":
 					show_edit_message("Every die must keep at least 1 Miss.")
 					return
+
 			if !face_fits_die(selected_edit_die, dragged_face):
-				var max_value := get_max_face_value_for_die(selected_edit_die, dragged_face)
+				var max_value := get_max_face_value_for_die(
+					selected_edit_die,
+					dragged_face
+				)
+
 				show_edit_message(
 					get_face_display_name(dragged_face)
-					+ " is too strong for a D" + str(selected_edit_die.sides)
-					+ ".\nD" + str(selected_edit_die.sides)
-					+ " non-Crit faces can be value " + str(max_value) + " or lower."
+					+ " is too strong for a D"
+					+ str(selected_edit_die.sides)
+					+ ".\nD"
+					+ str(selected_edit_die.sides)
+					+ " non-Crit faces can be value "
+					+ str(max_value)
+					+ " or lower."
 				)
 				return
-			
 
-
-			if target_face == null:
-				target_face = create_basic_miss_face()
-
+			# Valid fusion.
 			if can_fuse_faces(dragged_face, target_face):
-				var fused_face: DiceFace = create_fused_face(dragged_face, target_face)
+				var fused_face: DiceFace = create_fused_face(
+					dragged_face,
+					target_face
+				)
 
 				if fused_face == null:
 					return
-				if would_exceed_dodge_limit(selected_edit_die, fused_face, target_slot_index):
-					show_edit_message("Each die can only have 1 Dodge face.")
-					return
+
 				if !face_fits_die(selected_edit_die, fused_face):
-					var max_value := get_max_face_value_for_die(selected_edit_die, fused_face)
+					var max_value := get_max_face_value_for_die(
+						selected_edit_die,
+						fused_face
+					)
+
 					show_edit_message(
 						get_face_display_name(fused_face)
-						+ " is too strong for a D" + str(selected_edit_die.sides)
-						+ ".\nD" + str(selected_edit_die.sides)
-						+ " non-Crit faces can be value " + str(max_value) + " or lower."
+						+ " is too strong for a D"
+						+ str(selected_edit_die.sides)
+						+ ".\nD"
+						+ str(selected_edit_die.sides)
+						+ " non-Crit faces can be value "
+						+ str(max_value)
+						+ " or lower."
 					)
 					return
-				if would_remove_last_miss(selected_edit_die, target_slot_index):
+
+				if would_remove_last_miss(
+					selected_edit_die,
+					target_slot_index
+				):
 					show_edit_message("Every die must keep at least 1 Miss.")
 					return
+
 				selected_edit_die.faces[target_slot_index] = fused_face
 				face_inventory.erase(dragged_face)
 
 				AudioManager.play_one_shot(graft_face_sound)
+
+			# Invalid fusion means swap, not upgrade or deletion.
 			else:
 				selected_edit_die.faces[target_slot_index] = dragged_face
 				face_inventory.erase(dragged_face)
@@ -5068,32 +5118,47 @@ func handle_face_drop(data: Dictionary, target_face: DiceFace, target_source_typ
 			if source_face == null:
 				source_face = create_basic_miss_face()
 
-			if target_face == null:
-				target_face = create_basic_miss_face()
-
+			# Valid equipped-to-equipped fusion.
 			if can_fuse_faces(source_face, target_face):
-				var fused_face: DiceFace = create_fused_face(source_face, target_face)
-				if would_exceed_dodge_limit(selected_edit_die, fused_face, target_slot_index):
-					show_edit_message("Each die can only have 1 Dodge face.")
-					return
-				if !face_fits_die(selected_edit_die, fused_face):
-					var max_value := get_max_face_value_for_die(selected_edit_die, fused_face)
-					show_edit_message(
-						get_face_display_name(fused_face)
-						+ " is too strong for a D" + str(selected_edit_die.sides)
-						+ ".\nD" + str(selected_edit_die.sides)
-						+ " non-Crit faces can be value " + str(max_value) + " or lower."
-					)
-					return
+				var fused_face: DiceFace = create_fused_face(
+					source_face,
+					target_face
+				)
+
 				if fused_face == null:
 					return
-				if would_remove_last_miss(selected_edit_die, target_slot_index):
+
+				if !face_fits_die(selected_edit_die, fused_face):
+					var max_value := get_max_face_value_for_die(
+						selected_edit_die,
+						fused_face
+					)
+
+					show_edit_message(
+						get_face_display_name(fused_face)
+						+ " is too strong for a D"
+						+ str(selected_edit_die.sides)
+						+ ".\nD"
+						+ str(selected_edit_die.sides)
+						+ " non-Crit faces can be value "
+						+ str(max_value)
+						+ " or lower."
+					)
+					return
+
+				if would_remove_last_miss(
+					selected_edit_die,
+					target_slot_index
+				):
 					show_edit_message("Every die must keep at least 1 Miss.")
 					return
+
 				selected_edit_die.faces[target_slot_index] = fused_face
 				selected_edit_die.faces[source_slot] = create_basic_miss_face()
 
 				AudioManager.play_one_shot(graft_face_sound)
+
+			# Invalid fusion means swap the equipped slots.
 			else:
 				selected_edit_die.faces[source_slot] = target_face
 				selected_edit_die.faces[target_slot_index] = source_face
@@ -5102,10 +5167,12 @@ func handle_face_drop(data: Dictionary, target_face: DiceFace, target_source_typ
 	save_run()
 	
 func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
-	var index_a := face_inventory.find(face_a)
-	var index_b := face_inventory.find(face_b)
 	if dice_panel_read_only:
 		return
+
+	var index_a := face_inventory.find(face_a)
+	var index_b := face_inventory.find(face_b)
+
 	if index_a == -1 or index_b == -1:
 		show_edit_message("Could not find both faces.")
 		return
@@ -5113,13 +5180,16 @@ func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
 	if index_a == index_b:
 		return
 
-	var fused_face := create_fused_face(face_a, face_b)
-
-	if fused_face == null:
+	if !can_fuse_faces(face_a, face_b):
 		show_edit_message("Those faces cannot be fused.")
+		AudioManager.play_ui(ui_fail_sound)
 		return
 
-	# Remove higher index first so the lower index does not shift.
+	var fused_face: DiceFace = create_fused_face(face_a, face_b)
+
+	if fused_face == null:
+		return
+
 	var high_index: int = max(index_a, index_b)
 	var low_index: int = min(index_a, index_b)
 
@@ -5152,43 +5222,57 @@ func would_remove_last_miss(die_data: DiceData, slot_index: int) -> bool:
 
 	return miss_count <= 1
 	
-func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFace):
+func handle_inventory_face_drop(
+	data: Dictionary,
+	target_inventory_face: DiceFace
+):
 	clear_drag_fusion_preview()
+
 	if dice_panel_read_only:
-		return
-	if selected_edit_die == null:
 		return
 
 	if !data.has("source_type") or !data.has("face"):
 		return
 
-	var source_type := String(data["source_type"])
+	var source_type: String = String(data["source_type"])
+	var dragged_face: DiceFace = data["face"]
 
+	if dragged_face == null or target_inventory_face == null:
+		return
+
+	# Inventory -> Inventory fusion does not require a selected die.
 	if source_type == "inventory":
-		var dragged_face: DiceFace = data["face"]
-
-		if dragged_face == null:
-			return
-
 		if dragged_face == target_inventory_face:
 			return
 
-		if !face_inventory.has(dragged_face):
+		var dragged_index: int = face_inventory.find(dragged_face)
+		var target_index: int = face_inventory.find(target_inventory_face)
+
+		if dragged_index == -1 or target_index == -1:
 			return
 
-		if !face_inventory.has(target_inventory_face):
+		if dragged_index == target_index:
 			return
 
 		if !can_fuse_faces(dragged_face, target_inventory_face):
+			show_edit_message("Those faces cannot be fused.")
+			AudioManager.play_ui(ui_fail_sound)
 			return
 
-		var fused_face := create_fused_face(dragged_face, target_inventory_face)
+		var fused_face: DiceFace = create_fused_face(
+			dragged_face,
+			target_inventory_face
+		)
 
 		if fused_face == null:
 			return
 
-		face_inventory.erase(dragged_face)
-		face_inventory.erase(target_inventory_face)
+		# Remove the higher index first so the lower index remains valid.
+		var high_index: int = max(dragged_index, target_index)
+		var low_index: int = min(dragged_index, target_index)
+
+		face_inventory.remove_at(high_index)
+		face_inventory.remove_at(low_index)
 		face_inventory.append(fused_face)
 
 		AudioManager.play_one_shot(graft_face_sound)
@@ -5196,13 +5280,22 @@ func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFac
 		save_run()
 		return
 
+	# Everything below this point involves an equipped face.
 	if source_type != "equipped":
+		return
+
+	if selected_edit_die == null:
+		show_edit_message("Select a die first.")
+		return
+
+	if !selected_edit_die.editable:
+		show_edit_message("Cursed dice cannot be edited.")
 		return
 
 	if !data.has("slot"):
 		return
 
-	var source_slot: int = data["slot"]
+	var source_slot: int = int(data["slot"])
 
 	if source_slot < 0 or source_slot >= selected_edit_die.faces.size():
 		return
@@ -5212,38 +5305,78 @@ func handle_inventory_face_drop(data: Dictionary, target_inventory_face: DiceFac
 	if equipped_face == null:
 		equipped_face = create_basic_miss_face()
 
-	if target_inventory_face == null:
+	var target_inventory_index: int = face_inventory.find(
+		target_inventory_face
+	)
+
+	if target_inventory_index == -1:
 		return
 
-	if !face_inventory.has(target_inventory_face):
-		return
-
+	# Fuse equipped face with inventory face.
 	if can_fuse_faces(equipped_face, target_inventory_face):
-		var fused_face: DiceFace = create_fused_face(equipped_face, target_inventory_face)
+		var fused_face: DiceFace = create_fused_face(
+			equipped_face,
+			target_inventory_face
+		)
 
-		if !face_fits_die(selected_edit_die, fused_face):
-			var max_value := get_max_face_value_for_die(selected_edit_die, fused_face)
-			show_edit_message(
-				get_face_display_name(fused_face)
-				+ " is too strong for a D" + str(selected_edit_die.sides)
-				+ ".\nD" + str(selected_edit_die.sides)
-				+ " non-Crit faces can be value " + str(max_value) + " or lower."
-			)
-			return
 		if fused_face == null:
 			return
+
+		if !face_fits_die(selected_edit_die, fused_face):
+			var max_value: int = get_max_face_value_for_die(
+				selected_edit_die,
+				fused_face
+			)
+
+			show_edit_message(
+				get_face_display_name(fused_face)
+				+ " is too strong for a D"
+				+ str(selected_edit_die.sides)
+				+ ".\nD"
+				+ str(selected_edit_die.sides)
+				+ " non-Crit faces can be value "
+				+ str(max_value)
+				+ " or lower."
+			)
+			return
+
 		if is_last_miss_slot(selected_edit_die, source_slot):
 			show_edit_message("Every die must keep at least 1 Miss.")
 			return
 
 		selected_edit_die.faces[source_slot] = fused_face
-		face_inventory.erase(target_inventory_face)
+		face_inventory.remove_at(target_inventory_index)
 
 		AudioManager.play_one_shot(graft_face_sound)
+
+	# Invalid fusion means swap the two faces.
 	else:
+		# Prevent removing the final Miss from a normal die.
+		if is_last_miss_slot(selected_edit_die, source_slot):
+			if target_inventory_face.result_type != "miss":
+				show_edit_message("Every die must keep at least 1 Miss.")
+				return
+
+		if !face_fits_die(selected_edit_die, target_inventory_face):
+			var max_value: int = get_max_face_value_for_die(
+				selected_edit_die,
+				target_inventory_face
+			)
+
+			show_edit_message(
+				get_face_display_name(target_inventory_face)
+				+ " is too strong for a D"
+				+ str(selected_edit_die.sides)
+				+ ".\nD"
+				+ str(selected_edit_die.sides)
+				+ " non-Crit faces can be value "
+				+ str(max_value)
+				+ " or lower."
+			)
+			return
+
 		selected_edit_die.faces[source_slot] = target_inventory_face
-		face_inventory.erase(target_inventory_face)
-		face_inventory.append(equipped_face)
+		face_inventory[target_inventory_index] = equipped_face
 
 		AudioManager.play_one_shot(graft_face_sound)
 
@@ -5983,6 +6116,7 @@ func save_run():
 	for relic in owned_relics:
 		if relic != null:
 			owned_relic_names.append(relic.relic_name)
+		config.set_value("relics", "owned_relics", owned_relic_names)
 	var active_food_save_data: Array = []
 
 	for item in active_food_items:
@@ -6219,22 +6353,32 @@ func load_run():
 	for face_data in config.get_value("merchant", "unlocked_faces", []):
 		if face_data is Dictionary:
 			merchant_unlocked_faces.append(deserialize_face(face_data))
-			
+
 	owned_relics.clear()
 
-	var owned_relic_names: Array = config.get_value("unlock", "owned_relics", [])
+	var saved_relic_names: Array = config.get_value(
+		"relics",
+		"owned_relics",
+		[]
+	)
 
-	for relic_name in owned_relic_names:
-		var relic := find_relic_by_name(relic_name)
-		if relic != null and !has_relic_name(relic.relic_name):
+	for relic_name_value in saved_relic_names:
+		var relic_name: String = String(relic_name_value)
+		var relic: RelicData = find_relic_by_name(relic_name)
+
+		if relic == null:
+			push_warning("Could not load relic: " + relic_name)
+			continue
+
+		if !has_relic_name(relic.relic_name):
 			owned_relics.append(relic)
 
-	update_active_food_icons()
+	
 			# refresh_relic_panel()
 	unlocked_food_tier = config.get_value("unlock", "unlocked_food_tier", unlocked_food_tier)
-
+	has_meditation_charm = has_relic_name("Meditation Beads")
 	selected_edit_die = null
-
+	update_active_food_icons()
 	update_gold_label()
 	update_player_hp_label()
 	update_mulligem_button()
@@ -6556,6 +6700,7 @@ func recalculate_active_food_bonuses():
 		next_combat_bonus_max_hp += item.next_combat_max_hp
 
 func beastmaster_phase_transition(enemy_index: int):
+	
 	if enemy_index < 0 or enemy_index >= active_enemies.size():
 		return
 
@@ -6569,7 +6714,7 @@ func beastmaster_phase_transition(enemy_index: int):
 	
 	end_round_button.disabled = true
 	mulligem_button.disabled = true
-	clear_assigned_dice_ui()
+	await reset_all_dice_assignments_for_phase_transition()
 	set_combat_ui_enabled(false)
 
 	request_music_fade_out.emit()
@@ -6589,7 +6734,11 @@ func beastmaster_phase_transition(enemy_index: int):
 
 	await wait_until_sprite_frame(sprite, 38)
 	AudioManager.play_one_shot(beastmaster_horn_sound)
-	await shatter_camera_shake(get_viewport().get_camera_3d(), 0.35, 0.28)
+	await shatter_camera_shake(
+		combat_camera,
+		0.35,
+		0.28
+	)
 		
 	await sprite.animation_finished
 	await get_tree().create_timer(0.8).timeout
@@ -6601,7 +6750,7 @@ func beastmaster_phase_transition(enemy_index: int):
 	enemy["max_hp"] = enemy["data"].max_hp
 	enemy["hp"] = max(1, int(enemy["max_hp"] * enemy["data"].phase_two_hp_percent))
 
-	spawn_beastmaster_phase2_pack(enemy_index)
+	await spawn_beastmaster_phase2_pack(enemy_index)
 	enemy["attack"] = 0
 	enemy["crit"] = 0
 	enemy["block"] = 0
@@ -6610,35 +6759,124 @@ func beastmaster_phase_transition(enemy_index: int):
 	enemy["roll_text"] = "Recovering"
 	update_enemy_3d_nodes()
 	update_incoming_damage_label()
-	await shatter_camera_shake(get_viewport().get_camera_3d(), 0.35, 0.28)
+	await shatter_camera_shake(
+		combat_camera,
+		0.35,
+		0.28
+	)
 	await cinematic_beastmaster_zoom_out()
+
+	await clear_all_enemy_3d_nodes()
+	spawn_enemy_3d_nodes()
+
+	refresh_enemy_buttons()
+	update_enemy_3d_nodes()
+	if active_enemies.size() != 4 or enemy_3d_nodes.size() != 4:
+		push_error(
+			"Beast Master phase two failed. Enemies: "
+			+ str(active_enemies.size())
+			+ ", nodes: "
+			+ str(enemy_3d_nodes.size())
+		)
+
+		is_resolving_turn = false
+		end_round_button.disabled = false
+		set_combat_ui_enabled(true)
+		return
+	regroup_dice()
+	update_group_visibility()
+	update_assigned_panel_visibility()
+	update_incoming_damage_label()
+
 	set_combat_ui_enabled(true)
 	update_mulligem_button()
 	end_round_button.disabled = false
+	
+func clear_all_enemy_3d_nodes():
+	for enemy_node in enemy_3d_nodes:
+		if is_instance_valid(enemy_node):
+			enemy_node.queue_free()
 
+	enemy_3d_nodes.clear()
+
+	await get_tree().process_frame
+	
 func cinematic_beastmaster_focus(enemy_node: Node3D):
-	var camera := combat_camera
-	beastmaster_camera_original_position = camera.global_position
-	beastmaster_camera_original_size = camera.size
+	var camera: Camera3D = combat_camera
+
 	if camera == null:
 		camera = get_viewport().get_camera_3d()
 
-	if camera == null or !is_instance_valid(enemy_node):
+	if camera == null:
+		push_error("Beast Master cutscene could not find a camera.")
 		return
 
-	var original_position := camera.global_position
-	var original_size := camera.size
-	var zoom_size := original_size * 0.65
+	if !is_instance_valid(enemy_node):
+		push_error("Beast Master cutscene received an invalid enemy node.")
+		return
 
-	var direction_to_enemy := (enemy_node.global_position - camera.global_position).normalized()
-	var zoom_position := original_position + direction_to_enemy * 1.4
+	beastmaster_camera_original_transform = camera.global_transform
+	beastmaster_camera_original_size = camera.size
+
+	camera.current = true
+
+	var zoom_size: float = beastmaster_camera_original_size * 0.65
+	var direction_to_enemy: Vector3 = (
+		enemy_node.global_position - camera.global_position
+	).normalized()
+
+	var zoom_position: Vector3 = (
+		camera.global_position
+		+ direction_to_enemy * 1.4
+	)
+
+	var target_transform := camera.global_transform
+	target_transform.origin = zoom_position
 
 	var tween := create_tween()
-	tween.tween_property(camera, "global_position", zoom_position, 0.35)
-	tween.parallel().tween_property(camera, "size", zoom_size, 0.35)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_IN_OUT)
+
+	tween.tween_property(
+		camera,
+		"global_transform",
+		target_transform,
+		0.35
+	)
+
+	tween.parallel().tween_property(
+		camera,
+		"size",
+		zoom_size,
+		0.35
+	)
 
 	await tween.finished
+	
+func restore_beastmaster_camera():
+	beastmaster_camera_original_transform = combat_camera.global_transform
+	beastmaster_camera_original_size = combat_camera.size
+	if combat_camera == null:
+		return
 
+	var tween := create_tween()
+
+	tween.tween_property(
+		combat_camera,
+		"global_transform",
+		beastmaster_camera_original_transform,
+		0.6
+	)
+
+	tween.parallel().tween_property(
+		combat_camera,
+		"size",
+		beastmaster_camera_original_size,
+		0.6
+	)
+
+	await tween.finished
+	
 func wait_until_sprite_frame(sprite: AnimatedSprite3D, target_frame: int):
 	while sprite != null \
 		and sprite.is_playing() \
@@ -6647,43 +6885,170 @@ func wait_until_sprite_frame(sprite: AnimatedSprite3D, target_frame: int):
 		await get_tree().process_frame
 
 func cinematic_beastmaster_zoom_out():
-	var camera := combat_camera
+	var camera: Camera3D = combat_camera
+
 	if camera == null:
 		camera = get_viewport().get_camera_3d()
+
 	if camera == null:
+		push_error("Could not restore Beast Master camera.")
 		return
 
+	camera.current = true
+
 	var tween := create_tween()
-	tween.tween_property(camera, "global_position", beastmaster_camera_original_position, 0.35)
-	tween.parallel().tween_property(camera, "size", beastmaster_camera_original_size, 0.35)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_IN_OUT)
+
+	tween.tween_property(
+		camera,
+		"global_transform",
+		beastmaster_camera_original_transform,
+		0.55
+	)
+
+	tween.parallel().tween_property(
+		camera,
+		"size",
+		beastmaster_camera_original_size,
+		0.55
+	)
+
 	await tween.finished
+
+	# Force the exact values after the tween to prevent drift.
+	camera.global_transform = beastmaster_camera_original_transform
+	camera.size = beastmaster_camera_original_size
+	camera.current = true
 	
 func spawn_beastmaster_phase2_pack(beastmaster_index: int):
 	if beastmaster_index < 0 or beastmaster_index >= active_enemies.size():
+		push_error("Invalid Beast Master index: " + str(beastmaster_index))
 		return
 
-	var beastmaster_enemy : Dictionary = active_enemies[beastmaster_index]
+	if beastmaster_exvellus_enemy == null:
+		push_error("Beast Master Exvellus resource is not assigned.")
+		return
 
-	# Remove all other enemies.
+	if beastmaster_nigel_enemy == null:
+		push_error("Beast Master Nigel resource is not assigned.")
+		return
+
+	if beastmaster_noir_enemy == null:
+		push_error("Beast Master Noir resource is not assigned.")
+		return
+
+	if beastmaster_phase2_support_die == null:
+		push_error("Beast Master phase-two support die is not assigned.")
+		return
+
+	if enemy_positions == null:
+		push_error("EnemyPositions is null during Beast Master phase two.")
+		return
+
+	if enemy_positions.get_child_count() < 4:
+		push_error(
+			"Beast Master level requires 4 enemy positions, but only has "
+			+ str(enemy_positions.get_child_count())
+			+ "."
+		)
+		return
+
+	var beastmaster_enemy: Dictionary = active_enemies[beastmaster_index]
+
+	# Prepare the Beast Master before replacing the array.
+	beastmaster_enemy["downed"] = false
+	beastmaster_enemy["phase_two_started"] = true
+	beastmaster_enemy["phase_two_support_die"] = beastmaster_phase2_support_die
+	beastmaster_enemy["attack"] = 0
+	beastmaster_enemy["crit"] = 0
+	beastmaster_enemy["block"] = 0
+	beastmaster_enemy["heal"] = 0
+	beastmaster_enemy["rolled_faces"] = []
+	beastmaster_enemy["roll_text"] = "Recovering"
+
+	var exvellus: Dictionary = create_enemy_instance(
+		beastmaster_exvellus_enemy
+	)
+	var nigel: Dictionary = create_enemy_instance(
+		beastmaster_nigel_enemy
+	)
+	var noir: Dictionary = create_enemy_instance(
+		beastmaster_noir_enemy
+	)
+
+	# Build the complete phase-two array before touching the current one.
+	var phase_two_enemies: Array = [
+		exvellus,
+		nigel,
+		beastmaster_enemy,
+		noir
+	]
+
+	# Remove phase-one visuals before replacing the enemy data.
+	await clear_enemy_3d_nodes_immediately()
+
 	active_enemies.clear()
-	active_enemies.append(create_enemy_instance(beastmaster_exvellus_enemy))
-	active_enemies.append(create_enemy_instance(beastmaster_nigel_enemy))
-	active_enemies.append(beastmaster_enemy)
-	active_enemies.append(create_enemy_instance(beastmaster_noir_enemy))
+
+	for phase_two_enemy in phase_two_enemies:
+		active_enemies.append(phase_two_enemy)
+
+	print("PHASE TWO ENEMY COUNT: ", active_enemies.size())
 
 	for i in active_enemies.size():
-		active_enemies[i]["attack"] = 0
-		active_enemies[i]["crit"] = 0
-		active_enemies[i]["block"] = 0
-		active_enemies[i]["heal"] = 0
-		active_enemies[i]["rolled_faces"] = []
-		active_enemies[i]["roll_text"] = ""
+		var enemy_name: String = active_enemies[i]["data"].enemy_name
+		print("PHASE TWO INDEX ", i, ": ", enemy_name)
 
-	beastmaster_enemy["phase_two_support_die"] = beastmaster_phase2_support_die
+	spawn_enemy_3d_nodes()
+
+	# Confirm that all four visual nodes were created.
+	print("PHASE TWO NODE COUNT: ", enemy_3d_nodes.size())
 
 	refresh_enemy_buttons()
-	spawn_enemy_3d_nodes()
 	update_enemy_3d_nodes()
+	update_incoming_damage_label()
+	
+func reset_all_dice_assignments_for_phase_transition():
+	selected_dice_order.clear()
+	selected_enemy_index = -1
+
+	for die in dice_nodes:
+		if !is_instance_valid(die):
+			continue
+
+		die.assigned_enemy_index = -1
+		die.selected = false
+		die.reserved = false
+		die.visible = true
+		die.set_compact_mode(false)
+		die.update_visual()
+
+		if die.get_parent() != rolling_hidden_area:
+			die.reparent(rolling_hidden_area)
+
+	# Remove the old assignment containers.
+	for child in assigned_dice_overlay.get_children():
+		child.queue_free()
+
+	assigned_enemy_containers.clear()
+
+	await get_tree().process_frame
+
+	regroup_dice()
+	update_group_visibility()
+	update_assigned_panel_visibility()
+	
+func clear_enemy_3d_nodes_immediately():
+	for enemy_node in enemy_3d_nodes:
+		if is_instance_valid(enemy_node):
+			enemy_node.queue_free()
+
+	enemy_3d_nodes.clear()
+
+	# Allow the queued phase-one nodes to actually leave the tree
+	# before adding the phase-two nodes to the same positions.
+	await get_tree().process_frame
+	
 func clear_assigned_dice_ui():
 	rescue_assigned_dice()
 

@@ -16,6 +16,7 @@
 [resource]
 script = ExtResource("4_shgtm")
 enemy_name = "Nigel"
+max_hp = 21
 dice_pool = Array[ExtResource("1_j8vy0")]([ExtResource("2_s2u7n"), ExtResource("3_lkqng"), ExtResource("3_lkqng")])
 face_drop_pool = Array[ExtResource("2_rbwac")]([ExtResource("5_wtruy")])
 sprite_frames = ExtResource("9_0lkqr")

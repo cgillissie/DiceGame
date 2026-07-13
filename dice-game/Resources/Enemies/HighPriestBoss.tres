@@ -16,7 +16,7 @@
 [resource]
 script = ExtResource("3_gaggj")
 enemy_name = "High Priest"
-max_hp = 10
+max_hp = 12
 dice_pool = Array[ExtResource("1_01s3f")]([ExtResource("2_gy4j3")])
 face_drop_pool = Array[ExtResource("2_vnol4")]([ExtResource("6_gy4j3")])
 dice_drop_chance = 0.2

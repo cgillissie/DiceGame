@@ -16,7 +16,7 @@
 [resource]
 script = ExtResource("4_qry8q")
 enemy_name = "Wolf"
-max_hp = 12
+max_hp = 14
 dice_pool = Array[ExtResource("1_su1xl")]([ExtResource("2_qry8q"), ExtResource("2_qry8q")])
 face_drop_pool = Array[ExtResource("2_0yjuo")]([ExtResource("4_q0l4f"), ExtResource("5_daaj3"), ExtResource("6_yg7kg"), ExtResource("6_yg7kg"), ExtResource("6_yg7kg"), ExtResource("7_daaj3")])
 sprite_frames = ExtResource("5_0yjuo")

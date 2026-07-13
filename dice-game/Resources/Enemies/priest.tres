@@ -4,9 +4,8 @@
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_os3lu"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="3_ive2j"]
 [ext_resource type="Resource" uid="uid://bxhdjt8rdci25" path="res://Resources/Dice/priest_d8.tres" id="3_wuu4g"]
-[ext_resource type="Resource" uid="uid://qbtg018y6l3c" path="res://Resources/Faces/heal_1_face.tres" id="5_rvi0j"]
-[ext_resource type="Resource" uid="uid://20jefl0dm5v2" path="res://Resources/Faces/heal_2_face.tres" id="6_iaovh"]
-[ext_resource type="Resource" uid="uid://dj6p82bkcskuk" path="res://Resources/Faces/heal_3_face.tres" id="7_uo67f"]
+[ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="5_wuu4g"]
+[ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_1_face.tres" id="7_iaovh"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="10_lut8i"]
 [ext_resource type="SpriteFrames" uid="uid://cbl1o38c3eud6" path="res://Resources/SpriteFrames/PriestSpriteFrames.tres" id="11_rvi0j"]
 [ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="11_w4y3r"]
@@ -15,9 +14,9 @@
 [resource]
 script = ExtResource("3_ive2j")
 enemy_name = "Priest"
-max_hp = 4
+max_hp = 6
 dice_pool = Array[ExtResource("1_twtam")]([ExtResource("3_wuu4g")])
-face_drop_pool = Array[ExtResource("2_os3lu")]([ExtResource("5_rvi0j"), ExtResource("5_rvi0j"), ExtResource("5_rvi0j"), ExtResource("6_iaovh"), ExtResource("7_uo67f"), ExtResource("5_rvi0j"), ExtResource("5_rvi0j")])
+face_drop_pool = Array[ExtResource("2_os3lu")]([ExtResource("7_iaovh"), ExtResource("5_wuu4g")])
 dice_drop_chance = 0.1
 gold_reward = 12
 sprite_frames = ExtResource("11_rvi0j")
