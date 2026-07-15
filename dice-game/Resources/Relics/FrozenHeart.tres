@@ -8,4 +8,5 @@ script = ExtResource("1_mxoaj")
 relic_name = "Frozen Heart"
 description = "Hits apply 1 Freeze."
 icon = ExtResource("1_0u5wj")
+relic_description = "Hits apply 1 Freeze."
 metadata/_custom_type_script = "uid://dkturafp4qles"

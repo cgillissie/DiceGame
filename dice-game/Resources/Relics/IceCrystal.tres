@@ -8,4 +8,5 @@ script = ExtResource("1_dkcsh")
 relic_name = "Ice Crystal"
 description = "Frozen enemies deal 1 less damage."
 icon = ExtResource("1_wicat")
+relic_description = "Frozen enemies deal 1 less damage."
 metadata/_custom_type_script = "uid://dkturafp4qles"

@@ -6,3 +6,4 @@ class_name RelicData
 @export var icon: Texture2D
 
 @export var rarity := 0
+@export_multiline var relic_description: String

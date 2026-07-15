@@ -19,6 +19,7 @@ boss_encounter = ExtResource("1_0ials")
 expedition_encounter_pool = Array[ExtResource("1_4cakj")]([ExtResource("2_7eg0c"), ExtResource("3_0ials"), ExtResource("4_jgeje"), ExtResource("7_8ielu")])
 min_encounters_before_boss = 5
 max_encounters_before_boss = 7
+reward_food_tier_unlock = 2
 reward_volatile_cores = 1
 reward_gold = 200
 reward_reserve_slots = 1

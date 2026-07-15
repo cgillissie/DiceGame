@@ -8,4 +8,5 @@ script = ExtResource("1_jwxpo")
 relic_name = "Witch's Charm"
 description = "Prevents death once. Sends you back to town, then is consumed."
 icon = ExtResource("1_as8gr")
+relic_description = "Prevents death once. Sends you back to town, then is consumed."
 metadata/_custom_type_script = "uid://dkturafp4qles"

@@ -43,6 +43,7 @@
 [ext_resource type="Resource" uid="uid://ce7mugms5kks4" path="res://Resources/Dice/basic_d8.tres" id="21_pfx1i"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="22_7k868"]
 [ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="23_hpc6h"]
+[ext_resource type="Resource" uid="uid://rbxr43hvypuo" path="res://Resources/Dice/freeze_d6.tres" id="24_1tvlp"]
 [ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="24_kltya"]
 [ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="25_e08e2"]
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="26_neg2b"]
@@ -127,7 +128,7 @@ color = Color(0, 0, 0, 1)
 
 [node name="CombatUI" parent="." unique_id=1112470734 instance=ExtResource("2_bo1nx")]
 theme = ExtResource("12_536cc")
-starting_dice = Array[ExtResource("27_e5peh")]([ExtResource("20_pfx1i"), ExtResource("20_pfx1i"), ExtResource("20_sasc4"), ExtResource("21_pfx1i")])
+starting_dice = Array[ExtResource("27_e5peh")]([ExtResource("20_pfx1i"), ExtResource("20_pfx1i"), ExtResource("20_sasc4"), ExtResource("21_pfx1i"), ExtResource("24_1tvlp")])
 miss_face_template = ExtResource("6_6vcvc")
 dodge_face_template = ExtResource("7_7k868")
 reversal_face_template = ExtResource("8_hpc6h")
@@ -136,11 +137,8 @@ twist_knife_face_template = ExtResource("19_ptfg5")
 pain_face_template = ExtResource("21_1semv")
 shield_bash_face_template = ExtResource("29_fg68e")
 player_character_data = SubResource("Resource_hptm8")
-enemy_dice = null
 encounter_pool = Array[ExtResource("7_fdnlq")]([SubResource("Resource_v3f3w"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
-enemy_face_drop_pool = null
 bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf"), ExtResource("33_lx3vj")])
-required_bounties_for_final_boss = null
 beastmaster_phase2_music = ExtResource("34_lx3vj")
 combat_relic_drop_pool = Array[ExtResource("39_s8vy0")]([ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("40_jut3y"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 combat_relic_drop_chance = 0.03
@@ -148,7 +146,6 @@ food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResou
 merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), ExtResource("24_kltya"), ExtResource("25_e08e2"), ExtResource("26_neg2b"), ExtResource("27_r33sp")])
 merchant_relic_pool = Array[ExtResource("39_s8vy0")]([ExtResource("40_jut3y"), ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 random_enemy_trait_pool = Array[ExtResource("47_bv80c")]([ExtResource("48_ptfg5"), ExtResource("49_2daye"), ExtResource("50_1semv"), ExtResource("51_2060n"), ExtResource("52_6ml46"), ExtResource("53_qax2n"), ExtResource("54_y86h7"), ExtResource("61_ynmfv")])
-random_trait_chance = null
 freeze_sound = ExtResource("59_y86h7")
 shatter_death_sound = ExtResource("60_my4ki")
 victory_sound = ExtResource("61_lx3vj")

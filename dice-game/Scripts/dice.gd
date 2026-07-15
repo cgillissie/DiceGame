@@ -3,6 +3,8 @@ class_name DiceNode
 
 signal dice_selected(dice_node)
 signal clicked(dice_node)
+signal drag_started(dice_node)
+signal drag_finished(dice_node, screen_position: Vector2)
 
 @export var dice_data: DiceData
 
@@ -35,6 +37,13 @@ var has_exploded: bool = false
 var temporary_value_bonus: int = 0
 var display_value_override: int = -1
 var base_visual_scale := Vector2.ONE
+
+var left_mouse_held: bool = false
+var is_dragging: bool = false
+var invalid_drag_attempted: bool = false
+var mouse_is_hovering: bool = false
+var drag_start_mouse_position: Vector2 = Vector2.ZERO
+var drag_threshold: float = 10.0
 	
 func _ready():
 	reserve_lock_icon.visible = false
@@ -66,30 +75,129 @@ func roll():
 	face_index_label.text = str(current_face_index + 1) + "/" + str(dice_data.faces.size())
 	update_visual()
 
+func can_drag_to_enemy() -> bool:
+	if current_face == null:
+		return false
 
+	return current_face.result_type in [
+		"hit",
+		"crit",
+		"dodge",
+		"reversal",
+		"freeze",
+		"bleed",
+		"twist_knife",
+		"break_focus",
+		"shield_bash"
+	]
+	
 func _gui_input(event):
 	if used:
 		return
 
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			clicked.emit(self)
+	if !(event is InputEventMouseButton):
+		return
 
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			reserve_requested.emit(self)
+	if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			left_mouse_held = true
+			is_dragging = false
+			invalid_drag_attempted = false
+			drag_start_mouse_position = get_global_mouse_position()
+			accept_event()
+		else:
+			finish_left_mouse_interaction()
+
+	elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		reserve_requested.emit(self)
+		accept_event()
 			
+func _input(event):
+	if !left_mouse_held:
+		return
+
+	if used:
+		cancel_drag_interaction()
+		return
+
+	if event is InputEventMouseMotion:
+		var current_mouse_position := get_global_mouse_position()
+
+		if !is_dragging:
+			var drag_distance := drag_start_mouse_position.distance_to(
+				current_mouse_position
+			)
+
+			if drag_distance >= drag_threshold:
+				if !can_drag_to_enemy():
+					invalid_drag_attempted = true
+					return
+
+				is_dragging = true
+				drag_started.emit(self)
+
+		if is_dragging:
+			global_position = current_mouse_position - size * 0.5
+			get_viewport().set_input_as_handled()
+
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and !event.pressed:
+			finish_left_mouse_interaction()
+			
+func finish_left_mouse_interaction():
+	if !left_mouse_held:
+		return
+
+	left_mouse_held = false
+
+	if is_dragging:
+		is_dragging = false
+
+		drag_finished.emit(
+			self,
+			get_global_mouse_position()
+		)
+
+	elif !invalid_drag_attempted:
+		clicked.emit(self)
+
+	invalid_drag_attempted = false
+
+func apply_current_visual_scale():
+	scale = base_visual_scale
+
+	if is_dragging:
+		z_index = 1000
+	elif mouse_is_hovering:
+		z_index = 100
+	else:
+		z_index = 0
+		
+func cancel_drag_interaction():
+	left_mouse_held = false
+	is_dragging = false
+	invalid_drag_attempted = false
+	apply_current_visual_scale()
+	
 func set_base_visual_scale(new_scale: Vector2):
 	base_visual_scale = new_scale
-	scale = base_visual_scale
+	apply_current_visual_scale()
 	
 func _on_mouse_entered():
-	scale = base_visual_scale * 1.08
-	z_index = 100
+	mouse_is_hovering = true
 
+	if is_dragging:
+		return
+
+	apply_current_visual_scale()
 
 func _on_mouse_exited():
-	scale = base_visual_scale
-	z_index = 0
+	mouse_is_hovering = false
+
+	if is_dragging:
+		return
+
+	apply_current_visual_scale()
 	
 func update_tooltip():
 	if current_face == null:
@@ -167,10 +275,10 @@ func update_visual():
 	else:
 		panel.modulate = Color(1, 1, 1)
 
-	if selected:
-		border_panel.modulate = Color.YELLOW
-	elif reserved:
+	if reserved:
 		border_panel.modulate = Color.CYAN
+	elif selected:
+		border_panel.modulate = Color.YELLOW
 	elif came_from_reserve:
 		border_panel.modulate = Color.RED
 	else:
@@ -251,16 +359,34 @@ func set_compact_mode(enabled: bool):
 		custom_minimum_size = Vector2(55, 55)
 		panel.custom_minimum_size = Vector2(55, 55)
 		face_icon.custom_minimum_size = Vector2(28, 28)
-		result_label.add_theme_font_size_override("font_size", 14)
-		face_index_label.add_theme_font_size_override("font_size", 8)
+
+		result_label.add_theme_font_size_override(
+			"font_size",
+			14
+		)
+
+		face_index_label.add_theme_font_size_override(
+			"font_size",
+			8
+		)
+
 		exploding_icon.custom_minimum_size = Vector2(10, 10)
 		temporary_icon.custom_minimum_size = Vector2(10, 10)
 	else:
 		custom_minimum_size = Vector2(90, 90)
 		panel.custom_minimum_size = Vector2(90, 90)
 		face_icon.custom_minimum_size = Vector2(56, 56)
-		result_label.add_theme_font_size_override("font_size", 20)
-		face_index_label.add_theme_font_size_override("font_size", 16)
+
+		result_label.add_theme_font_size_override(
+			"font_size",
+			20
+		)
+
+		face_index_label.add_theme_font_size_override(
+			"font_size",
+			16
+		)
+
 		exploding_icon.custom_minimum_size = Vector2(18, 18)
 		temporary_icon.custom_minimum_size = Vector2(18, 18)
 

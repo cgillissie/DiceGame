@@ -8,4 +8,5 @@ script = ExtResource("1_c7lyl")
 relic_name = "Iron Charm"
 description = "Start each round with 2 Block."
 icon = ExtResource("1_3uc6k")
+relic_description = "Start each round with 2 Block."
 metadata/_custom_type_script = "uid://dkturafp4qles"

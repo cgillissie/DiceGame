@@ -8,4 +8,5 @@ script = ExtResource("1_meqvx")
 relic_name = "Lucky Coin"
 description = "Gain +5 gold after each combat."
 icon = ExtResource("1_l7xbk")
+relic_description = "Gain +5 gold after each combat."
 metadata/_custom_type_script = "uid://dkturafp4qles"

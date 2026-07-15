@@ -7,5 +7,6 @@
 
 [resource]
 script = ExtResource("2_v835q")
+encounter_name = "The High Priest"
 enemies = Array[ExtResource("1_omr60")]([ExtResource("2_utd3f"), ExtResource("3_ijjs2"), ExtResource("3_ijjs2")])
 metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

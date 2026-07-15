@@ -8,4 +8,5 @@ script = ExtResource("1_bm0g1")
 relic_name = "Spiked Shield"
 description = "Blocking attacks applies bleed to the attacker."
 icon = ExtResource("1_7h74i")
+relic_description = "Blocking attacks applies bleed to the attacker."
 metadata/_custom_type_script = "uid://dkturafp4qles"

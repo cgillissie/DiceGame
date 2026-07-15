@@ -46,6 +46,7 @@ var town_camera_is_tweening := false
 @export var witch_music: AudioStream
 
 var active_world: Node3D = null
+var pending_well_relic: RelicData = null
 
 func _init():
 	OS.set_environment("SteamAppID", AppID)
@@ -515,15 +516,21 @@ func start_witch_encounter_world():
 	await fade_from_black()
 
 func _on_witch_choice_made(accepted: bool):
+	var awarded_relic: RelicData = null
+
+	if accepted:
+		awarded_relic = combat.accept_witch_offer()
+	else:
+		combat.ignore_witch_offer()
+
+	if awarded_relic != null:
+		combat.visible = true
+		await combat.show_relic_acquisition(awarded_relic)
+
 	await fade_to_black()
 
 	combat.visible = true
 
-	if accepted:
-		combat.accept_witch_offer()
-	else:
-		combat.ignore_witch_offer()
-		
 	await play_music_fade(expedition_music.pick_random())
 
 	var scene_to_load := get_combat_scene_for_current_encounter()
@@ -539,10 +546,13 @@ func _on_witch_choice_made(accepted: bool):
 	combat.show_expedition_camp()
 	combat.expedition_progress += 1
 	combat.save_run()
+
 	await fade_from_black()
 	
 func start_water_well_world():
 	await fade_to_black()
+	await fade_audio_out(music_player, 0.75)
+
 	load_world(water_well_scene)
 
 	combat.hide_all_major_panels()
@@ -554,20 +564,95 @@ func start_water_well_world():
 	await fade_from_black()
 	
 func _on_well_choice_made(pulled_bucket: bool):
+	if !pulled_bucket:
+		await finish_water_well_event()
+		return
+
+	var relic: RelicData = combat.claim_well_relic()
+
+	if relic == null:
+		print("The Well had no available relic.")
+		await finish_water_well_event()
+		return
+
+	# CombatUI was hidden while displaying the Well world.
+	# Make it visible so its RelicRewardOverlay can appear.
+	combat.visible = true
+
+	await combat.show_relic_acquisition(relic)
+
+	await finish_water_well_event()
+
+	
+func _on_well_reward_acknowledged():
+	await animate_well_relic_to_ui()
+	await finish_water_well_event()
+	
+func animate_well_relic_to_ui():
+	if pending_well_relic == null:
+		return
+
+	var target: Control = combat.relic_container
+
+	if target == null:
+		return
+
+	var flying_icon := TextureRect.new()
+	flying_icon.texture = pending_well_relic.icon
+	flying_icon.custom_minimum_size = Vector2(160, 160)
+	flying_icon.size = Vector2(160, 160)
+	flying_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flying_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	flying_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flying_icon.z_index = 500
+
+	add_child(flying_icon)
+
+	var viewport_size := get_viewport().get_visible_rect().size
+	flying_icon.global_position = viewport_size * 0.5 - flying_icon.size * 0.5
+
+	combat.visible = true
+	combat.update_active_food_icons()
+
+	await get_tree().process_frame
+
+	var target_position := target.global_position + target.size * 0.5
+	target_position -= flying_icon.size * 0.5
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		flying_icon,
+		"global_position",
+		target_position,
+		0.65
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+
+	tween.tween_property(
+		flying_icon,
+		"scale",
+		Vector2(0.25, 0.25),
+		0.65
+	)
+
+	tween.tween_property(
+		flying_icon,
+		"modulate:a",
+		0.0,
+		0.65
+	)
+
+	await tween.finished
+	flying_icon.queue_free()
+	
+func finish_water_well_event():
 	await fade_to_black()
 
 	combat.visible = true
-
-	if pulled_bucket:
-		combat.claim_well_relic()
+	pending_well_relic = null
 
 	await play_music_fade(expedition_music.pick_random())
-
-	if combat.current_bounty == null or !combat.expedition_active:
-		load_town()
-		combat.set_combat_ui_enabled(false)
-		await fade_from_black()
-		return
 
 	var scene_to_load := get_combat_scene_for_current_encounter()
 

@@ -75,6 +75,7 @@
 [ext_resource type="Texture2D" uid="uid://dsenmc6jkig6i" path="res://Assets/Sprites/UI/Menus/UIFrameBottom.png" id="55_fu7uk"]
 [ext_resource type="Script" uid="uid://cf04t4ovmanqi" path="res://Scripts/sell_face_drop_area.gd" id="55_h6x2e"]
 [ext_resource type="Texture2D" uid="uid://cuvepjvja36bq" path="res://Assets/Sprites/UI/Menus/DiceBagIcon.png" id="74_avtp3"]
+[ext_resource type="Texture2D" uid="uid://csbp7231l7d8l" path="res://Assets/Sprites/UI/Relics/BackgroundIconGlow.png" id="76_cda1e"]
 
 [sub_resource type="Resource" id="Resource_v3f3w"]
 script = ExtResource("6_8xcd4")
@@ -868,11 +869,6 @@ mouse_filter = 2
 layout_mode = 2
 
 [node name="PlayerBlockLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=1845361872]
-visible = false
-layout_mode = 2
-theme_override_fonts/font = ExtResource("8_d53gg")
-
-[node name="IncomingDamageLabel" type="Label" parent="LeftMarginContainer/VBoxContainer" unique_id=578210502]
 visible = false
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -2036,3 +2032,126 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="RelicRewardOverlay" type="ColorRect" parent="." unique_id=1663083129]
+z_index = 500
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6117647)
+
+[node name="CenterContainer" type="CenterContainer" parent="RelicRewardOverlay" unique_id=1948539678]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -130.0
+offset_top = -151.5
+offset_right = 130.0
+offset_bottom = 151.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RewardVBox" type="VBoxContainer" parent="RelicRewardOverlay/CenterContainer" unique_id=1050239889]
+layout_mode = 2
+
+[node name="GlowContainer" type="Control" parent="RelicRewardOverlay/CenterContainer/RewardVBox" unique_id=583939138]
+custom_minimum_size = Vector2(260, 260)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="GlowBack" type="TextureRect" parent="RelicRewardOverlay/CenterContainer/RewardVBox/GlowContainer" unique_id=35069742]
+modulate = Color(1, 0.83137256, 0.29411766, 0.7058824)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("76_cda1e")
+
+[node name="RewardIcon" type="TextureRect" parent="RelicRewardOverlay/CenterContainer/RewardVBox/GlowContainer" unique_id=262586045]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="RewardNameLabel" type="Label" parent="RelicRewardOverlay/CenterContainer/RewardVBox" unique_id=1638555169]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RewardDescriptionLabel" type="RichTextLabel" parent="RelicRewardOverlay/CenterContainer/RewardVBox" unique_id=631843382]
+layout_mode = 2
+theme_override_fonts/normal_font = ExtResource("8_d53gg")
+fit_content = true
+
+[node name="ContinueButton" type="Button" parent="RelicRewardOverlay/CenterContainer/RewardVBox" unique_id=977286911]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Continue"
+
+[node name="CombatLogPanel" type="Panel" parent="." unique_id=113934769]
+visible = false
+z_index = 200
+custom_minimum_size = Vector2(420, 260)
+layout_mode = 0
+offset_left = 8.0
+offset_top = 136.0
+offset_right = 48.0
+offset_bottom = 176.0
+
+[node name="MarginContainer" type="MarginContainer" parent="CombatLogPanel" unique_id=1159161188]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CombatLogPanel/MarginContainer" unique_id=662843656]
+layout_mode = 2
+
+[node name="HeaderHBox" type="HBoxContainer" parent="CombatLogPanel/MarginContainer/VBoxContainer" unique_id=884671002]
+layout_mode = 2
+
+[node name="CombatLogTitle" type="Label" parent="CombatLogPanel/MarginContainer/VBoxContainer/HeaderHBox" unique_id=1913804812]
+layout_mode = 2
+
+[node name="CombatLogScroll" type="ScrollContainer" parent="CombatLogPanel/MarginContainer/VBoxContainer" unique_id=2137120125]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CombatLogText" type="RichTextLabel" parent="CombatLogPanel/MarginContainer/VBoxContainer/CombatLogScroll" unique_id=1501151558]
+custom_minimum_size = Vector2(320, 200)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="CombatLogButton" type="Button" parent="." unique_id=851350889]
+visible = false
+layout_mode = 0
+offset_left = 8.0
+offset_top = 110.0
+offset_right = 152.0
+offset_bottom = 134.0
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Combat Log"

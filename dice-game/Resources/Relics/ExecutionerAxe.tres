@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_n408q")
 relic_name = "Executioner's Axe"
-description = "+2 Damage from Hits against bleeding enemies."
+description = "+2 Damage to Hits against bleeding enemies."
 icon = ExtResource("1_hr2bq")
+relic_description = "+2 Damage to Hits against bleeding enemies."
 metadata/_custom_type_script = "uid://dkturafp4qles"

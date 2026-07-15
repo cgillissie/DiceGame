@@ -36,6 +36,7 @@ font = ExtResource("2_hsehg")
 
 [node name="IncomingLabel3D" type="Label3D" parent="." unique_id=1151053137]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0045437813, 1.4506985, -0.29844046)
+visible = false
 billboard = 1
 font = ExtResource("2_hsehg")
 

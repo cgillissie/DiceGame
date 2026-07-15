@@ -9,4 +9,5 @@ item_name = "Mushroom"
 description = "Heals 5 HP"
 icon = ExtResource("1_a3q5o")
 heal_amount = 5
+food_tier = 2
 metadata/_custom_type_script = "uid://cg2kq5l1graas"

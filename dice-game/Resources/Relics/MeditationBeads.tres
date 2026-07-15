@@ -8,4 +8,5 @@ script = ExtResource("1_n6sxl")
 relic_name = "Meditation Beads"
 description = "Heal 1 HP for every reserved die at the end of the round."
 icon = ExtResource("1_slphd")
+relic_description = "Heal 1 HP for every reserved die at the end of the round."
 metadata/_custom_type_script = "uid://dkturafp4qles"

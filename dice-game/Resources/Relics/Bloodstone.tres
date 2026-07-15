@@ -8,4 +8,5 @@ script = ExtResource("1_k2ww8")
 relic_name = "Bloodstone"
 description = "Hits apply 1 Bleed."
 icon = ExtResource("1_ay55w")
+relic_description = "Hits apply 1 Bleed."
 metadata/_custom_type_script = "uid://dkturafp4qles"

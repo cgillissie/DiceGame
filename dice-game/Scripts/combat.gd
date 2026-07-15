@@ -26,6 +26,10 @@ var crit_by_enemy := {}
 var combat_log_entries: Array[String] = []
 var selected_dice_order: Array[DiceNode] = []
 
+var dragged_die: DiceNode = null
+var dragged_die_original_parent: Node = null
+var dragged_die_original_index: int = -1
+
 var combat_camera: Camera3D
 var enemy_positions: Node3D
 var player_position: Node3D
@@ -54,7 +58,10 @@ var camera_original_position: Vector3
 @onready var player_hp_label: Label = $LeftMarginContainer/VBoxContainer/PlayerHPLabel
 @onready var end_round_button: Button = $DiceArea/EndRoundButton
 @export var enemy_dice: Array[DiceData]
-@onready var combat_log_label: Label = $LeftMarginContainer/VBoxContainer/CombatLogLabel
+@onready var combat_log_panel: Panel = $CombatLogPanel
+@onready var combat_log_button: Button = $CombatLogButton
+@onready var combat_log_text: RichTextLabel = $CombatLogPanel/MarginContainer/VBoxContainer/CombatLogScroll/CombatLogText
+@onready var combat_log_scroll: ScrollContainer = $CombatLogPanel/MarginContainer/VBoxContainer/CombatLogScroll
 @onready var combat_number_label: Label = $TopMarginContainer/CenterContainer/VBoxContainer/CombatNumberLabel
 @onready var gold_label: Label = $ShopPanel/VBoxContainer/GoldLabel
 @onready var enemy_buttons_container: VBoxContainer = $RightMarginContainer/VBoxContainer/EnemyButtonsContainer
@@ -74,7 +81,6 @@ var is_rolling_dice: bool = false
 var enemy_roll_preview_panel: Control = null
 
 @onready var player_block_label: Label = $LeftMarginContainer/VBoxContainer/PlayerBlockLabel
-@onready var incoming_damage_label: Label = $LeftMarginContainer/VBoxContainer/IncomingDamageLabel
 @onready var reserve_slots_label: Label = $DiceArea/ReserveHBox/ReserveSlotsLabel
 
 # AUTO WIN BUTTON FOR TESTING
@@ -275,6 +281,17 @@ var owned_dice: Array[DiceData] = []
 @export var combat_relic_drop_pool: Array[RelicData]
 @export var combat_relic_drop_chance: float = 0.05
 
+@onready var relic_reward_overlay: ColorRect = $RelicRewardOverlay
+@onready var relic_reward_glow: TextureRect = $RelicRewardOverlay/CenterContainer/RewardVBox/GlowContainer/GlowBack
+@onready var relic_reward_icon: TextureRect = $RelicRewardOverlay/CenterContainer/RewardVBox/GlowContainer/RewardIcon
+@onready var relic_reward_name_label: Label = $RelicRewardOverlay/CenterContainer/RewardVBox/RewardNameLabel
+@onready var relic_reward_description_label: RichTextLabel = $RelicRewardOverlay/CenterContainer/RewardVBox/RewardDescriptionLabel
+@onready var relic_reward_continue_button: Button = $RelicRewardOverlay/CenterContainer/RewardVBox/ContinueButton
+
+var relic_reward_pending: RelicData = null
+var relic_reward_acknowledged: bool = false
+signal relic_reward_finished
+
 # Consumable Items #############################################
 var consumable_inventory: Array[ConsumableItem] = []
 var next_combat_bonus_damage := 0
@@ -366,6 +383,7 @@ var sell_face_value: int = 2
 @export var beastmaster_nigel_enemy: EnemyData
 @export var beastmaster_noir_enemy: EnemyData
 @export var beastmaster_phase2_support_die: DiceData
+var beastmaster_transition_running: bool = false
 
 const AVAILABLE_RESOLUTIONS := [
 	Vector2i(1280, 720),
@@ -456,7 +474,14 @@ func _ready():
 
 	print("Owned dice after setup: ", owned_dice.size())
 		
-
+	combat_log_panel.visible = false
+	combat_log_text.bbcode_enabled = false
+	combat_log_text.add_theme_color_override("default_color", Color.WHITE)
+	combat_log_text.add_theme_color_override("font_outline_color", Color.BLACK)
+	combat_log_text.add_theme_constant_override("outline_size", 2)
+	combat_log_button.pressed.connect(toggle_combat_log)
+	relic_reward_overlay.visible = false
+	relic_reward_continue_button.pressed.connect(_on_relic_reward_continue_pressed)
 	hits_button.pressed.connect(select_group.bind(hits_container))
 	crits_button.pressed.connect(select_group.bind(crits_container))
 	blocks_button.pressed.connect(select_group.bind(blocks_container))
@@ -544,7 +569,6 @@ func _ready():
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
 	update_player_hp_label()
 	update_player_block_label()
-	update_incoming_damage_label()
 	update_player_status_icons()
 	# spawn_dice()
 	# await roll_all_dice()
@@ -702,7 +726,6 @@ func reroll_available_dice():
 
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
-	update_incoming_damage_label()
 	update_group_visibility()
 	
 func get_current_incoming_damage() -> int:
@@ -725,6 +748,7 @@ func get_current_incoming_damage() -> int:
 
 func update_begin_expedition_button_visibility():
 	begin_expedition_button.visible = is_in_town \
+		and !beastmaster_transition_running \
 		and !merchant_panel.visible \
 		and !food_craft_panel.visible \
 		and !edit_dice_panel.visible \
@@ -1002,7 +1026,6 @@ func roll_enemy_intents():
 			enemy["roll_text"] += "Ice Crystal -1 "
 
 	calculate_auto_block()
-	update_incoming_damage_label()
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
 	update_player_3d_node()
@@ -1325,7 +1348,9 @@ func select_group(container: GridContainer):
 				selected_dice_order.erase(child)
 				selected_dice_order.append(child)
 				child.update_visual()
-				
+	calculate_auto_block()
+	update_reserve_slots_label()
+	
 func get_container_for_die(die: DiceNode) -> GridContainer:
 	if die.current_face == null:
 		return misses_container
@@ -1363,8 +1388,10 @@ func regroup_dice():
 		if die.assigned_enemy_index != -1:
 			continue
 			
-		die.set_base_visual_scale(Vector2.ONE * get_combat_die_scale())
 		die.set_compact_mode(false)
+		die.set_base_visual_scale(
+			Vector2.ONE * get_combat_die_scale()
+		)
 
 		var target_container = get_container_for_die(die)
 
@@ -1414,45 +1441,85 @@ func update_group_visibility():
 	misses_container.get_parent().visible = has_visible_dice(misses_container)
 	
 ################################################################
+func connect_combat_die_signals(die: DiceNode):
+	if die == null:
+		return
+
+	if !die.clicked.is_connected(handle_die_click):
+		die.clicked.connect(handle_die_click)
+
+	if !die.reserve_requested.is_connected(handle_reserve_request):
+		die.reserve_requested.connect(handle_reserve_request)
+
+	if !die.drag_started.is_connected(handle_die_drag_started):
+		die.drag_started.connect(handle_die_drag_started)
+
+	if !die.drag_finished.is_connected(handle_die_drag_finished):
+		die.drag_finished.connect(handle_die_drag_finished)
+		
 func spawn_dice():
 	print("Spawning dice count: ", owned_dice.size())
 
 	for die_data in owned_dice:
 		print("Spawning die: ", die_data.die_name)
 		var die_node: DiceNode = dice_scene.instantiate()
-		if !die_node.clicked.is_connected(handle_die_click):
-			die_node.clicked.connect(handle_die_click)
-		if !die_node.reserve_requested.is_connected(handle_reserve_request):
-			die_node.reserve_requested.connect(handle_reserve_request)
+		connect_combat_die_signals(die_node)
 		misses_container.add_child(die_node)
 		die_node.setup(die_data)
-		die_node.scale = Vector2.ONE * get_combat_die_scale()
+		die_node.set_base_visual_scale(
+			Vector2.ONE * get_combat_die_scale()
+		)
 		dice_nodes.append(die_node)
 	update_combat_dice_spacing()
 	update_group_visibility()
 	
 func handle_die_click(die: DiceNode):
 	print("Individual die clicked")
-	AudioManager.play_ui(dice_select_sound)
-	if die.used:
+
+	if die == null or !is_instance_valid(die):
 		return
 
+	if die.used:
+		return
+		
+	AudioManager.play_ui(dice_select_sound)
+
+	# Clicking an assigned die returns it to its normal group.
 	if die.assigned_enemy_index != -1:
 		die.assigned_enemy_index = -1
 		die.selected = false
+		die.reserved = false
+
+		selected_dice_order.erase(die)
+
 		die.update_visual()
 		regroup_dice()
+		calculate_auto_block()
 		update_enemy_button_texts()
+		update_assigned_panel_visibility()
+		update_reserve_slots_label()
 		return
 
+	# Clicking a reserved die unreserves it.
 	if die.reserved:
 		die.reserved = false
 		die.selected = false
+
+		selected_dice_order.erase(die)
+
 		die.update_visual()
 		regroup_dice()
+		calculate_auto_block()
+		update_enemy_button_texts()
+		update_assigned_panel_visibility()
+		update_reserve_slots_label()
 		return
 
+	# Normal selection toggle.
 	die.selected = !die.selected
+
+	# A selected die may never simultaneously be reserved.
+	die.reserved = false
 
 	if die.selected:
 		selected_dice_order.erase(die)
@@ -1460,10 +1527,178 @@ func handle_die_click(die: DiceNode):
 	else:
 		selected_dice_order.erase(die)
 
-	die.reserved = false
 	die.update_visual()
+
+	calculate_auto_block()
 	update_enemy_button_texts()
 	update_assigned_panel_visibility()
+	update_reserve_slots_label()
+	
+func handle_die_drag_started(die: DiceNode):
+	if die == null or !is_instance_valid(die):
+		return
+
+	if combat_over or is_rolling_dice or is_resolving_turn:
+		die.cancel_drag_interaction()
+		return
+
+	if die.used or die.reserved:
+		die.cancel_drag_interaction()
+		return
+
+	if !is_offensive_die(die):
+		die.cancel_drag_interaction()
+		return
+
+	dragged_die = die
+	dragged_die_original_parent = die.get_parent()
+	dragged_die_original_index = die.get_index()
+
+	die.selected = false
+	selected_dice_order.erase(die)
+
+	# An assigned die can be dragged again to retarget it.
+	die.assigned_enemy_index = -1
+	die.reserved = false
+
+	var current_global_position := die.global_position
+
+	die.reparent(assigned_dice_overlay)
+	die.global_position = current_global_position
+
+	die.set_compact_mode(false)
+	die.apply_current_visual_scale()
+	die.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	die.update_visual()
+	update_assigned_panel_visibility()
+	
+func handle_die_drag_finished(
+	die: DiceNode,
+	screen_position: Vector2
+):
+	if die == null or !is_instance_valid(die):
+		clear_dragged_die_state()
+		return
+
+	die.mouse_filter = Control.MOUSE_FILTER_STOP
+	die.apply_current_visual_scale()
+
+	var enemy_index := get_enemy_index_at_screen_position(
+		screen_position
+	)
+
+	if enemy_index != -1:
+		assign_single_die_to_enemy(
+			die,
+			enemy_index
+		)
+	else:
+		die.assigned_enemy_index = -1
+		die.selected = false
+		die.reserved = false
+		die.update_visual()
+
+		regroup_dice()
+		calculate_auto_block()
+		update_enemy_button_texts()
+		update_assigned_panel_visibility()
+
+	clear_dragged_die_state()
+	
+func get_enemy_index_at_screen_position(
+	screen_position: Vector2
+) -> int:
+	var camera := get_viewport().get_camera_3d()
+
+	if camera == null:
+		return -1
+
+	var ray_origin := camera.project_ray_origin(screen_position)
+	var ray_end := ray_origin + (
+		camera.project_ray_normal(screen_position) * 1000.0
+	)
+
+	var query := PhysicsRayQueryParameters3D.create(
+		ray_origin,
+		ray_end
+	)
+
+	query.collision_mask = 2
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+
+	var result: Dictionary = (
+		get_viewport()
+		.world_3d
+		.direct_space_state
+		.intersect_ray(query)
+	)
+
+	if result.is_empty():
+		return -1
+
+	var collider = result.get("collider")
+
+	if collider == null:
+		return -1
+
+	var enemy_node: Node = collider
+
+	while enemy_node != null and !(enemy_node is Enemy3D):
+		enemy_node = enemy_node.get_parent()
+
+	if !(enemy_node is Enemy3D):
+		return -1
+
+	var enemy_index: int = enemy_node.enemy_index
+
+	if enemy_index < 0 or enemy_index >= active_enemies.size():
+		return -1
+
+	return enemy_index
+	
+func assign_single_die_to_enemy(
+	die: DiceNode,
+	enemy_index: int
+):
+	if die == null or !is_instance_valid(die):
+		return
+
+	if enemy_index < 0 or enemy_index >= active_enemies.size():
+		regroup_dice()
+		return
+
+	if assigned_enemy_containers.size() != active_enemies.size():
+		refresh_enemy_buttons()
+
+	if !is_offensive_die(die):
+		regroup_dice()
+		return
+
+	if die.used or die.reserved:
+		regroup_dice()
+		return
+
+	die.assigned_enemy_index = enemy_index
+	die.selected = false
+	die.reserved = false
+
+	selected_dice_order.erase(die)
+
+	move_die_to_assigned_enemy(die)
+	die.update_visual()
+
+	selected_enemy_index = -1
+
+	calculate_auto_block()
+	update_enemy_button_texts()
+	update_assigned_panel_visibility()
+	
+func clear_dragged_die_state():
+	dragged_die = null
+	dragged_die_original_parent = null
+	dragged_die_original_index = -1
 	
 func move_die_to_assigned_enemy(die: DiceNode):
 	var container := get_assigned_container(die.assigned_enemy_index)
@@ -1486,7 +1721,6 @@ func handle_reserve_request(die: DiceNode):
 		die.update_visual()
 		regroup_dice()
 		calculate_auto_block()
-		update_incoming_damage_label()
 		update_reserve_slots_label()
 		return
 
@@ -1496,7 +1730,6 @@ func handle_reserve_request(die: DiceNode):
 		die.update_visual()
 		regroup_dice()
 		calculate_auto_block()
-		update_incoming_damage_label()
 		update_reserve_slots_label()
 		return
 
@@ -1512,7 +1745,6 @@ func handle_reserve_request(die: DiceNode):
 	die.update_visual()
 	regroup_dice()
 	calculate_auto_block()
-	update_incoming_damage_label()
 	update_reserve_slots_label()
 	
 func roll_all_dice():
@@ -1583,7 +1815,11 @@ func roll_all_dice():
 			AudioManager.play_one_shot(critical_roll_sound)
 		var final_container := get_container_for_die(die)
 		await die.fly_to_container(final_container)
+
 		die.set_compact_mode(false)
+		die.set_base_visual_scale(
+			Vector2.ONE * get_combat_die_scale()
+		)
 		if die.dice_data.can_explode:
 			if die.current_face_index == die.dice_data.faces.size() - 1:
 				if !die.has_exploded:
@@ -1594,7 +1830,6 @@ func roll_all_dice():
 		await get_tree().create_timer(0.04).timeout
 
 	calculate_auto_block()
-	update_incoming_damage_label()
 	update_reserve_slots_label()
 
 	print("Dice count after roll: ", dice_nodes.size())
@@ -1605,14 +1840,29 @@ func roll_all_dice():
 
 	is_rolling_dice = false
 	
-func add_combat_log_entry(text: String):
-	combat_log_entries.append(text)
+func add_combat_log_entry(message: String):
+	if message.strip_edges().is_empty():
+		return
 
-	while combat_log_entries.size() > 10:
+	combat_log_entries.append(message)
+
+	while combat_log_entries.size() > 50:
 		combat_log_entries.pop_front()
 
-	combat_log_label.text = "\n".join(combat_log_entries)
+	refresh_combat_log()
 
+func refresh_combat_log():
+	if combat_log_text == null:
+		return
+
+	combat_log_text.text = "\n".join(combat_log_entries)
+
+	await get_tree().process_frame
+
+	if combat_log_scroll != null:
+		var scroll_bar: VScrollBar = combat_log_scroll.get_v_scroll_bar()
+		scroll_bar.value = scroll_bar.max_value
+		
 func resolve_player_dice():
 	dice_nodes = dice_nodes.filter(func(die):
 		return is_instance_valid(die)
@@ -1647,43 +1897,107 @@ func resolve_player_dice():
 				gold_gained_this_turn += die.current_face.value
 
 			"heal":
+				var hp_before_heal: int = player_hp
+
 				player_hp += die.current_face.value
 
-				if player_hp > max_player_hp:
-					player_hp = max_player_hp
+				if player_hp > combat_max_player_hp:
+					player_hp = combat_max_player_hp
 
-				show_popup_text(player_3d_node, "+" + str(die.current_face.value), 1.8, Color.GREEN)
-				combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+				var actual_healing: int = player_hp - hp_before_heal
+
+				if actual_healing > 0:
+					show_popup_text(
+						player_3d_node,
+						"+" + str(actual_healing),
+						1.8,
+						Color.GREEN
+					)
+
+					add_combat_log_entry(
+						"Heal restored "
+							+ str(actual_healing)
+							+ " HP to the player."
+					)
+				else:
+					add_combat_log_entry(
+						"Heal had no effect because the player was already at full HP."
+					)
+
 				update_player_hp_label()
 
 			"vitality":
-				max_player_hp += die.current_face.value
-				player_hp += die.current_face.value
+				var vitality_value: int = die.current_face.value
 
-				show_popup_text(player_3d_node, "+" + str(die.current_face.value), 1.8, Color.GREEN)
-				combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+				max_player_hp += vitality_value
+				combat_max_player_hp += vitality_value
+				player_hp += vitality_value
+
+				if player_hp > combat_max_player_hp:
+					player_hp = combat_max_player_hp
+
+				show_popup_text(
+					player_3d_node,
+					"+" + str(vitality_value),
+					1.8,
+					Color.GREEN
+				)
+
+				add_combat_log_entry(
+					"Vitality permanently increased Max HP by "
+						+ str(vitality_value)
+						+ " and restored "
+						+ str(vitality_value)
+						+ " HP."
+				)
+
 				update_player_hp_label()
-				add_combat_log_entry("Vitality increased max HP by " + str(die.current_face.value) + ".")
 
 			"dodge":
 				dodged_enemy_crits = true
+
+				add_combat_log_entry(
+					"Dodge prepared the player to avoid enemy Crit damage this turn."
+				)
+				
 			"pain":
-				player_hp -= die.current_face.value
+				var pain_damage: int = die.current_face.value
+
+				var hp_before_pain: int = player_hp
+
+				player_hp -= pain_damage
+
 				if player_hp < 0:
 					player_hp = 0
-					lose_combat()
+
+				var actual_pain_damage: int = hp_before_pain - player_hp
+				last_damage_taken += actual_pain_damage
+
 				show_popup_text(
 					player_3d_node,
-					str(die.current_face.value),
+					str(pain_damage),
 					1.8,
 					Color(0.95, 0.45, 0.85)
 				)
-				show_damage_popup(player_3d_node, die.current_face.value)
-				add_combat_log_entry("Pain dealt " + str(die.current_face.value) + " damage.")
+
+				show_damage_popup(
+					player_3d_node,
+					actual_pain_damage
+				)
+
+				add_combat_log_entry(
+					"Pain dealt "
+						+ str(actual_pain_damage)
+						+ " damage to the player."
+				)
 
 				update_player_hp_label()
 
 				if player_hp <= 0:
+					add_combat_log_entry(
+						"The player was defeated by Pain."
+					)
+
 					lose_combat()
 					return
 			_:
@@ -1696,6 +2010,17 @@ func resolve_player_dice():
 			die.update_visual()
 
 	gold += gold_gained_this_turn
+	if gold_gained_this_turn > 0:
+		gold += gold_gained_this_turn
+
+		add_combat_log_entry(
+			"Total Gold gained this turn: "
+				+ str(gold_gained_this_turn)
+				+ "."
+		)
+
+	update_gold_label()
+	update_player_block_label()
 	update_gold_label()
 	update_player_block_label()
 
@@ -1786,32 +2111,56 @@ func end_round():
 	is_resolving_turn = true
 	end_round_button.disabled = true
 
+	last_damage_taken = 0
+
 	await resolve_player_dice()
-	
+
 	if combat_over:
 		is_resolving_turn = false
 		end_round_button.disabled = false
 		return
-		
+
 	mulligem_used_this_turn = false
 	update_mulligem_button()
-	
+
 	if active_enemies.is_empty():
 		await get_tree().create_timer(0.5).timeout
 		win_combat()
 		is_resolving_turn = false
 		return
 
+	# ---------------------------------------------------------
+	# ENEMY HEALING
+	# ---------------------------------------------------------
 	for healer_index in active_enemies.size():
-		var healer = active_enemies[healer_index]
+		if healer_index < 0 or healer_index >= active_enemies.size():
+			continue
+
+		var healer: Dictionary = active_enemies[healer_index]
+		var healer_name: String = healer["data"].enemy_name
+
 		if healer["frozen"]:
 			continue
+
 		if healer["heal"] <= 0:
 			continue
 
 		if break_focus_targets.has(healer_index):
-			add_combat_log_entry(healer["data"].enemy_name + "'s healing was broken.")
-			show_popup_text(enemy_3d_nodes[healer_index], "Healing Broken!", 1.2, Color.PURPLE)
+			add_combat_log_entry(
+				"Break Focus cancelled "
+				+ healer_name
+				+ "'s healing."
+			)
+
+			if healer_index < enemy_3d_nodes.size():
+				if is_instance_valid(enemy_3d_nodes[healer_index]):
+					show_popup_text(
+						enemy_3d_nodes[healer_index],
+						"Healing Broken!",
+						1.2,
+						Color.PURPLE
+					)
+
 			continue
 
 		var lowest_enemy = get_lowest_health_enemy()
@@ -1819,58 +2168,87 @@ func end_round():
 		if lowest_enemy == null:
 			continue
 
+		var target_name: String = lowest_enemy["data"].enemy_name
+		var hp_before: int = lowest_enemy["hp"]
+		var target_max_hp: int = lowest_enemy["max_hp"]
+
 		lowest_enemy["hp"] += healer["heal"]
 
-		var healed_index := active_enemies.find(lowest_enemy)
+		if lowest_enemy["hp"] > target_max_hp:
+			lowest_enemy["hp"] = target_max_hp
 
-		var max_hp = lowest_enemy["max_hp"]
-		if lowest_enemy["hp"] > max_hp:
-			lowest_enemy["hp"] = max_hp
+		var actual_healing: int = lowest_enemy["hp"] - hp_before
+		var healed_index: int = active_enemies.find(lowest_enemy)
 
 		update_enemy_3d_nodes()
 
-		if healed_index != -1 and healed_index < enemy_3d_nodes.size():
-			if is_instance_valid(enemy_3d_nodes[healed_index]):
-				show_popup_text(
-					enemy_3d_nodes[healed_index],
-					"+" + str(healer["heal"]),
-					1.8,
-					Color.GREEN
-				)
+		if actual_healing > 0:
+			add_combat_log_entry(
+				healer_name
+					+ " restored "
+					+ str(actual_healing)
+					+ " HP to "
+					+ target_name
+					+ "."
+			)
 
-				await get_tree().create_timer(1.50).timeout
-	last_damage_taken = 0
+			if healed_index != -1 and healed_index < enemy_3d_nodes.size():
+				if is_instance_valid(enemy_3d_nodes[healed_index]):
+					show_popup_text(
+						enemy_3d_nodes[healed_index],
+						"+" + str(actual_healing),
+						1.8,
+						Color.GREEN
+					)
 
+					await get_tree().create_timer(1.5).timeout
+
+	# ---------------------------------------------------------
+	# ENEMY ATTACKS
+	# ---------------------------------------------------------
 	for enemy_index in active_enemies.size():
 		if enemy_index < 0 or enemy_index >= active_enemies.size():
 			continue
 
-		var enemy = active_enemies[enemy_index]
+		var enemy: Dictionary = active_enemies[enemy_index]
+		var enemy_name: String = enemy["data"].enemy_name
+
+		# Freeze skips this enemy's turn unless it resists the skip.
 		if enemy["frozen"]:
 			if enemy["data"].immune_to_freeze_skip:
-				show_popup_text(
-					enemy_3d_nodes[enemy_index],
-					"Chilled!",
-					1.2,
-					Color.CYAN
+				if enemy_index < enemy_3d_nodes.size():
+					if is_instance_valid(enemy_3d_nodes[enemy_index]):
+						show_popup_text(
+							enemy_3d_nodes[enemy_index],
+							"Chilled!",
+							1.2,
+							Color.CYAN
+						)
+
+				add_combat_log_entry(
+					enemy_name + " resisted the Freeze turn skip."
 				)
 
-				add_combat_log_entry(enemy["data"].enemy_name + " resists being frozen.")
 				enemy["frozen"] = false
+				update_enemy_3d_nodes()
 			else:
-				show_popup_text(
-					enemy_3d_nodes[enemy_index],
-					"Frozen!",
-					1.2,
-					Color.CYAN
+				if enemy_index < enemy_3d_nodes.size():
+					if is_instance_valid(enemy_3d_nodes[enemy_index]):
+						show_popup_text(
+							enemy_3d_nodes[enemy_index],
+							"Frozen!",
+							1.2,
+							Color.CYAN
+						)
+
+				add_combat_log_entry(
+					enemy_name + " was Frozen and skipped its turn."
 				)
 
-				add_combat_log_entry(enemy["data"].enemy_name + " is frozen and skips their turn.")
 				enemy["frozen"] = false
-
 				update_enemy_3d_nodes()
 				continue
-			
+
 		if enemy_index >= enemy_3d_nodes.size():
 			continue
 
@@ -1886,23 +2264,45 @@ func end_round():
 			await enemy_3d_nodes[enemy_index].play_attack_animation()
 			await launch_enemy_die_at_player(enemy_index, face)
 
-			var damage := face.value
-			
+			var damage: int = face.value
+
+			# -------------------------------------------------
+			# ENEMY CRIT
+			# -------------------------------------------------
 			if face.result_type == "crit":
 				AudioManager.play_one_shot(critical_hit_sound)
+
 				if reversal_targets.has(enemy_index):
-					active_enemies[enemy_index]["hp"] -= damage
+					var hp_before_reversal: int = enemy["hp"]
 
-					show_damage_popup(enemy_3d_nodes[enemy_index], damage)
-					add_combat_log_entry("Reversed " + str(damage) + " crit damage.")
+					enemy["hp"] -= damage
 
-					if active_enemies[enemy_index]["hp"] < 0:
-						active_enemies[enemy_index]["hp"] = 0
+					if enemy["hp"] < 0:
+						enemy["hp"] = 0
+
+					var actual_reversal_damage: int = (
+						hp_before_reversal - enemy["hp"]
+					)
+
+					last_player_damage += actual_reversal_damage
+
+					show_damage_popup(
+						enemy_3d_nodes[enemy_index],
+						actual_reversal_damage
+					)
+
+					add_combat_log_entry(
+						"Reversal reflected "
+							+ str(actual_reversal_damage)
+							+ " Crit damage to "
+							+ enemy_name
+							+ "."
+					)
 
 					update_enemy_3d_nodes()
 					await hit_stop(0.035)
 
-					if active_enemies[enemy_index]["hp"] <= 0:
+					if enemy["hp"] <= 0:
 						await remove_defeated_enemies()
 
 						if active_enemies.is_empty():
@@ -1914,66 +2314,171 @@ func end_round():
 					continue
 
 				if dodge_targets.has(enemy_index):
-					add_combat_log_entry("Dodged " + str(damage) + " crit damage.")
-					show_popup_text(player_3d_node, "Dodged!", 1.0, Color.CORNFLOWER_BLUE)
+					add_combat_log_entry(
+						"The player dodged "
+							+ enemy_name
+							+ "'s "
+							+ str(damage)
+							+ "-damage Crit."
+					)
+
+					show_popup_text(
+						player_3d_node,
+						"Dodged!",
+						1.0,
+						Color.CORNFLOWER_BLUE
+					)
+
 					await hit_stop(0.02)
 					continue
+
+			# -------------------------------------------------
+			# NORMAL ENEMY HIT AND PLAYER BLOCK
+			# -------------------------------------------------
 			if face.result_type == "hit":
-				damage += get_active_berserker_bonus(enemy)
-				var blocked_amount = min(damage, player_block)
+				var berserker_bonus: int = get_active_berserker_bonus(enemy)
+
+				if berserker_bonus > 0:
+					damage += berserker_bonus
+
+					add_combat_log_entry(
+						enemy_name
+							+ "'s Berserker trait added "
+							+ str(berserker_bonus)
+							+ " damage."
+					)
+
+				var blocked_amount: int = min(damage, player_block)
 
 				if blocked_amount > 0:
 					player_block -= blocked_amount
 
 					if player_block < 0:
 						player_block = 0
+
+					add_combat_log_entry(
+						"Player Block absorbed "
+							+ str(blocked_amount)
+							+ " damage from "
+							+ enemy_name
+							+ "."
+					)
+
 					if has_relic("Spiked Shield"):
 						enemy["bleed"] += 1
-						show_popup_text(enemy_3d_nodes[enemy_index], "Bleed +1", 1.2, Color.RED)
-						add_combat_log_entry("Spiked Shield inflicted 1 Bleed.")
+
+						show_popup_text(
+							enemy_3d_nodes[enemy_index],
+							"Bleed +1",
+							1.2,
+							Color.RED
+						)
+
+						add_combat_log_entry(
+							"Spiked Shield applied 1 Bleed to "
+								+ enemy_name
+								+ "."
+						)
+
 						update_enemy_3d_nodes()
-					AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
+
+					AudioManager.play_one_shot(
+						hit_blocked_sound,
+						0.95,
+						1.05
+					)
+
 					show_popup_text(
 						player_3d_node,
 						"Block -" + str(blocked_amount),
 						1.0,
 						Color.CORNFLOWER_BLUE
 					)
+
 					update_player_block_label()
 					await hit_stop(0.015)
 
 				damage -= blocked_amount
 
+			# -------------------------------------------------
+			# PLAYER TAKES HP DAMAGE
+			# -------------------------------------------------
 			if damage > 0:
 				player_hp -= damage
-				if face.result_type == "hit":
-					var venom_value := get_enemy_trait_value(enemy, "venomous")
-					print("VENOM CHECK: ", enemy["data"].enemy_name, " value=", venom_value)
 
-					if venom_value > 0:
-						player_statuses["bleed"] += venom_value
-						show_popup_text(player_3d_node, "Bleed +" + str(venom_value), 1.2, Color.RED)
-						add_combat_log_entry(enemy["data"].enemy_name + " applied Bleed " + str(venom_value) + ".")
-						update_player_status_icons()
-												
 				if player_hp < 0:
 					player_hp = 0
 
 				last_damage_taken += damage
 
-				AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
+				if face.result_type == "crit":
+					add_combat_log_entry(
+						enemy_name
+							+ " dealt "
+							+ str(damage)
+							+ " Crit damage to the player."
+					)
+				else:
+					add_combat_log_entry(
+						enemy_name
+							+ " dealt "
+							+ str(damage)
+							+ " damage to the player."
+					)
+
+				# Venom only triggers when a Hit reaches player HP.
+				if face.result_type == "hit":
+					var venom_value: int = get_enemy_trait_value(
+						enemy,
+						"venomous"
+					)
+
+					if venom_value > 0:
+						player_statuses["bleed"] += venom_value
+
+						show_popup_text(
+							player_3d_node,
+							"Bleed +" + str(venom_value),
+							1.2,
+							Color.RED
+						)
+
+						add_combat_log_entry(
+							enemy_name
+								+ "'s Venomous trait applied "
+								+ str(venom_value)
+								+ " Bleed to the player."
+						)
+
+						update_player_status_icons()
+
+				AudioManager.play_one_shot(
+					hit_damage_sound,
+					0.9,
+					1.1
+				)
+
 				show_damage_popup(player_3d_node, damage)
 				player_3d_node.hit_flash()
 				player_3d_node.hurt_bump()
 				screen_shake(0.08, 0.12)
-				combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+
+				combat_max_player_hp = (
+					max_player_hp + next_combat_bonus_max_hp
+				)
+
 				update_player_hp_label()
 				await hit_stop(0.035)
-
+			
 			if player_hp <= 0:
+				add_combat_log_entry("The player was defeated.")
 				lose_combat()
 				is_resolving_turn = false
 				return
+	
+	# ---------------------------------------------------------
+	# END-OF-ROUND EFFECTS
+	# ---------------------------------------------------------
 	await apply_enemy_bleed()
 	apply_player_regeneration()
 	await remove_defeated_enemies()
@@ -1983,28 +2488,44 @@ func end_round():
 		win_combat()
 		is_resolving_turn = false
 		return
+
 	clear_used_assigned_dice()
+
 	dodge_targets.clear()
 	reversal_targets.clear()
 	break_focus_targets.clear()
+
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+
 	update_player_hp_label()
 	update_player_block_label()
+
 	apply_player_bleed()
-	update_combat_log()
+
+	if combat_over:
+		is_resolving_turn = false
+		return
 	apply_enemy_end_round_traits()
 	update_enemy_3d_nodes()
 	apply_end_round_relics()
 	decay_enemy_statuses()
+	update_combat_log()
 	selected_enemy_index = -1
+
 	reset_dice_for_next_roll()
 	await roll_all_dice()
+
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
-	
+
 	roll_enemy_intents()
 	refresh_enemy_buttons()
 	update_player_3d_node()
+
+	add_combat_log_entry("────────── New Round ──────────")
+
+	is_resolving_turn = false
+	end_round_button.disabled = false
 
 	is_resolving_turn = false
 	end_round_button.disabled = false
@@ -2015,20 +2536,46 @@ func apply_player_bleed():
 	if bleed_value <= 0:
 		return
 
+	var hp_before_bleed: int = player_hp
+
 	player_hp -= bleed_value
-	AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
+
 	if player_hp < 0:
 		player_hp = 0
 
-	show_damage_popup(player_3d_node, bleed_value)
-	add_combat_log_entry("Bleed dealt " + str(bleed_value) + " damage.")
+	var actual_bleed_damage: int = hp_before_bleed - player_hp
+	last_damage_taken += actual_bleed_damage
 
-	player_statuses["bleed"] = max(bleed_value - 1, 0)
+	AudioManager.play_one_shot(
+		hit_damage_sound,
+		0.9,
+		1.1
+	)
+
+	show_damage_popup(
+		player_3d_node,
+		actual_bleed_damage
+	)
+
+	add_combat_log_entry(
+		"Bleed dealt "
+			+ str(actual_bleed_damage)
+			+ " damage to the player."
+	)
+
+	player_statuses["bleed"] = max(
+		bleed_value - 1,
+		0
+	)
 
 	update_player_hp_label()
 	update_player_status_icons()
 
 	if player_hp <= 0:
+		add_combat_log_entry(
+			"The player was defeated by Bleed."
+		)
+
 		lose_combat()
 		
 func get_active_berserker_bonus(enemy: Dictionary) -> int:
@@ -2247,8 +2794,10 @@ func get_face_text(face: DiceFace) -> String:
 
 func update_combat_log():
 	add_combat_log_entry(
-		"You dealt " + str(last_player_damage) +
-		" damage. You took " + str(last_damage_taken) + " damage."
+		"Round Summary — Damage dealt: "
+			+ str(last_player_damage)
+			+ " | Damage taken: "
+			+ str(last_damage_taken)
 	)
 
 func win_combat():
@@ -2322,9 +2871,9 @@ func win_combat():
 
 	if player_hp > max_player_hp:
 		player_hp = max_player_hp
+		
 	update_gold_label()
 	apply_end_combat_relics()
-	last_unlocked_relics.clear()
 
 	if combat_relic_drop_pool.size() > 0:
 		if randf() <= combat_relic_drop_chance:
@@ -2366,6 +2915,10 @@ func win_combat():
 	# Functions for combat rewards
 	
 func show_loot_panel():
+	if last_unlocked_relics.size() > 0:
+		var relic: RelicData = last_unlocked_relics[0]
+		await show_relic_acquisition(relic)
+	
 	loot_panel.visible = true
 	shop_panel.visible = false
 
@@ -2423,6 +2976,7 @@ func show_loot_panel():
 	loot_rich_text_label.clear()
 	loot_rich_text_label.append_text(loot_text)
 		
+	
 func update_camp_hp_label():
 	if camp_hp_label != null:
 		camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(max_player_hp)
@@ -2457,6 +3011,7 @@ func heal_reward():
 func lose_combat():
 	combat_over = true
 	is_resolving_turn = false
+	combat_log_panel.visible = false
 	screen_shake(0.15, 0.3)
 	request_music_fade_out.emit()
 	AudioManager.play_one_shot(player_death_sound)
@@ -2466,6 +3021,7 @@ func lose_combat():
 		combat_max_player_hp = max_player_hp
 		update_player_hp_label()
 		expedition_active = false
+		clear_all_combat_dice_state()
 		is_in_town = true
 		current_bounty = null
 		current_encounter = null
@@ -2473,7 +3029,7 @@ func lose_combat():
 		save_run()
 		return_to_town_requested.emit()
 		return
-	
+	clear_all_combat_dice_state()
 	hide_all_combat_ui()
 	show_death_screen()
 
@@ -2483,6 +3039,8 @@ func restart_run():
 	delete_run_save()
 	get_tree().reload_current_scene()
 	completed_bounties.clear()
+	combat_log_entries.clear()
+	combat_log_button.visible = false
 	final_boss_unlocked = false
 	current_bounty = null
 	owned_relics.clear()
@@ -2519,7 +3077,11 @@ func start_new_combat():
 	combat_over = false
 	is_resolving_turn = false
 	is_in_town = false
-	
+	combat_log_entries.clear()
+	combat_log_text.clear()
+	refresh_combat_log()
+	combat_log_panel.visible = false
+	combat_log_button.visible = true
 	shop_panel.visible = false
 	loot_panel.visible = false
 	encounter_panel.visible = false
@@ -2539,8 +3101,6 @@ func start_new_combat():
 
 	dodge_targets.clear()
 	reversal_targets.clear()
-	combat_log_entries.clear()
-	combat_log_label.text = ""
 	defeated_enemies.clear()
 	active_enemies.clear()
 	selected_enemy_index = -1
@@ -2556,7 +3116,7 @@ func start_new_combat():
 	misses_container.get_parent().visible = true
 	last_player_damage = 0
 	last_damage_taken = 0
-
+	clear_all_combat_dice_state()
 	for die in dice_nodes:
 		if is_instance_valid(die):
 			die.queue_free()
@@ -2597,7 +3157,6 @@ func start_new_combat():
 	regroup_dice()
 	update_group_visibility()
 	update_player_status_icons()
-	update_incoming_damage_label()
 	update_reserve_slots_label()
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
@@ -2643,7 +3202,43 @@ func update_combat_number_label():
 
 	combat_number_label.visible = !is_in_town
 	
+func clear_all_combat_dice_state():
+	selected_dice_order.clear()
+	selected_enemy_index = -1
 
+	for die in dice_nodes:
+		if !is_instance_valid(die):
+			continue
+
+		die.assigned_enemy_index = -1
+		die.selected = false
+		die.reserved = false
+		die.came_from_reserve = false
+		die.visible = false
+		die.set_compact_mode(false)
+		die.update_visual()
+
+		if die.get_parent() != rolling_hidden_area:
+			die.reparent(rolling_hidden_area)
+
+	for container in assigned_enemy_containers:
+		if !is_instance_valid(container):
+			continue
+
+		for child in container.get_children():
+			if child is DiceNode:
+				child.assigned_enemy_index = -1
+				child.selected = false
+				child.reserved = false
+				child.visible = false
+
+	for child in assigned_dice_overlay.get_children():
+		child.queue_free()
+
+	assigned_enemy_containers.clear()
+
+	update_assigned_panel_visibility()
+	update_group_visibility()
 	
 func buy_reserve_slot():
 	if gold < reserve_slot_cost:
@@ -3467,29 +4062,25 @@ func calculate_auto_block():
 			player_block += die.current_face.value
 
 	update_player_block_label()
-	
-func update_incoming_damage_label():
-	var total_attack := 0
-	var total_crit := 0
 
-	for enemy in active_enemies:
-		total_attack += enemy["attack"]
-		total_crit += enemy["crit"]
-
-	var incoming = total_attack - player_block
-
-	if incoming < 0:
-		incoming = 0
-
-	if !dodged_enemy_crits:
-		incoming += total_crit
-
-	incoming_damage_label.text = "Incoming: " + str(incoming)
-	update_player_3d_node()
-	
 func update_reserve_slots_label():
+	for die in dice_nodes:
+		if !is_instance_valid(die):
+			continue
+
+		# Selection and assignment always take priority over reserve.
+		if die.selected or die.assigned_enemy_index != -1:
+			if die.reserved:
+				die.reserved = false
+				die.update_visual()
+
 	var reserved := get_reserved_die_count()
-	reserve_slots_label.text = str(reserved) + "/" + str(reserve_slots)
+
+	reserve_slots_label.text = (
+		str(reserved)
+		+ "/"
+		+ str(reserve_slots)
+	)
 	
 func clear_assignments_for_enemy(enemy_index: int):
 	for die in dice_nodes:
@@ -3585,8 +4176,7 @@ func get_reversal_damage_for_enemy(enemy_index: int) -> int:
 func spawn_exploded_die(source_die: DiceNode):
 	var die_node: DiceNode = dice_scene.instantiate()
 
-	die_node.clicked.connect(handle_die_click)
-	die_node.reserve_requested.connect(handle_reserve_request)
+	connect_combat_die_signals(die_node)
 
 	rolling_hidden_area.add_child(die_node)
 
@@ -3605,6 +4195,10 @@ func spawn_exploded_die(source_die: DiceNode):
 	await die_node.fly_to_container(final_container)
 
 	die_node.set_compact_mode(false)
+	die_node.set_base_visual_scale(
+		Vector2.ONE * get_combat_die_scale()
+	)
+
 	update_group_visibility()
 
 	if die_node.dice_data.can_explode:
@@ -3684,8 +4278,6 @@ func _input(event):
 	while enemy_node != null and !(enemy_node is Enemy3D):
 		enemy_node = enemy_node.get_parent()
 
-	if enemy_node is Enemy3D:
-		select_enemy_target(enemy_node.enemy_index)
 	if enemy_node is Enemy3D:
 		select_enemy_target(enemy_node.enemy_index)
 		
@@ -3956,7 +4548,10 @@ func get_assigned_dice_for_enemy(enemy_index: int) -> Array[DiceNode]:
 
 	return result
 
-func resolve_single_die_impact(enemy_index: int, die: DiceNode):
+func resolve_single_die_impact(
+	enemy_index: int,
+	die: DiceNode
+):
 	if enemy_index < 0 or enemy_index >= active_enemies.size():
 		return
 
@@ -3966,104 +4561,256 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 	if die.current_face == null:
 		return
 
-	var enemy = active_enemies[enemy_index]
-	var enemy_node = enemy_3d_nodes[enemy_index]
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+	var face: DiceFace = die.current_face
+
 	if enemy.has("downed") and enemy["downed"]:
-		show_popup_text(enemy_3d_nodes[enemy_index], "Downed", 1.2, Color.GRAY)
+		show_popup_text(
+			enemy_node,
+			"Downed",
+			1.2,
+			Color.GRAY
+		)
+
+		add_combat_log_entry(
+			enemy_name + " is already downed."
+		)
 		return
+
 	if !is_instance_valid(enemy_node):
 		return
 
 	await launch_die_at_enemy(die, enemy_index)
 
-	match die.current_face.result_type:
+	match face.result_type:
+		# -----------------------------------------------------
+		# DODGE
+		# -----------------------------------------------------
 		"dodge":
 			if !dodge_targets.has(enemy_index):
 				dodge_targets.append(enemy_index)
 
-			add_combat_log_entry("Dodging crits from " + enemy["data"].enemy_name + ".")
+			add_combat_log_entry(
+				"Dodge will prevent "
+					+ enemy_name
+					+ "'s Crit damage this turn."
+			)
 			return
 
+		# -----------------------------------------------------
+		# REVERSAL
+		# -----------------------------------------------------
 		"reversal":
 			if !reversal_targets.has(enemy_index):
 				reversal_targets.append(enemy_index)
 
-			add_combat_log_entry("Reversing crits from " + enemy["data"].enemy_name + ".")
+			add_combat_log_entry(
+				"Reversal will reflect "
+					+ enemy_name
+					+ "'s Crit damage this turn."
+			)
 			return
 
+		# -----------------------------------------------------
+		# BREAK FOCUS
+		# -----------------------------------------------------
 		"break_focus":
 			if !break_focus_targets.has(enemy_index):
 				break_focus_targets.append(enemy_index)
 
-			show_popup_text(enemy_node, "Break Focus", 1.2, Color.PURPLE)
-			add_combat_log_entry("Break Focus will cancel " + enemy["data"].enemy_name + "'s healing.")
+			show_popup_text(
+				enemy_node,
+				"Break Focus",
+				1.2,
+				Color.PURPLE
+			)
+
+			add_combat_log_entry(
+				"Break Focus will cancel "
+					+ enemy_name
+					+ "'s healing this turn."
+			)
 			return
 
+		# -----------------------------------------------------
+		# FREEZE
+		# -----------------------------------------------------
 		"freeze":
 			if enemy["data"].crowd_control_immune:
-				show_popup_text(enemy_node, "Immune", 1.2, Color.ORANGE_RED)
-				add_combat_log_entry(enemy["data"].enemy_name + " is immune to Freeze.")
+				show_popup_text(
+					enemy_node,
+					"Immune",
+					1.2,
+					Color.ORANGE_RED
+				)
+
+				add_combat_log_entry(
+					enemy_name + " is immune to Freeze."
+				)
+
 				update_enemy_3d_nodes()
 				return
 
 			enemy["frozen"] = true
-			enemy["freeze_stacks"] += die.current_face.value
+			enemy["freeze_stacks"] += face.value
 
 			AudioManager.play_one_shot(freeze_sound)
 
-			show_popup_text(enemy_node, "Frozen +" + str(die.current_face.value), 1.2, Color.CYAN)
-			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " Freeze stacks.")
+			show_popup_text(
+				enemy_node,
+				"Frozen +" + str(face.value),
+				1.2,
+				Color.CYAN
+			)
+
+			add_combat_log_entry(
+				enemy_name
+					+ " gained "
+					+ str(face.value)
+					+ " Freeze."
+			)
 
 			update_enemy_3d_nodes()
 			return
 
+		# -----------------------------------------------------
+		# BLEED
+		# -----------------------------------------------------
 		"bleed":
 			if enemy["block"] > 0:
-				show_popup_text(enemy_node, "Blocked Bleed", 1.0, Color.GRAY)
-				add_combat_log_entry(enemy["data"].enemy_name + "'s block stopped Bleed.")
-				AudioManager.play_one_shot(hit_blocked_sound, 0.9, 1.1)
+				show_popup_text(
+					enemy_node,
+					"Blocked Bleed",
+					1.0,
+					Color.GRAY
+				)
+
+				add_combat_log_entry(
+					enemy_name
+						+ "'s Block prevented "
+						+ str(face.value)
+						+ " Bleed."
+				)
+
+				AudioManager.play_one_shot(
+					hit_blocked_sound,
+					0.9,
+					1.1
+				)
+
 				update_enemy_3d_nodes()
 				return
-			AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
-			enemy["bleed"] += die.current_face.value
 
-			show_popup_text(enemy_node, "Bleed +" + str(die.current_face.value), 1.2, Color.RED)
-			add_combat_log_entry(enemy["data"].enemy_name + " gains " + str(die.current_face.value) + " bleed.")
+			enemy["bleed"] += face.value
+
+			AudioManager.play_one_shot(
+				hit_damage_sound,
+				0.9,
+				1.1
+			)
+
+			show_popup_text(
+				enemy_node,
+				"Bleed +" + str(face.value),
+				1.2,
+				Color.RED
+			)
+
+			add_combat_log_entry(
+				enemy_name
+					+ " gained "
+					+ str(face.value)
+					+ " Bleed."
+			)
 
 			update_enemy_3d_nodes()
 			return
 
+		# -----------------------------------------------------
+		# TWIST KNIFE
+		# -----------------------------------------------------
 		"twist_knife":
 			var bleed_value: int = enemy.get("bleed", 0)
 
 			if bleed_value <= 0:
-				show_popup_text(enemy_node, "No Bleed", 1.0, Color.GRAY)
+				show_popup_text(
+					enemy_node,
+					"No Bleed",
+					1.0,
+					Color.GRAY
+				)
+
+				add_combat_log_entry(
+					"Twist Knife failed because "
+						+ enemy_name
+						+ " had no Bleed."
+				)
 				return
-			
+
 			enemy["bleed"] = 0
 			enemy["hp"] -= bleed_value
 			last_player_damage += bleed_value
-			AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
+
 			if enemy["hp"] < 0:
 				enemy["hp"] = 0
 
+			AudioManager.play_one_shot(
+				hit_damage_sound,
+				0.9,
+				1.1
+			)
+
 			show_damage_popup(enemy_node, bleed_value)
-			add_combat_log_entry("Twist Knife consumed " + str(bleed_value) + " bleed.")
+
+			add_combat_log_entry(
+				"Twist Knife consumed "
+					+ str(bleed_value)
+					+ " Bleed and dealt "
+					+ str(bleed_value)
+					+ " damage to "
+					+ enemy_name
+					+ "."
+			)
 
 			update_enemy_3d_nodes()
 			return
-		
-		"crit":
-			var damage: int = die.current_face.value
 
-			if get_enemy_trait_value(enemy, "agile") > 0 and !enemy["agile_used"]:
+		# -----------------------------------------------------
+		# CRIT
+		# -----------------------------------------------------
+		"crit":
+			var damage: int = face.value
+
+			if (
+				get_enemy_trait_value(enemy, "agile") > 0
+				and !enemy["agile_used"]
+			):
 				enemy["agile_used"] = true
-				show_popup_text(enemy_node, "Dodged Crit!", 1.3, Color.CORNFLOWER_BLUE)
-				add_combat_log_entry(enemy["data"].enemy_name + " avoided a Crit with Agile.")
+
+				show_popup_text(
+					enemy_node,
+					"Dodged Crit!",
+					1.3,
+					Color.CORNFLOWER_BLUE
+				)
+
+				add_combat_log_entry(
+					enemy_name
+						+ "'s Agile trait avoided a "
+						+ str(damage)
+						+ "-damage Crit."
+				)
+
 				update_enemy_3d_nodes()
 				return
 
-			damage = apply_guardian_split(enemy_index, damage, true)
+			damage = apply_guardian_split(
+				enemy_index,
+				damage,
+				true
+			)
 
 			enemy["hp"] -= damage
 			enemy["exposed"] = true
@@ -4072,39 +4819,84 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			if enemy["hp"] < 0:
 				enemy["hp"] = 0
 
-			AudioManager.play_one_shot(critical_hit_sound, 0.85, 1.15)
-			show_popup_text(enemy_node, "-" + str(damage), 1.7, Color.GOLD)
-			show_popup_text(enemy_node, "EXPOSED", 2.2, Color.YELLOW)
+			AudioManager.play_one_shot(
+				critical_hit_sound,
+				0.85,
+				1.15
+			)
+
+			show_popup_text(
+				enemy_node,
+				"-" + str(damage),
+				1.7,
+				Color.GOLD
+			)
+
+			show_popup_text(
+				enemy_node,
+				"EXPOSED",
+				2.2,
+				Color.YELLOW
+			)
+
+			add_combat_log_entry(
+				"Crit dealt "
+					+ str(damage)
+					+ " damage to "
+					+ enemy_name
+					+ " and applied Exposed."
+			)
+
 			enemy_node.hit_flash()
 			enemy_node.hurt_bump()
 			screen_shake(0.07, 0.1)
+
 			await hit_stop(0.03)
 
 			update_enemy_3d_nodes()
 			return
+
+		# -----------------------------------------------------
+		# SHIELD BASH
+		# -----------------------------------------------------
 		"shield_bash":
 			var starting_block: int = player_block
-			var damage: int = starting_block
+			var raw_damage: int = starting_block
 
-			if damage <= 0:
-				show_popup_text(enemy_node, "No Block", 1.2, Color.GRAY)
-				add_combat_log_entry("Shield Bash failed. No Block to consume.")
+			if raw_damage <= 0:
+				show_popup_text(
+					enemy_node,
+					"No Block",
+					1.2,
+					Color.GRAY
+				)
+
+				add_combat_log_entry(
+					"Shield Bash failed because the player had no Block."
+				)
 				return
 
-			# Each Shield Bash consumes half of the player's current Block,
-			# rounded up so repeated bashes still have value.
-			player_block = int(ceil(float(player_block) / 2.0))
+			player_block = int(
+				ceil(float(player_block) / 2.0)
+			)
 
-			# If only 1 Block remained, consume it completely.
 			if starting_block == 1:
 				player_block = 0
 
 			update_player_block_label()
 			update_player_3d_node()
 
-			damage = apply_guardian_split(enemy_index, damage, false)
+			var damage: int = apply_guardian_split(
+				enemy_index,
+				raw_damage,
+				false
+			)
 
-			var blocked_amount: int = min(damage, int(enemy["block"]))
+			var blocked_amount: int = min(
+				damage,
+				int(enemy["block"])
+			)
+
 			enemy["block"] -= blocked_amount
 			damage -= blocked_amount
 
@@ -4112,7 +4904,18 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 				enemy["block"] = 0
 
 			if blocked_amount > 0:
-				await show_enemy_hit_sequence(enemy_index, blocked_amount, 0)
+				add_combat_log_entry(
+					enemy_name
+						+ " blocked "
+						+ str(blocked_amount)
+						+ " Shield Bash damage."
+				)
+
+				await show_enemy_hit_sequence(
+					enemy_index,
+					blocked_amount,
+					0
+				)
 
 			if damage > 0:
 				enemy["hp"] -= damage
@@ -4121,48 +4924,101 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 				if enemy["hp"] < 0:
 					enemy["hp"] = 0
 
-				await show_enemy_hit_sequence(enemy_index, 0, damage)
+				await show_enemy_hit_sequence(
+					enemy_index,
+					0,
+					damage
+				)
 
 			show_popup_text(
 				player_3d_node,
-				"Block " + str(starting_block) + " → " + str(player_block),
+				"Block "
+					+ str(starting_block)
+					+ " → "
+					+ str(player_block),
 				1.4,
 				Color.CORNFLOWER_BLUE
 			)
 
 			add_combat_log_entry(
 				"Shield Bash dealt "
-				+ str(damage)
-				+ " damage and reduced Block from "
-				+ str(starting_block)
-				+ " to "
-				+ str(player_block)
-				+ "."
+					+ str(damage)
+					+ " HP damage to "
+					+ enemy_name
+					+ " and reduced player Block from "
+					+ str(starting_block)
+					+ " to "
+					+ str(player_block)
+					+ "."
 			)
 
 			update_enemy_3d_nodes()
 			return
+
+		# -----------------------------------------------------
+		# NORMAL HIT
+		# -----------------------------------------------------
 		"hit":
-			var base_damage: int = die.current_face.value + active_combat_bonus_damage
-			var exposed_bonus := 0
+			var base_damage: int = (
+				face.value + active_combat_bonus_damage
+			)
+
+			var exposed_bonus: int = 0
+			var axe_bonus: int = 0
 
 			if enemy["exposed"]:
 				exposed_bonus = 1
 				enemy["exposed"] = false
-				show_popup_text(enemy_node, "EXPOSED +1", 2.2, Color.YELLOW)
 
-			if has_relic("Executioner's Axe") and enemy["bleed"] > 0:
-				base_damage += 2
+				show_popup_text(
+					enemy_node,
+					"EXPOSED +1",
+					2.2,
+					Color.YELLOW
+				)
+
+			if (
+				has_relic("Executioner's Axe")
+				and enemy["bleed"] > 0
+			):
+				axe_bonus = 2
+				base_damage += axe_bonus
+
+				add_combat_log_entry(
+					"Executioner's Axe added 2 damage against "
+						+ enemy_name
+						+ "."
+				)
 
 			if has_relic("Bloodstone"):
 				enemy["bleed"] += 1
 
+				add_combat_log_entry(
+					"Bloodstone applied 1 Bleed to "
+						+ enemy_name
+						+ "."
+				)
+
 			if has_relic("Frozen Heart"):
 				enemy["freeze_stacks"] += 1
 
-			base_damage = apply_guardian_split(enemy_index, base_damage, false)
+				add_combat_log_entry(
+					"Frozen Heart applied 1 Freeze to "
+						+ enemy_name
+						+ "."
+				)
 
-			var blocked_amount: int = min(base_damage, int(enemy["block"]))
+			base_damage = apply_guardian_split(
+				enemy_index,
+				base_damage,
+				false
+			)
+
+			var blocked_amount: int = min(
+				base_damage,
+				int(enemy["block"])
+			)
+
 			enemy["block"] -= blocked_amount
 			base_damage -= blocked_amount
 
@@ -4170,9 +5026,27 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 				enemy["block"] = 0
 
 			if blocked_amount > 0:
-				await show_enemy_hit_sequence(enemy_index, blocked_amount, 0)
+				add_combat_log_entry(
+					enemy_name
+						+ " blocked "
+						+ str(blocked_amount)
+						+ " Hit damage."
+				)
+
+				await show_enemy_hit_sequence(
+					enemy_index,
+					blocked_amount,
+					0
+				)
 
 			var hp_damage: int = base_damage + exposed_bonus
+
+			if exposed_bonus > 0:
+				add_combat_log_entry(
+					"Exposed dealt 1 damage to "
+						+ enemy_name
+						+ " through Block."
+				)
 
 			if hp_damage > 0:
 				enemy["hp"] -= hp_damage
@@ -4181,21 +5055,60 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 				if enemy["hp"] < 0:
 					enemy["hp"] = 0
 
-				await show_enemy_hit_sequence(enemy_index, 0, hp_damage)
+				await show_enemy_hit_sequence(
+					enemy_index,
+					0,
+					hp_damage
+				)
 
-				var spiked_value := get_enemy_trait_value(enemy, "spiked")
+				add_combat_log_entry(
+					"Hit dealt "
+						+ str(hp_damage)
+						+ " HP damage to "
+						+ enemy_name
+						+ "."
+				)
 
+				var spiked_value: int = get_enemy_trait_value(
+					enemy,
+					"spiked"
+				)
+
+				# Spikes only trigger if normal Hit damage reached HP.
+				# The Exposed guaranteed point alone does not trigger it.
 				if spiked_value > 0 and base_damage > 0:
+					var hp_before_spikes: int = player_hp
+
 					player_hp -= spiked_value
 
 					if player_hp < 0:
 						player_hp = 0
 
-					show_damage_popup(player_3d_node, spiked_value)
-					add_combat_log_entry(enemy["data"].enemy_name + "'s spikes dealt " + str(spiked_value) + " damage.")
+					var actual_spiked_damage: int = (
+						hp_before_spikes - player_hp
+					)
+
+					last_damage_taken += actual_spiked_damage
+
+					show_damage_popup(
+						player_3d_node,
+						actual_spiked_damage
+					)
+
+					add_combat_log_entry(
+						enemy_name
+							+ "'s Spiked trait dealt "
+							+ str(actual_spiked_damage)
+							+ " damage to the player."
+					)
+
 					update_player_hp_label()
 
 					if player_hp <= 0:
+						add_combat_log_entry(
+							"The player was defeated by Spiked damage."
+						)
+
 						lose_combat()
 						return
 
@@ -4206,43 +5119,98 @@ func resolve_single_die_impact(enemy_index: int, die: DiceNode):
 			update_enemy_3d_nodes()
 			return
 			
-func apply_guardian_split(target_index: int, damage: int, ignores_block: bool) -> int:
+func apply_guardian_split(
+	target_index: int,
+	damage: int,
+	ignores_block: bool
+) -> int:
 	if damage <= 0:
 		return damage
 
-	var guardian_index := get_living_guardian_index(target_index)
+	var guardian_index: int = get_living_guardian_index(target_index)
 
 	if guardian_index == -1:
 		return damage
 
-	var redirected := int(ceil(float(damage) / 2.0))
-	var remaining := damage - redirected
+	var target_enemy: Dictionary = active_enemies[target_index]
+	var guardian_enemy: Dictionary = active_enemies[guardian_index]
 
-	var guardian_damage := redirected
+	var target_name: String = target_enemy["data"].enemy_name
+	var guardian_name: String = guardian_enemy["data"].enemy_name
+
+	var redirected_damage: int = int(ceil(float(damage) / 2.0))
+	var remaining_damage: int = damage - redirected_damage
+
+	var guardian_damage: int = redirected_damage
+	var blocked_damage: int = 0
 
 	if !ignores_block:
-		var guardian_block: int = active_enemies[guardian_index]["block"]
-		var blocked : int = min(guardian_damage, guardian_block)
+		var guardian_block: int = guardian_enemy["block"]
 
-		active_enemies[guardian_index]["block"] -= blocked
-		guardian_damage -= blocked
+		blocked_damage = min(
+			guardian_damage,
+			guardian_block
+		)
 
-		if blocked > 0:
-			show_popup_text(enemy_3d_nodes[guardian_index], "Block -" + str(blocked), 1.2, Color.CORNFLOWER_BLUE)
+		guardian_enemy["block"] -= blocked_damage
+		guardian_damage -= blocked_damage
+
+		if guardian_enemy["block"] < 0:
+			guardian_enemy["block"] = 0
+
+		if blocked_damage > 0:
+			show_popup_text(
+				enemy_3d_nodes[guardian_index],
+				"Block -" + str(blocked_damage),
+				1.2,
+				Color.CORNFLOWER_BLUE
+			)
+
+			add_combat_log_entry(
+				guardian_name
+					+ "'s Guardian Block absorbed "
+					+ str(blocked_damage)
+					+ " redirected damage."
+			)
 
 	if guardian_damage > 0:
-		active_enemies[guardian_index]["hp"] -= guardian_damage
+		guardian_enemy["hp"] -= guardian_damage
+		last_player_damage += guardian_damage
 
-		if active_enemies[guardian_index]["hp"] < 0:
-			active_enemies[guardian_index]["hp"] = 0
+		if guardian_enemy["hp"] < 0:
+			guardian_enemy["hp"] = 0
 
-		show_damage_popup(enemy_3d_nodes[guardian_index], guardian_damage)
+		show_damage_popup(
+			enemy_3d_nodes[guardian_index],
+			guardian_damage
+		)
 
-	show_popup_text(enemy_3d_nodes[guardian_index], "Guardian", 1.4, Color.CORNFLOWER_BLUE)
+		add_combat_log_entry(
+			guardian_name
+				+ "'s Guardian trait redirected "
+				+ str(guardian_damage)
+				+ " damage away from "
+				+ target_name
+				+ "."
+		)
+	else:
+		add_combat_log_entry(
+			guardian_name
+				+ "'s Guardian trait redirected the attack away from "
+				+ target_name
+				+ ", but its Block absorbed all redirected damage."
+		)
+
+	show_popup_text(
+		enemy_3d_nodes[guardian_index],
+		"Guardian",
+		1.4,
+		Color.CORNFLOWER_BLUE
+	)
 
 	update_enemy_3d_nodes()
 
-	return remaining
+	return remaining_damage
 	
 func get_living_guardian_index(target_index: int) -> int:
 	for i in active_enemies.size():
@@ -4259,38 +5227,89 @@ func get_living_guardian_index(target_index: int) -> int:
 
 func apply_enemy_bleed():
 	for i in active_enemies.size():
-		var enemy = active_enemies[i]
-
-		if enemy["bleed"] <= 0:
+		if i < 0 or i >= active_enemies.size():
 			continue
+
+		var enemy: Dictionary = active_enemies[i]
+		var enemy_name: String = enemy["data"].enemy_name
+		var bleed_value: int = enemy.get("bleed", 0)
+
+		if bleed_value <= 0:
+			continue
+
+		# Any amount of Block prevents the Bleed damage entirely,
+		# but the Bleed stack still decays by 1.
 		if enemy["block"] > 0:
-			AudioManager.play_one_shot(hit_blocked_sound, 0.95, 1.05)
+			AudioManager.play_one_shot(
+				hit_blocked_sound,
+				0.95,
+				1.05
+			)
 
-			if i < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[i]):
-				show_popup_text(enemy_3d_nodes[i], "Blocked Bleed", 1.0, Color.CORNFLOWER_BLUE)
+			if (
+				i < enemy_3d_nodes.size()
+				and is_instance_valid(enemy_3d_nodes[i])
+			):
+				show_popup_text(
+					enemy_3d_nodes[i],
+					"Blocked Bleed",
+					1.0,
+					Color.CORNFLOWER_BLUE
+				)
 
-			enemy["bleed"] -= 1
-			if enemy["bleed"] < 0:
-				enemy["bleed"] = 0
+			add_combat_log_entry(
+				enemy_name
+					+ "'s Block prevented "
+					+ str(bleed_value)
+					+ " Bleed damage."
+			)
+
+			enemy["bleed"] = max(bleed_value - 1, 0)
 
 			update_enemy_3d_nodes()
 			await get_tree().create_timer(0.35).timeout
 			continue
-		var bleed_damage: int = enemy["bleed"]
-		enemy["hp"] -= bleed_damage
-		AudioManager.play_one_shot(hit_damage_sound, 0.9, 1.1)
+
+		var bleed_damage: int = bleed_value
+
+		var hp_before_bleed: int = enemy["hp"]
+
+		enemy["hp"] -= bleed_value
+
 		if enemy["hp"] < 0:
 			enemy["hp"] = 0
 
-		if i < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[i]):
-			show_damage_popup(enemy_3d_nodes[i], bleed_damage)
+		var actual_bleed_damage: int = (
+			hp_before_bleed - enemy["hp"]
+		)
 
-		add_combat_log_entry(enemy["data"].enemy_name + " takes " + str(bleed_damage) + " bleed damage.")
+		last_player_damage += actual_bleed_damage
 
-		enemy["bleed"] -= 1
+		AudioManager.play_one_shot(
+			hit_damage_sound,
+			0.9,
+			1.1
+		)
 
-		if enemy["bleed"] < 0:
-			enemy["bleed"] = 0
+		if (
+			i < enemy_3d_nodes.size()
+			and is_instance_valid(enemy_3d_nodes[i])
+		):
+			show_damage_popup(
+				enemy_3d_nodes[i],
+				actual_bleed_damage
+			)
+
+		add_combat_log_entry(
+			"Bleed dealt "
+				+ str(actual_bleed_damage)
+				+ " damage to "
+				+ enemy_name
+				+ "."
+		)
+
+		enemy["bleed"] = max(bleed_value - 1, 0)
+
 		await get_tree().create_timer(0.35).timeout
 		
 func launch_enemy_die_at_player(enemy_index: int, face: DiceFace):
@@ -4355,19 +5374,31 @@ func rest_at_town():
 	
 
 func start_expedition():
-	if current_encounter == null:
-		var first_node := get_current_plan_node()
+	var first_node: Dictionary = get_current_plan_node()
 
-		if first_node.get("type", PLAN_COMBAT) == PLAN_COMBAT:
-			current_encounter = first_node["encounter"]
-		else:
-			current_encounter = null
-
-	if current_encounter == null:
-		push_error("Cannot start expedition. current_encounter is null.")
+	if first_node.is_empty():
+		push_error("Cannot start expedition. No plan node was found.")
 		return
 
-	start_new_combat()
+	match first_node.get("type", PLAN_COMBAT):
+		PLAN_COMBAT:
+			current_encounter = first_node.get("encounter", null)
+
+			if current_encounter == null:
+				push_error("Combat plan node has no encounter.")
+				return
+
+			combat_log_entries.clear()
+			refresh_combat_log()
+			combat_log_panel.visible = false
+
+			start_new_combat()
+
+		PLAN_WITCH:
+			expedition_started.emit(PLAN_WITCH)
+
+		PLAN_WELL:
+			expedition_started.emit(PLAN_WELL)
 
 func open_bounty_board():
 	town_panel.visible = false
@@ -4418,7 +5449,7 @@ func select_bounty(bounty: BountyData):
 
 	selected_bounty_label.text = "(" + bounty.bounty_name + ")"
 	prepare_selected_bounty_label.text = "Bounty: " + bounty.bounty_name
-
+	combat_log_panel.visible = false
 	bounty_board_panel.visible = false
 	town_panel.visible = false
 	town_menu_closed.emit()
@@ -4461,7 +5492,7 @@ func complete_current_bounty():
 
 	player_hp = max_player_hp
 	update_player_hp_label()
-
+	combat_log_button.visible = false
 	shop_panel.visible = false
 	loot_panel.visible = false
 	edit_dice_panel.visible = false
@@ -4469,6 +5500,7 @@ func complete_current_bounty():
 	
 	print("Bounty completed. Returned to town.")
 	
+	clear_all_combat_dice_state()
 	expedition_active = false
 	is_in_town = true
 	current_bounty = null
@@ -4503,7 +5535,7 @@ func show_expedition_camp():
 	combat_over = true
 	is_resolving_turn = false
 	is_rolling_dice = false
-
+	combat_log_panel.visible = false
 	set_combat_ui_enabled(false)
 	
 	expedition_camp_panel.visible = true
@@ -4579,26 +5611,32 @@ func continue_expedition():
 		PLAN_WELL:
 			expedition_started.emit("well")
 			
-func claim_well_relic():
-	print("Well relic pool size: ", combat_relic_drop_pool.size())
-	print("Owned relics size: ", owned_relics.size())
+func claim_well_relic() -> RelicData:
+	var valid_relics: Array[RelicData] = []
 
-	if combat_relic_drop_pool.is_empty():
-		print("No relics assigned to combat_relic_drop_pool.")
-		return
+	for relic in combat_relic_drop_pool:
+		if relic == null:
+			continue
 
-	var relic: RelicData = combat_relic_drop_pool.pick_random()
+		if has_relic_name(relic.relic_name):
+			continue
 
-	if relic == null:
-		print("Picked null relic.")
-		return
+		valid_relics.append(relic)
+
+	if valid_relics.is_empty():
+		print("Well reward failed: no unowned relics remain.")
+		return null
+
+	var relic: RelicData = valid_relics.pick_random()
 
 	owned_relics.append(relic)
 	last_unlocked_relics.clear()
 	last_unlocked_relics.append(relic)
+
 	update_active_food_icons()
-	print("Well rewarded relic: ", relic.relic_name)
 	save_run()
+
+	return relic
 	
 func open_trophies():
 	town_panel.visible = false
@@ -4785,18 +5823,31 @@ func buy_merchant_relic():
 	if gold < merchant_relic_cost:
 		return
 
+	var purchased_relic: RelicData = current_merchant_relic
+
+	if has_relic_name(purchased_relic.relic_name):
+		current_merchant_relic = null
+		rebuild_merchant()
+		return
+
 	gold -= merchant_relic_cost
-
-	if !has_relic_name(current_merchant_relic.relic_name):
-		owned_relics.append(current_merchant_relic)
-
+	owned_relics.append(purchased_relic)
 	current_merchant_relic = null
 
 	AudioManager.play_ui(coin_purchase_sound)
+
 	update_gold_label()
 	update_active_food_icons()
 	rebuild_merchant()
 	save_run()
+
+	merchant_panel.visible = false
+
+	await show_relic_acquisition(purchased_relic)
+
+	merchant_panel.visible = true
+	merchant_gold_label.text = "Gold: " + str(gold)
+	rebuild_merchant()
 	
 func has_relic_name(relic_name: String) -> bool:
 	for relic in owned_relics:
@@ -5917,26 +6968,52 @@ func update_player_status_icons():
 			regenerating_value
 		)
 func apply_player_regeneration():
-	var regen_value: int = player_statuses.get("regenerating", 0)
+	var regen_value: int = player_statuses.get(
+		"regenerating",
+		0
+	)
 
 	if regen_value <= 0:
 		return
+
+	var hp_before: int = player_hp
 
 	player_hp += regen_value
 
 	if player_hp > combat_max_player_hp:
 		player_hp = combat_max_player_hp
 
-	show_popup_text(player_3d_node, "+" + str(regen_value), 1.2, Color.GREEN)
-	add_combat_log_entry("Regenerating healed " + str(regen_value) + " HP.")
+	var actual_healing: int = player_hp - hp_before
+
+	if actual_healing > 0:
+		show_popup_text(
+			player_3d_node,
+			"+" + str(actual_healing),
+			1.2,
+			Color.GREEN
+		)
+
+		add_combat_log_entry(
+			"Regeneration restored "
+				+ str(actual_healing)
+				+ " HP."
+		)
+	else:
+		add_combat_log_entry(
+			"Regeneration triggered, but the player was already at full HP."
+		)
 
 	update_player_hp_label()
 	update_player_status_icons()
 
 func has_relic(name: String) -> bool:
 	for relic in owned_relics:
+		if relic == null:
+			continue
+
 		if relic.relic_name == name:
 			return true
+
 	return false
 
 
@@ -6479,7 +7556,6 @@ func hide_all_combat_ui():
 	combat_number_label.visible = false
 	player_hp_label.visible = false
 	player_block_label.visible = false
-	incoming_damage_label.visible = false
 
 	hide_all_groups()
 	hide_status_tooltip()
@@ -6525,42 +7601,29 @@ func build_expedition_plan():
 	if current_bounty == null:
 		return
 
-	for i in expedition_required_encounters:
-		expedition_encounter_plan.append({
-			"type": PLAN_COMBAT,
-			"encounter": current_bounty.expedition_encounter_pool.pick_random()
-		})
+	if current_bounty.expedition_encounter_pool.is_empty():
+		push_error("Current bounty has no normal encounters.")
+		return
 
-	var event_chance := 0.35
-	var possible_events: Array[String] = []
+	# First node stays combat because starting an expedition expects combat.
+	expedition_encounter_plan.append({
+		"type": PLAN_COMBAT,
+		"encounter": current_bounty.expedition_encounter_pool[0]
+	})
 
-	if !witch_seen_this_run:
-		possible_events.append(PLAN_WITCH)
+	# Force the Well as the next node.
+	expedition_encounter_plan.append({
+		"type": PLAN_WELL,
+		"encounter": null
+	})
 
-	if !well_seen_this_run:
-		possible_events.append(PLAN_WELL)
-
-	if expedition_encounter_plan.size() >= 2 \
-	and possible_events.size() > 0 \
-	and randf() <= event_chance:
-		var event_index := randi_range(1, expedition_encounter_plan.size() - 1)
-		var event_type: String = possible_events.pick_random()
-
-		expedition_encounter_plan[event_index] = {
-			"type": event_type,
-			"encounter": null
-		}
-
-		if event_type == PLAN_WITCH:
-			witch_seen_this_run = true
-		elif event_type == PLAN_WELL:
-			well_seen_this_run = true
-
+	# Boss still ends the expedition.
 	expedition_encounter_plan.append({
 		"type": PLAN_COMBAT,
 		"encounter": current_bounty.boss_encounter
 	})
-	
+
+	expedition_required_encounters = 2
 func get_current_plan_node() -> Dictionary:
 	if expedition_encounter_plan.is_empty():
 		return {}
@@ -6598,22 +7661,31 @@ func consume_relic(relic_name: String):
 			save_run()
 			return
 
-func accept_witch_offer():
+func accept_witch_offer() -> RelicData:
 	print("Accepting witch offer")
 
+	var awarded_relic: RelicData = null
+
 	if witch_charm_relic == null:
-		print("witch_charm_relic is NULL")
+		push_warning("Witch offer failed: witch_charm_relic is null.")
 	else:
 		print("Witch relic: ", witch_charm_relic.relic_name)
 
-	if witch_charm_relic != null and !has_relic_name(witch_charm_relic.relic_name):
-		owned_relics.append(witch_charm_relic)
-		print("Added relic. Owned relic count: ", owned_relics.size())
+		if !has_relic_name(witch_charm_relic.relic_name):
+			owned_relics.append(witch_charm_relic)
+			awarded_relic = witch_charm_relic
+
+			print(
+				"Added Witch relic. Owned relic count: ",
+				owned_relics.size()
+			)
 
 	owned_dice.append(create_cursed_d6())
 
 	update_active_food_icons()
 	save_run()
+
+	return awarded_relic
 
 
 func ignore_witch_offer():
@@ -6700,17 +7772,36 @@ func recalculate_active_food_bonuses():
 		next_combat_bonus_max_hp += item.next_combat_max_hp
 
 func beastmaster_phase_transition(enemy_index: int):
-	
+	if beastmaster_transition_running:
+		return
+
+	beastmaster_transition_running = true
+	begin_expedition_button.visible = false
 	if enemy_index < 0 or enemy_index >= active_enemies.size():
+		beastmaster_transition_running = false
+		update_begin_expedition_button_visibility()
 		return
 
 	if enemy_index >= enemy_3d_nodes.size():
+		beastmaster_transition_running = false
+		update_begin_expedition_button_visibility()
 		return
-	
+
+		is_resolving_turn = false
+		end_round_button.disabled = false
+		set_combat_ui_enabled(true)
+		beastmaster_transition_running = false
+		update_begin_expedition_button_visibility()
+		return
 	var enemy = active_enemies[enemy_index]
 	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+
 	enemy["downed"] = false
 	enemy["phase_two_started"] = true
+
+	add_combat_log_entry(
+		"The Beast Master called his pack."
+	)
 	
 	end_round_button.disabled = true
 	mulligem_button.disabled = true
@@ -6758,7 +7849,6 @@ func beastmaster_phase_transition(enemy_index: int):
 	enemy["rolled_faces"] = []
 	enemy["roll_text"] = "Recovering"
 	update_enemy_3d_nodes()
-	update_incoming_damage_label()
 	await shatter_camera_shake(
 		combat_camera,
 		0.35,
@@ -6782,15 +7872,18 @@ func beastmaster_phase_transition(enemy_index: int):
 		is_resolving_turn = false
 		end_round_button.disabled = false
 		set_combat_ui_enabled(true)
+		beastmaster_transition_running = false
+		update_begin_expedition_button_visibility()
 		return
 	regroup_dice()
 	update_group_visibility()
 	update_assigned_panel_visibility()
-	update_incoming_damage_label()
 
 	set_combat_ui_enabled(true)
 	update_mulligem_button()
 	end_round_button.disabled = false
+	beastmaster_transition_running = false
+	update_begin_expedition_button_visibility()
 	
 func clear_all_enemy_3d_nodes():
 	for enemy_node in enemy_3d_nodes:
@@ -6854,28 +7947,40 @@ func cinematic_beastmaster_focus(enemy_node: Node3D):
 	await tween.finished
 	
 func restore_beastmaster_camera():
-	beastmaster_camera_original_transform = combat_camera.global_transform
-	beastmaster_camera_original_size = combat_camera.size
-	if combat_camera == null:
+	var camera: Camera3D = combat_camera
+
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera == null:
+		push_error("Could not restore the Beast Master camera.")
 		return
 
+	camera.current = true
+
 	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_IN_OUT)
 
 	tween.tween_property(
-		combat_camera,
+		camera,
 		"global_transform",
 		beastmaster_camera_original_transform,
 		0.6
 	)
 
 	tween.parallel().tween_property(
-		combat_camera,
+		camera,
 		"size",
 		beastmaster_camera_original_size,
 		0.6
 	)
 
 	await tween.finished
+
+	camera.global_transform = beastmaster_camera_original_transform
+	camera.size = beastmaster_camera_original_size
+	camera.current = true
 	
 func wait_until_sprite_frame(sprite: AnimatedSprite3D, target_frame: int):
 	while sprite != null \
@@ -6922,6 +8027,8 @@ func cinematic_beastmaster_zoom_out():
 	camera.current = true
 	
 func spawn_beastmaster_phase2_pack(beastmaster_index: int):
+	print("========================")
+	print("PHASE 2 START")
 	if beastmaster_index < 0 or beastmaster_index >= active_enemies.size():
 		push_error("Invalid Beast Master index: " + str(beastmaster_index))
 		return
@@ -6955,7 +8062,7 @@ func spawn_beastmaster_phase2_pack(beastmaster_index: int):
 		return
 
 	var beastmaster_enemy: Dictionary = active_enemies[beastmaster_index]
-
+	
 	# Prepare the Beast Master before replacing the array.
 	beastmaster_enemy["downed"] = false
 	beastmaster_enemy["phase_two_started"] = true
@@ -6984,7 +8091,13 @@ func spawn_beastmaster_phase2_pack(beastmaster_index: int):
 		beastmaster_enemy,
 		noir
 	]
+	print("Enemies:", active_enemies.size())
 
+	for i in active_enemies.size():
+		print(
+			i,
+			active_enemies[i]["data"].enemy_name
+		)
 	# Remove phase-one visuals before replacing the enemy data.
 	await clear_enemy_3d_nodes_immediately()
 
@@ -7000,14 +8113,15 @@ func spawn_beastmaster_phase2_pack(beastmaster_index: int):
 		print("PHASE TWO INDEX ", i, ": ", enemy_name)
 
 	spawn_enemy_3d_nodes()
-
+	
 	# Confirm that all four visual nodes were created.
 	print("PHASE TWO NODE COUNT: ", enemy_3d_nodes.size())
 
 	refresh_enemy_buttons()
+	print("Enemy buttons rebuilt")
 	update_enemy_3d_nodes()
-	update_incoming_damage_label()
-	
+	print("Enemy nodes updated")
+	print("========================")
 func reset_all_dice_assignments_for_phase_transition():
 	selected_dice_order.clear()
 	selected_enemy_index = -1
@@ -7196,3 +8310,205 @@ func reset_edit_panel_to_normal_mode():
 	
 func _on_discord_button_pressed():
 	OS.shell_open("https://discord.gg/vrhvAe5GPa")
+
+func show_relic_acquisition(relic: RelicData):
+	if relic == null:
+		return
+
+	relic_reward_pending = relic
+	relic_reward_acknowledged = false
+
+	relic_reward_icon.texture = relic.icon
+	relic_reward_name_label.text = relic.relic_name
+	relic_reward_description_label.text = relic.description
+
+	relic_reward_overlay.visible = true
+	relic_reward_overlay.modulate.a = 0.0
+
+	relic_reward_icon.scale = Vector2(0.25, 0.25)
+	relic_reward_icon.modulate.a = 0.0
+
+	relic_reward_glow.scale = Vector2(0.4, 0.4)
+	relic_reward_glow.modulate.a = 0.0
+	relic_reward_glow.rotation = 0.0
+
+	relic_reward_continue_button.disabled = true
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		relic_reward_overlay,
+		"modulate:a",
+		1.0,
+		0.25
+	)
+
+	tween.tween_property(
+		relic_reward_icon,
+		"scale",
+		Vector2.ONE,
+		0.45
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	tween.tween_property(
+		relic_reward_icon,
+		"modulate:a",
+		1.0,
+		0.25
+	)
+
+	tween.tween_property(
+		relic_reward_glow,
+		"scale",
+		Vector2.ONE,
+		0.55
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	tween.tween_property(
+		relic_reward_glow,
+		"modulate:a",
+		0.85,
+		0.35
+	)
+
+	tween.tween_property(
+		relic_reward_glow,
+		"rotation",
+		0.35,
+		1.2
+	)
+
+	await tween.finished
+
+	relic_reward_continue_button.disabled = false
+
+	# Start the pulse without blocking this function.
+	_pulse_relic_glow()
+
+	# Wait immediately so the Continue signal cannot be missed.
+	await relic_reward_finished
+	
+func _pulse_relic_glow():
+	while relic_reward_overlay.visible:
+		var pulse := create_tween()
+		pulse.set_parallel(true)
+
+		pulse.tween_property(
+			relic_reward_glow,
+			"scale",
+			Vector2(1.08, 1.08),
+			0.7
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+		pulse.tween_property(
+			relic_reward_glow,
+			"modulate:a",
+			0.55,
+			0.7
+		)
+
+		await pulse.finished
+
+		if !relic_reward_overlay.visible:
+			break
+
+		var reverse := create_tween()
+		reverse.set_parallel(true)
+
+		reverse.tween_property(
+			relic_reward_glow,
+			"scale",
+			Vector2.ONE,
+			0.7
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+		reverse.tween_property(
+			relic_reward_glow,
+			"modulate:a",
+			0.85,
+			0.7
+		)
+
+		await reverse.finished
+
+func _on_relic_reward_continue_pressed():
+	if relic_reward_acknowledged:
+		return
+
+	relic_reward_acknowledged = true
+	relic_reward_continue_button.disabled = true
+
+	await animate_relic_reward_to_active_area()
+
+	relic_reward_overlay.visible = false
+	relic_reward_pending = null
+
+	relic_reward_finished.emit()
+	
+func animate_relic_reward_to_active_area():
+	if relic_reward_pending == null:
+		return
+
+	var target: Control = active_food_container
+
+	if target == null:
+		return
+
+	var flying_icon := TextureRect.new()
+	flying_icon.texture = relic_reward_pending.icon
+	flying_icon.size = Vector2(160, 160)
+	flying_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flying_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	flying_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flying_icon.z_index = 1000
+
+	add_child(flying_icon)
+
+	var start_position := relic_reward_icon.global_position
+	flying_icon.global_position = start_position
+	flying_icon.scale = Vector2.ONE
+
+	update_active_food_icons()
+	await get_tree().process_frame
+
+	var target_position := target.global_position + target.size * 0.5
+	target_position -= flying_icon.size * 0.5
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		flying_icon,
+		"global_position",
+		target_position,
+		0.65
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+
+	tween.tween_property(
+		flying_icon,
+		"scale",
+		Vector2(0.22, 0.22),
+		0.65
+	)
+
+	tween.tween_property(
+		flying_icon,
+		"modulate:a",
+		0.0,
+		0.65
+	)
+
+	await tween.finished
+	flying_icon.queue_free()
+
+func toggle_combat_log():
+	combat_log_panel.visible = !combat_log_panel.visible
+
+	if combat_log_panel.visible:
+		refresh_combat_log()
+		
+func add_colored_combat_log_entry(text: String, color: Color):
+	var color_hex := color.to_html(false)
+	combat_log_entries.append("[color=#" + color_hex + "]" + text + "[/color]")
+	refresh_combat_log()
