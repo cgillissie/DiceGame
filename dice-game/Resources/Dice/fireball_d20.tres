@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://bkbndn15w537j"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_3sgne"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_qjdu8"]
+[ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="2_y7tgt"]
+[ext_resource type="Resource" uid="uid://dscnflctgts6" path="res://Resources/Faces/fireball_face.tres" id="3_xu7yi"]
+
+[resource]
+script = ExtResource("2_qjdu8")
+die_name = "Fireball D20"
+sides = 20
+faces = Array[ExtResource("1_3sgne")]([ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("2_y7tgt"), ExtResource("3_xu7yi")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

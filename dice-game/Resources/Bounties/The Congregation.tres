@@ -9,7 +9,7 @@
 [ext_resource type="Resource" uid="uid://c5nx4qgaeu8kx" path="res://Resources/Encounters/The Congregation/acolyte_priest_encounter.tres" id="6_st8j2"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="7_w1n20"]
 [ext_resource type="Script" uid="uid://bnyhau7o1nqd2" path="res://Scripts/FoodRecipe.gd" id="9_ch3sf"]
-[ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_1_face.tres" id="9_st8j2"]
+[ext_resource type="Resource" uid="uid://bwg810kbjv25b" path="res://Resources/Faces/dodge_face.tres" id="9_st8j2"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="10_fbtch"]
 [ext_resource type="Resource" uid="uid://b5fukb2rrejry" path="res://Resources/Relics/MeditationBeads.tres" id="11_fbtch"]
 

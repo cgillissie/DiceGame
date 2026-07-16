@@ -26,6 +26,7 @@ var active_status_icons: Array[Sprite3D] = []
 @export var exposed_icon_texture: Texture2D
 @export var freeze_icon_texture: Texture2D
 @export var bleed_icon_texture: Texture2D
+
 @export var shatter_particles_scene: PackedScene
 @export var cc_immune_icon_texture: Texture2D
 

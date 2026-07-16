@@ -19,6 +19,7 @@ var reserve_slots: int = 2
 @onready var face_icon: TextureRect = $BorderPanel/Panel/FaceIcon
 @onready var exploding_icon: TextureRect = $BorderPanel/Panel/ExplodingIcon
 @onready var temporary_icon: TextureRect = $BorderPanel/Panel/TemporaryIcon
+@onready var buff_glow: TextureRect = $BorderPanel/Panel/BuffGlow
 
 
 var current_face_index: int = -1
@@ -35,6 +36,7 @@ var assigned_enemy_index: int = -1
 var temporary: bool = false
 var has_exploded: bool = false
 var temporary_value_bonus: int = 0
+var buff_glow_tween: Tween = null
 var display_value_override: int = -1
 var base_visual_scale := Vector2.ONE
 
@@ -79,6 +81,12 @@ func can_drag_to_enemy() -> bool:
 	if current_face == null:
 		return false
 
+	if used:
+		return false
+
+	if reserved:
+		return false
+
 	return current_face.result_type in [
 		"hit",
 		"crit",
@@ -88,7 +96,8 @@ func can_drag_to_enemy() -> bool:
 		"bleed",
 		"twist_knife",
 		"break_focus",
-		"shield_bash"
+		"shield_bash",
+		"fireball"
 	]
 	
 func _gui_input(event):
@@ -205,45 +214,25 @@ func update_tooltip():
 		return
 
 	tooltip_text = get_face_tooltip(current_face)
+
+	if (
+		current_face.result_type == "hit"
+		and temporary_value_bonus > 0
+	):
+		tooltip_text += (
+			"\nCurrent total: "
+			+ str(current_face.value + temporary_value_bonus)
+			+ " damage."
+			+ "\nBuff bonus: +"
+			+ str(temporary_value_bonus)
+			+ "."
+		)
 	
 func get_face_tooltip(face: DiceFace) -> String:
-	match face.result_type:
-		"miss":
-			return "Miss"
-		"hit":
-			return "Hit " + str(face.value) + "\nDeals " + str(face.value) + " damage." % [face.value, face.value]
+	if face == null:
+		return ""
 
-		"crit":
-			return "Critical " + str(face.value) + "\nIgnores Block." % face.value
-
-		"block":
-			return "Block " + str(face.value) + "\nGain " + str(face.value) + " Block."
-
-		"heal":
-			return "Heal " + str(face.value) + "\nRestore " + str(face.value) + " HP."
-
-		"gold":
-			return "Gold " + str(face.value) +"\nGain " + str(face.value) + "gold after combat."
-
-		"bleed":
-			return "Bleed " + str(face.value) + "\nApply " + str(face.value) + " Bleed."
-
-		"freeze":
-			return "Freeze " + str(face.value) + "\nApply " + str(face.value) + " Freeze. Target skips this turn."
-
-		"dodge":
-			return "Dodge\nThe targeted enemy Critical Misses."
-
-		"twist_knife":
-			return "Twist Knife\nTriggers Bleed immediately."
-			
-		"shield_bash":
-			return "Shield Bash\nConsumes all Block. Deals damage equal to Block consumed."
-			
-		"pain":
-			return "\nDeals damage to the player."
-		_:
-			return face.face_name
+	return face.get_tooltip(dice_data)
 		
 func update_visual():
 	if dice_data == null:
@@ -292,6 +281,7 @@ func update_visual():
 			exploding_icon.visible = true
 	
 	update_tooltip()
+	update_buff_glow()
 	
 func face_should_show_value(face: DiceFace) -> bool:
 	if face == null:
@@ -451,3 +441,56 @@ func fly_to_container(final_container: Control):
 	reparent(final_container)
 	position = Vector2.ZERO
 	visible = true
+
+func update_buff_glow():
+	if buff_glow == null:
+		return
+
+	var should_glow := (
+		current_face != null
+		and current_face.result_type == "hit"
+		and temporary_value_bonus > 0
+		and !used
+	)
+
+	buff_glow.visible = should_glow
+
+	if !should_glow:
+		if buff_glow_tween != null:
+			if buff_glow_tween.is_valid():
+				buff_glow_tween.kill()
+
+		buff_glow.scale = Vector2.ONE
+		buff_glow.modulate.a = 0.0
+		return
+
+	buff_glow.pivot_offset = buff_glow.size * 0.5
+	buff_glow.scale = Vector2.ONE
+	buff_glow.modulate = Color(
+		0.35,
+		1.0,
+		0.75,
+		0.65
+	)
+
+	if buff_glow_tween != null:
+		if buff_glow_tween.is_valid():
+			buff_glow_tween.kill()
+
+	buff_glow_tween = create_tween()
+	buff_glow_tween.set_loops()
+
+	buff_glow_tween.tween_property(
+		buff_glow,
+		"scale",
+		Vector2(1.10, 1.10),
+		0.7
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	buff_glow_tween.tween_property(
+		buff_glow,
+		"scale",
+		Vector2.ONE,
+		0.7
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	

@@ -18,45 +18,10 @@ func setup(face: DiceFace, is_selected: bool = false):
 	modulate = Color.YELLOW if is_selected else Color.WHITE
 	
 func get_face_tooltip(face: DiceFace) -> String:
-	var title := get_face_display_name(face)
-	if title == "":
-		title = face.result_type.capitalize()
+	if face == null:
+		return ""
 
-	var text := title
-
-	match face.result_type:
-		"hit":
-			text += "\nDeals " + str(face.value) + " damage. Block reduces this damage."
-		"crit":
-			text += "\nDeals " + str(face.value) + " damage that ignores Block. Applies Exposed."
-		"block":
-			text += "\nAdds " + str(face.value) + " Block this round."
-		"heal":
-			text += "\nRestores " + str(face.value) + " HP."
-		"gold":
-			text += "\nGain " + str(face.value) + " Gold."
-		"miss":
-			text += "\nDoes nothing. Can be used in crafting."
-		"bleed":
-			text += "\nApplies " + str(face.value) + " Bleed. Bleed damages at end of round. Prevented by Block."
-		"freeze":
-			text += "\nApplies " + str(face.value) + " Freeze. Enemies skip the turn it's applied. Frozen enemies can shatter."
-		"twist_knife":
-			text += "\nConsumes enemy Bleed and deals that much damage."
-		"dodge":
-			text += "\nDodges enemy Crit damage from the chosen enemy."
-		"reversal":
-			text += "\nReflects enemy Crit damage back at the chosen enemy."
-		"break_focus":
-			text += "\nCancels the chosen enemy's healing."
-		"vitality":
-			text += "\nPermanently increases maximum HP."
-		"shield_bash":
-			text += "\n Consume all your block and deal that much damage to the target."
-		_:
-			text += "\n" + face.result_type
-
-	return text
+	return face.get_tooltip()
 	
 func _notification(what):
 	if what == NOTIFICATION_DRAG_END:
@@ -66,27 +31,10 @@ func _notification(what):
 			combat.clear_drag_fusion_preview()
 
 func get_face_display_name(face: DiceFace) -> String:
-	match face.result_type:
-		"hit":
-			return "Hit " + str(face.value)
-		"crit":
-			return "Crit " + str(face.value)
-		"block":
-			return "Block " + str(face.value)
-		"heal":
-			return "Heal " + str(face.value)
-		"gold":
-			return "Gold " + str(face.value)
-		"bleed":
-			return "Bleed " + str(face.value)
-		"freeze":
-			return "Freeze " + str(face.value)
-		"shield_bash":
-			return "Shield Bash"
-		"miss":
-			return "Miss"
-		_:
-			return face.result_type.capitalize()
+	if face == null:
+		return ""
+
+	return face.get_display_name()
 			
 func _get_drag_data(_position):
 	if face_data == null:

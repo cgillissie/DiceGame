@@ -11,6 +11,9 @@
 [ext_resource type="SpriteFrames" uid="uid://c7yg1b7wow15e" path="res://Resources/SpriteFrames/RavenSpriteFrames.tres" id="6_elb43"]
 [ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="6_qeaqu"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="6_re5kk"]
+[ext_resource type="Resource" uid="uid://bwg810kbjv25b" path="res://Resources/Faces/dodge_face.tres" id="7_qeaqu"]
+[ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="10_6anpi"]
+[ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="11_v04d3"]
 [ext_resource type="Resource" uid="uid://xkfgg8vudns" path="res://Resources/Traits/agile.tres" id="12_re5kk"]
 
 [resource]
@@ -18,11 +21,11 @@ script = ExtResource("4_pdn1d")
 enemy_name = "Raven"
 max_hp = 11
 dice_pool = Array[ExtResource("1_tdw4d")]([ExtResource("2_ue45b"), ExtResource("3_o325x")])
-face_drop_pool = Array[ExtResource("2_db1nj")]([ExtResource("6_re5kk"), ExtResource("6_re5kk"), ExtResource("6_re5kk"), ExtResource("6_qeaqu")])
+face_drop_pool = Array[ExtResource("2_db1nj")]([ExtResource("6_re5kk"), ExtResource("6_re5kk"), ExtResource("6_re5kk"), ExtResource("6_qeaqu"), ExtResource("7_qeaqu")])
 sprite_frames = ExtResource("6_elb43")
 sprite_scale = Vector3(3, 3, 3)
 sprite_offset = Vector3(0, 0.1, 0)
 traits = Array[ExtResource("5_ue45b")]([ExtResource("12_re5kk")])
 food_drop_chance = 0.3
-food_drop_pool = Array[ExtResource("3_elb43")]([ExtResource("4_db1nj")])
+food_drop_pool = Array[ExtResource("3_elb43")]([ExtResource("4_db1nj"), ExtResource("10_6anpi"), ExtResource("11_v04d3")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"

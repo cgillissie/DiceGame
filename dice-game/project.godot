@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="DiceGame"
+config/name="You Must Die"
 run/main_scene="uid://w73xtlec2s6a"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"

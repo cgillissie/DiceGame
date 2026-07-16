@@ -7,7 +7,8 @@
 [resource]
 script = ExtResource("1_wc3hj")
 item_name = "Ale"
-description = "Gives Berserker 2"
+description = "Gain Berserker 2 for the next combat.
+Add 2 damage to Hit faces while below half HP."
 icon = ExtResource("1_pmplw")
 cost = 20
 food_tier = 3

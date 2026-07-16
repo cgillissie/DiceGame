@@ -1,7 +1,8 @@
 extends Control
 
-const SETTINGS_SAVE_PATH := "user://settings.cfg"
-const RUN_SAVE_PATH := "user://run_save.cfg"
+const SAVE_DIRECTORY := "user://SaveData/"
+const SETTINGS_SAVE_PATH := SAVE_DIRECTORY + "settings.cfg"
+const RUN_SAVE_PATH := SAVE_DIRECTORY + "run_save.cfg"
 
 @export var dice_scene: PackedScene
 @export var starting_dice: Array[DiceData]
@@ -81,7 +82,9 @@ var is_rolling_dice: bool = false
 var enemy_roll_preview_panel: Control = null
 
 @onready var player_block_label: Label = $LeftMarginContainer/VBoxContainer/PlayerBlockLabel
-@onready var reserve_slots_label: Label = $DiceArea/ReserveHBox/ReserveSlotsLabel
+@onready var reserve_locks_container: HBoxContainer = $DiceArea/ReserveHBox/ReserveLocksCenter/ReserveLocksContainer
+@export var reserve_unlocked_texture: Texture2D
+@export var reserve_locked_texture: Texture2D
 
 # AUTO WIN BUTTON FOR TESTING
 @onready var debug_win_button: Button = $DebugWinButton
@@ -109,7 +112,6 @@ var assigned_enemy_containers: Array[GridContainer] = []
 @onready var status_tooltip_label: Label = $StatusTooltipPanel/StatusTooltipLabel
 
 @export var damage_popup_scene: PackedScene
-@export var reserve_icon_texture: Texture2D
 
 var run_encounters_completed: int = 0
 
@@ -126,13 +128,15 @@ var dropped_face: DiceFace
 @onready var buy_heal_button: Button = $ShopPanel/VBoxContainer/ItemGrid/BuyHealButton
 @onready var next_fight_button: Button = $ShopPanel/VBoxContainer/NextFightButton
 @export var random_die_pool: Array[DiceData]
-
+@export_range(0.0, 1.0, 0.01)
+var mulligem_drop_chance: float = 0.05
 @onready var restart_run_button: Button = $TopMarginContainer/CenterContainer/VBoxContainer/RestartRunButton
 
 # Dice Editing panel
 @onready var edit_dice_button: Button = $ShopPanel/VBoxContainer/EditDiceButton
 @onready var edit_dice_panel: Panel = $EditDicePanel
 @onready var die_faces_container: GridContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/DiceFacesVBox/DieFacesContainer
+@onready var undo_fusion_button: Button = $EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox/UndoFusionButton
 @onready var close_edit_button: Button = $EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox/CloseEditButton
 @onready var apply_volatile_core_button = $EditDicePanel/MarginContainer/MainVBox/ApplyVolatileCoreButton
 @onready var owned_dice_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer/OwnedDiceContainer
@@ -157,12 +161,16 @@ var last_die_fragments_gained: int = 0
 
 @export var bleed_icon_texture: Texture2D
 @export var status_icon_scene: PackedScene
+@export var heal_icon_texture: Texture2D
 
 @onready var edit_warning_label: Label = $EditDicePanel/MarginContainer/EditWarningLabel
 @export var ui_fail_sound: AudioStream
 
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
+var fusion_undo_inventory: Array[DiceFace] = []
+var fusion_undo_die_faces: Dictionary = {}
+var fusion_undo_available: bool = false
 var selected_die_face_index: int = -1
 var selected_die_face_index_2: int = -1
 var selected_edit_die: DiceData = null
@@ -201,6 +209,7 @@ var is_in_town: bool = true
 @onready var begin_expedition_button: Button = $BeginExpeditionButton
 @onready var selected_bounty_label: Label = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/SelectedBountyLabel
 @onready var prepare_expedition_label: Label = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/PrepareExpeditionLabel
+@onready var prepare_hp_label: Label = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/PrepareHPLabel
 # Camp Screen #################################
 
 @onready var expedition_camp_panel: Panel = $ExpeditionCampPanel
@@ -250,6 +259,7 @@ var final_boss_unlocked: bool = false
 @export var beastmaster_inhale_sound: AudioStream
 @export var beastmaster_horn_sound: AudioStream
 @export var beastmaster_phase2_music: AudioStream
+@export var fireball_sound: AudioStream
 
 signal request_music_fade_out
 
@@ -377,6 +387,7 @@ var sell_face_value: int = 2
 @export var victory_sound: AudioStream
 @export var player_death_sound: AudioStream
 @export var shatter_particles_scene: PackedScene
+@onready var fireball_flash: ColorRect = $FireballFlash
 
 # Beast Master stuff ############################
 @export var beastmaster_exvellus_enemy: EnemyData
@@ -436,7 +447,8 @@ var player_hp_at_combat_start: int = 30
 
 var player_statuses := {
 	"bleed": 0,
-	"regenerating": 0
+	"regenerating": 0,
+	"berserker": 0
 }
 
 var dice_nodes: Array[DiceNode] = []
@@ -447,12 +459,12 @@ var dodged_enemy_crits := false
 var combat_over: bool = false
 
 var mulligems: int = 0
-const MAX_MULLIGEMS := 3
 var mulligem_used_this_turn: bool = false
 var last_mulligems_gained: int = 0
 
 @onready var mulligem_button: Button = $DiceArea/MulligemButton
-
+@onready var mulligem_icons_container: HBoxContainer = $DiceArea/MulligemButton/CenterContainer/MulligemIconsContainer
+@export var mulligem_icon_texture: Texture2D
 var random_die_cost: int = 40
 var reserve_slot_cost: int = 20
 var heal_cost: int = 10
@@ -473,7 +485,8 @@ func _ready():
 		owned_dice.append(die.duplicate(true))
 
 	print("Owned dice after setup: ", owned_dice.size())
-		
+	fireball_flash.visible = false
+	fireball_flash.modulate.a = 0.0
 	combat_log_panel.visible = false
 	combat_log_text.bbcode_enabled = false
 	combat_log_text.add_theme_color_override("default_color", Color.WHITE)
@@ -567,9 +580,11 @@ func _ready():
 	# refresh_relic_panel()
 	roll_merchant_stock()
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+	
 	update_player_hp_label()
 	update_player_block_label()
 	update_player_status_icons()
+	update_reserve_slots_display()
 	# spawn_dice()
 	# await roll_all_dice()
 	regroup_dice()
@@ -586,7 +601,9 @@ func _ready():
 	debug_gold_button.pressed.connect(debug_gold)
 	next_fight_button.pressed.connect(next_fight)
 	edit_dice_button.pressed.connect(open_edit_dice_panel)
+	undo_fusion_button.pressed.connect(undo_last_fusion)
 	close_edit_button.pressed.connect(close_edit_dice_panel)
+	update_fusion_undo_button()
 	loot_continue_button.pressed.connect(open_shop_after_loot)
 	choice_button_1.pressed.connect(select_encounter.bind(0))
 	choice_button_2.pressed.connect(select_encounter.bind(1))
@@ -654,15 +671,91 @@ func update_player_health_bar_position():
 
 	player_health_bar.visible = true
 	player_health_label.visible = true
+	
 func update_mulligem_button():
-	mulligem_button.text = str(mulligems) + "/" + str(MAX_MULLIGEMS)
+	if mulligem_icons_container != null:
+		for child in mulligem_icons_container.get_children():
+			child.queue_free()
 
-	mulligem_button.disabled = mulligems <= 0 \
-		or mulligem_used_this_turn \
-		or combat_over \
-		or is_rolling_dice \
+		var visible_icon_count: int = min(mulligems, 8)
+
+		for i in visible_icon_count:
+			var icon := TextureRect.new()
+
+			icon.texture = mulligem_icon_texture
+			icon.custom_minimum_size = Vector2(30, 30)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+			mulligem_icons_container.add_child(icon)
+		if mulligems > visible_icon_count:
+			var overflow_label := Label.new()
+
+			overflow_label.text = (
+				"+"
+				+ str(mulligems - visible_icon_count)
+			)
+
+			overflow_label.vertical_alignment = (
+				VERTICAL_ALIGNMENT_CENTER
+			)
+
+			overflow_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+			mulligem_icons_container.add_child(
+				overflow_label
+			)
+	mulligem_button.text = ""
+
+	mulligem_button.disabled = (
+		mulligems <= 0
+		or mulligem_used_this_turn
+		or combat_over
+		or is_rolling_dice
 		or is_resolving_turn
-		
+	)
+
+	if mulligem_used_this_turn:
+		mulligem_button.tooltip_text = (
+			"You have already used a Mulligem this turn."
+		)
+	elif mulligems <= 0:
+		mulligem_button.tooltip_text = (
+			"You do not have any Mulligems."
+		)
+	else:
+		mulligem_button.tooltip_text = (
+			"Reroll every available die.\n"
+			+ "Can be used once per turn.\n"
+			+ "Mulligems owned: "
+			+ str(mulligems)
+		)
+	var icon_modulate := Color.WHITE
+
+	if mulligem_button.disabled:
+		icon_modulate = Color(0.45, 0.45, 0.45, 1.0)
+
+	mulligem_icons_container.modulate = icon_modulate
+	
+func has_mulligem_reroll_targets() -> bool:
+	for die in dice_nodes:
+		if !is_instance_valid(die):
+			continue
+
+		if die.used:
+			continue
+
+		if die.reserved:
+			continue
+
+		if die.assigned_enemy_index != -1:
+			continue
+
+		return true
+
+	return false
+	
 func use_mulligem():
 	if mulligems <= 0:
 		return
@@ -673,8 +766,17 @@ func use_mulligem():
 	if is_rolling_dice or is_resolving_turn:
 		return
 
+	if !has_mulligem_reroll_targets():
+		update_mulligem_button()
+		return
+
 	mulligems -= 1
 	mulligem_used_this_turn = true
+	add_combat_log_entry(
+		"Used a Mulligem to reroll all available dice."
+	)
+	update_mulligem_button()
+	save_run()
 
 	await reroll_available_dice()
 
@@ -686,10 +788,13 @@ func reroll_available_dice():
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
+
 		if die.used:
 			continue
+
 		if die.reserved:
 			continue
+
 		if die.assigned_enemy_index != -1:
 			continue
 
@@ -698,11 +803,20 @@ func reroll_available_dice():
 	if dice_to_reroll.is_empty():
 		return
 
+	is_rolling_dice = true
+	end_round_button.disabled = true
+	update_mulligem_button()
+
+	# Move every eligible die into the roll area first.
 	for die in dice_to_reroll:
 		die.selected = false
-		selected_dice_order.erase(die)
 		die.assigned_enemy_index = -1
-		die.set_base_visual_scale(Vector2.ONE * get_combat_die_scale())
+		selected_dice_order.erase(die)
+
+		die.set_compact_mode(false)
+		die.set_base_visual_scale(
+			Vector2.ONE * get_combat_die_scale()
+		)
 
 		if die.get_parent() != roll_animation_area:
 			die.reparent(roll_animation_area)
@@ -712,21 +826,49 @@ func reroll_available_dice():
 
 	update_group_visibility()
 
+	# Reroll and return each die one at a time.
 	for die in dice_to_reroll:
+		if !is_instance_valid(die):
+			continue
+
 		dice_roll_sfx.pitch_scale = randf_range(0.9, 1.1)
 		dice_roll_sfx.play()
 
-		await die.roll_animated(roll_animation_area, 0, 1)
+		await die.roll_animated(
+			roll_animation_area,
+			0,
+			1
+		)
 
-		var final_container := get_container_for_die(die)
+		var final_container: GridContainer = get_container_for_die(die)
+
+		if final_container == null:
+			continue
+
+		# The destination group may currently be hidden because it was empty.
+		# Reveal it before calculating and playing the return tween.
+		final_container.get_parent().visible = true
+
+		await get_tree().process_frame
+
 		await die.fly_to_container(final_container)
 
 		die.set_compact_mode(false)
-		die.set_base_visual_scale(Vector2.ONE * get_combat_die_scale())
+		die.set_base_visual_scale(
+			Vector2.ONE * get_combat_die_scale()
+		)
+
+		update_group_visibility()
+
+		await get_tree().create_timer(0.04).timeout
 
 	apply_damage_bonus_to_dice_visuals()
 	calculate_auto_block()
 	update_group_visibility()
+
+	is_rolling_dice = false
+	end_round_button.disabled = false
+	update_mulligem_button()
 	
 func get_current_incoming_damage() -> int:
 	var total_attack := 0
@@ -1240,7 +1382,8 @@ func is_offensive_die(die: DiceNode) -> bool:
 		or die.current_face.result_type == "bleed" \
 		or die.current_face.result_type == "twist_knife" \
 		or die.current_face.result_type == "break_focus" \
-		or die.current_face.result_type == "shield_bash"
+		or die.current_face.result_type == "shield_bash" \
+		or die.current_face.result_type == "fireball"
 	##############################################################################
 	
 func load_encounter(encounter_data: EncounterData):
@@ -1349,7 +1492,7 @@ func select_group(container: GridContainer):
 				selected_dice_order.append(child)
 				child.update_visual()
 	calculate_auto_block()
-	update_reserve_slots_label()
+	update_reserve_slots_display()
 	
 func get_container_for_die(die: DiceNode) -> GridContainer:
 	if die.current_face == null:
@@ -1371,7 +1514,7 @@ func get_container_for_die(die: DiceNode) -> GridContainer:
 		"heal", "vitality":
 			return healing_container
 
-		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus", "pain", "shield_bash":
+		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus", "pain", "shield_bash", "fireball":
 			return actions_container
 			
 		
@@ -1497,7 +1640,7 @@ func handle_die_click(die: DiceNode):
 		calculate_auto_block()
 		update_enemy_button_texts()
 		update_assigned_panel_visibility()
-		update_reserve_slots_label()
+		update_reserve_slots_display()
 		return
 
 	# Clicking a reserved die unreserves it.
@@ -1512,7 +1655,7 @@ func handle_die_click(die: DiceNode):
 		calculate_auto_block()
 		update_enemy_button_texts()
 		update_assigned_panel_visibility()
-		update_reserve_slots_label()
+		update_reserve_slots_display()
 		return
 
 	# Normal selection toggle.
@@ -1532,7 +1675,7 @@ func handle_die_click(die: DiceNode):
 	calculate_auto_block()
 	update_enemy_button_texts()
 	update_assigned_panel_visibility()
-	update_reserve_slots_label()
+	update_reserve_slots_display()
 	
 func handle_die_drag_started(die: DiceNode):
 	if die == null or !is_instance_valid(die):
@@ -1721,7 +1864,7 @@ func handle_reserve_request(die: DiceNode):
 		die.update_visual()
 		regroup_dice()
 		calculate_auto_block()
-		update_reserve_slots_label()
+		update_reserve_slots_display()
 		return
 
 	if die.reserved:
@@ -1730,7 +1873,7 @@ func handle_reserve_request(die: DiceNode):
 		die.update_visual()
 		regroup_dice()
 		calculate_auto_block()
-		update_reserve_slots_label()
+		update_reserve_slots_display()
 		return
 
 	if die.came_from_reserve:
@@ -1745,7 +1888,7 @@ func handle_reserve_request(die: DiceNode):
 	die.update_visual()
 	regroup_dice()
 	calculate_auto_block()
-	update_reserve_slots_label()
+	update_reserve_slots_display()
 	
 func roll_all_dice():
 	if is_rolling_dice:
@@ -1830,7 +1973,7 @@ func roll_all_dice():
 		await get_tree().create_timer(0.04).timeout
 
 	calculate_auto_block()
-	update_reserve_slots_label()
+	update_reserve_slots_display()
 
 	print("Dice count after roll: ", dice_nodes.size())
 
@@ -1963,6 +2106,11 @@ func resolve_player_dice():
 			"pain":
 				var pain_damage: int = die.current_face.value
 
+				await tween_face_icon_to_player(
+					die,
+					die.current_face
+				)
+
 				var hp_before_pain: int = player_hp
 
 				player_hp -= pain_damage
@@ -2018,7 +2166,7 @@ func resolve_player_dice():
 				+ str(gold_gained_this_turn)
 				+ "."
 		)
-
+	apply_damage_bonus_to_dice_visuals()
 	update_gold_label()
 	update_player_block_label()
 	update_gold_label()
@@ -2120,9 +2268,6 @@ func end_round():
 		end_round_button.disabled = false
 		return
 
-	mulligem_used_this_turn = false
-	update_mulligem_button()
-
 	if active_enemies.is_empty():
 		await get_tree().create_timer(0.5).timeout
 		win_combat()
@@ -2199,6 +2344,10 @@ func end_round():
 						"+" + str(actual_healing),
 						1.8,
 						Color.GREEN
+					)
+
+					spawn_enemy_heal_icon_particles(
+						enemy_3d_nodes[healed_index]
 					)
 
 					await get_tree().create_timer(1.5).timeout
@@ -2522,10 +2671,10 @@ func end_round():
 	refresh_enemy_buttons()
 	update_player_3d_node()
 
+	mulligem_used_this_turn = false
+	update_mulligem_button()
+	
 	add_combat_log_entry("────────── New Round ──────────")
-
-	is_resolving_turn = false
-	end_round_button.disabled = false
 
 	is_resolving_turn = false
 	end_round_button.disabled = false
@@ -2801,6 +2950,11 @@ func update_combat_log():
 	)
 
 func win_combat():
+	expedition_is_boss_fight = (
+		expedition_is_boss_fight
+		or is_current_encounter_boss()
+	)
+
 	combat_over = true
 	AudioManager.play_one_shot(victory_sound)
 	player_health_bar.visible = false
@@ -2852,16 +3006,14 @@ func win_combat():
 		gold_reward += 5
 	gold += total_gold_reward
 	gold_reward = total_gold_reward
-	if mulligems < MAX_MULLIGEMS:
-		if randf() <= 0.05:
-			add_mulligems(1)
-			last_mulligems_gained += 1
+	if randf() <= mulligem_drop_chance:
+		add_mulligems(1)
+		last_mulligems_gained += 1
 	if last_dropped_faces.size() > 0:
 		last_dropped_face = last_dropped_faces[0]
 	if expedition_is_boss_fight:
-		if mulligems < MAX_MULLIGEMS:
-			add_mulligems(1)
-			last_mulligems_gained += 1
+		add_mulligems(1)
+		last_mulligems_gained += 1
 	
 	next_combat_bonus_damage = 0
 	next_combat_bonus_block = 0
@@ -2981,10 +3133,27 @@ func update_camp_hp_label():
 	if camp_hp_label != null:
 		camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(max_player_hp)
 		
+func update_prepare_hp_label():
+	if prepare_hp_label == null:
+		return
+
+	prepare_hp_label.text = (
+		"HP: "
+		+ str(player_hp)
+		+ "/"
+		+ str(combat_max_player_hp)
+	)
+	
 func open_shop_after_loot():
 	loot_panel.visible = false
 
-	if expedition_is_boss_fight:
+	var defeated_boss := (
+		expedition_is_boss_fight
+		or is_current_encounter_boss()
+	)
+
+	if defeated_boss:
+		expedition_is_boss_fight = true
 		complete_current_bounty()
 		return
 
@@ -3067,13 +3236,44 @@ func clear_food_buffs():
 	active_combat_bonus_block = 0
 	active_combat_bonus_damage = 0
 
-	player_statuses["regenerating"] = 0
+	for item in active_food_items:
+		if item == null:
+			continue
+
+		if item.grants_trait == null:
+			continue
+
+		var trait_id: String = item.grants_trait.trait_id
+
+		if trait_id.is_empty():
+			continue
+
+		player_statuses[trait_id] = 0
 
 	active_food_items.clear()
 	update_active_food_icons()
 	update_player_status_icons()
 	
+func apply_consumable_trait(item: ConsumableItem):
+	if item == null:
+		return
+
+	if item.grants_trait == null:
+		return
+
+	var trait_id: String = item.grants_trait.trait_id
+	var trait_value: int = item.grants_trait.value
+
+	if trait_id.is_empty():
+		return
+
+	player_statuses[trait_id] = trait_value
+
+	update_player_status_icons()
+	
 func start_new_combat():
+	expedition_is_boss_fight = is_current_encounter_boss()
+
 	combat_over = false
 	is_resolving_turn = false
 	is_in_town = false
@@ -3129,10 +3329,20 @@ func start_new_combat():
 
 	combat_number += 1
 	update_combat_number_label()
-	player_hp_at_combat_start = player_hp
-	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
-	player_hp = min(player_hp + next_combat_heal, combat_max_player_hp)
+	combat_max_player_hp = (
+		max_player_hp
+		+ next_combat_bonus_max_hp
+	)
 
+	player_hp = min(
+		player_hp + next_combat_heal,
+		combat_max_player_hp
+	)
+
+	# Save the fully prepared HP state used when restarting
+	# this encounter after quitting.
+	player_hp_at_combat_start = player_hp
+	save_run()
 	active_combat_bonus_block = next_combat_bonus_block
 	active_combat_bonus_damage = next_combat_bonus_damage
 	player_block = active_combat_bonus_block
@@ -3157,7 +3367,7 @@ func start_new_combat():
 	regroup_dice()
 	update_group_visibility()
 	update_player_status_icons()
-	update_reserve_slots_label()
+	update_reserve_slots_display()
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
 	update_player_3d_node()
@@ -3249,7 +3459,7 @@ func buy_reserve_slot():
 	reserve_slot_cost += 10
 	AudioManager.play_ui(ui_click_sound)
 	update_gold_label()
-	update_reserve_slots_label()
+	update_reserve_slots_display()
 	
 func buy_heal():
 	if gold < heal_cost:
@@ -3345,6 +3555,7 @@ func handle_inventory_face_click(index: int):
 	refresh_edit_dice_panel()
 	
 func open_edit_dice_panel():
+	clear_fusion_undo_state()
 	reset_edit_panel_to_normal_mode()
 	if shop_panel.visible == false:
 		return
@@ -3371,6 +3582,7 @@ func open_edit_dice_panel():
 
 
 func close_edit_dice_panel():
+	clear_fusion_undo_state()
 	if edit_dice_return_context == "dice_bag":
 		dice_panel_read_only = false
 		edit_dice_panel.visible = false
@@ -3620,6 +3832,11 @@ func fuse_selected_faces():
 
 	var new_face: DiceFace = create_fused_face(face_a, face_b)
 
+	if new_face == null:
+		end_fusion_mode()
+		refresh_edit_dice_panel()
+		return
+
 	selected_inventory_face_indices.sort()
 	selected_inventory_face_indices.reverse()
 
@@ -3673,6 +3890,16 @@ func update_volatile_core_button():
 	apply_volatile_core_button.disabled = false
 	
 func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
+	if face.result_type in [
+		"fireball",
+		"shield_bash",
+		"dodge",
+		"reversal",
+		"twist_knife",
+		"break_focus"
+	]:
+		return 0
+
 	if face.result_type == "crit":
 		return die_data.sides
 
@@ -3684,42 +3911,71 @@ func face_fits_die(die_data: DiceData, face: DiceFace) -> bool:
 
 	return face.value <= get_max_face_value_for_die(die_data, face)
 	
-func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
+func can_fuse_faces(
+	face_a: DiceFace,
+	face_b: DiceFace
+) -> bool:
 	if face_a == null or face_b == null:
 		return false
 
-	var type_a := face_a.result_type
-	var type_b := face_b.result_type
+	var type_a: String = face_a.result_type
+	var type_b: String = face_b.result_type
 
-	# Special recipe: Hit + Block = Shield Bash
-	if (type_a == "hit" and type_b == "block") \
-	or (type_a == "block" and type_b == "hit"):
+	# ---------------------------------------------------------
+	# Explicit special recipes
+	# ---------------------------------------------------------
+
+	if (
+		(type_a == "hit" and type_b == "block")
+		or
+		(type_a == "block" and type_b == "hit")
+	):
 		return true
 
-	# Shield Bash itself cannot fuse with anything.
-	if type_a == "shield_bash" or type_b == "shield_bash":
+	if (
+		(type_a == "dodge" and type_b == "crit")
+		or
+		(type_a == "crit" and type_b == "dodge")
+	):
+		return true
+
+	if (
+		(type_a == "crit" and type_b == "bleed")
+		or
+		(type_a == "bleed" and type_b == "crit")
+	):
+		return true
+
+	if (
+		(type_a == "crit" and type_b == "heal")
+		or
+		(type_a == "heal" and type_b == "crit")
+	):
+		return true
+
+	# ---------------------------------------------------------
+	# Faces that cannot use generic fusion
+	# ---------------------------------------------------------
+
+	var non_fusible_types: Array[String] = [
+		"miss",
+		"dodge",
+		"reversal",
+		"twist_knife",
+		"break_focus",
+		"shield_bash",
+		"fireball"
+	]
+
+	if type_a in non_fusible_types:
 		return false
 
-	if face_a.result_type == "miss" and face_b.result_type == "miss":
-		return true
-
-	if type_a == "miss" or type_b == "miss":
+	if type_b in non_fusible_types:
 		return false
 
-	if (type_a == "dodge" and type_b == "crit") \
-	or (type_a == "crit" and type_b == "dodge"):
-		return true
-
-	if (type_a == "crit" and type_b == "bleed") \
-	or (type_a == "bleed" and type_b == "crit"):
-		return true
-
-	if (type_a == "crit" and type_b == "heal") \
-	or (type_a == "heal" and type_b == "crit"):
-		return true
-
-	if type_a in ["dodge", "reversal", "twist_knife", "break_focus"]:
-		return false
+	# ---------------------------------------------------------
+	# Normal fusion requires identical types and values
+	# ---------------------------------------------------------
 
 	if type_a != type_b:
 		return false
@@ -3729,52 +3985,67 @@ func can_fuse_faces(face_a: DiceFace, face_b: DiceFace) -> bool:
 
 	return true
 
-func create_fused_face(face_a: DiceFace, face_b: DiceFace) -> DiceFace:
+func create_fused_face(
+	face_a: DiceFace,
+	face_b: DiceFace
+) -> DiceFace:
 	if !can_fuse_faces(face_a, face_b):
 		show_edit_message("These faces cannot be fused.")
 		AudioManager.play_ui(ui_fail_sound)
 		return null
 
-	var type_a := face_a.result_type
-	var type_b := face_b.result_type
+	var type_a: String = face_a.result_type
+	var type_b: String = face_b.result_type
 
-	if (type_a == "hit" and type_b == "block") \
-	or (type_a == "block" and type_b == "hit"):
+	if (
+		(type_a == "hit" and type_b == "block")
+		or
+		(type_a == "block" and type_b == "hit")
+	):
 		return shield_bash_face_template.duplicate(true)
 
-	if type_a == "miss" and type_b == "miss":
-		return create_dodge_face()
+	if (
+		(type_a == "dodge" and type_b == "crit")
+		or
+		(type_a == "crit" and type_b == "dodge")
+	):
+		return reversal_face_template.duplicate(true)
 
-	if (type_a == "dodge" and type_b == "crit") \
-	or (type_a == "crit" and type_b == "dodge"):
-		return create_reversal_face()
-
-	if (type_a == "crit" and type_b == "bleed") \
-	or (type_a == "bleed" and type_b == "crit"):
+	if (
+		(type_a == "crit" and type_b == "bleed")
+		or
+		(type_a == "bleed" and type_b == "crit")
+	):
 		return create_twist_knife_face()
 
-	if (type_a == "crit" and type_b == "heal") \
-	or (type_a == "heal" and type_b == "crit"):
+	if (
+		(type_a == "crit" and type_b == "heal")
+		or
+		(type_a == "heal" and type_b == "crit")
+	):
 		return create_break_focus_face()
 
+	# Generic fusion is only reachable for identical types
+	# with identical values because can_fuse_faces validated it.
 	var new_face: DiceFace = face_a.duplicate(true)
-	new_face.value += 1
+
+	new_face.value = face_a.value + 1
 	new_face.face_name = get_face_display_name(new_face)
 
 	return new_face
 
 
 func create_upgraded_face(face: DiceFace) -> DiceFace:
+	if face == null:
+		return null
+
 	if face.result_type == "miss":
-		var dodge := DiceFace.new()
-		dodge.face_name = "Dodge"
-		dodge.result_type = "dodge"
-		dodge.value = 0
-		return dodge
+		return null
 
 	var new_face: DiceFace = face.duplicate(true)
 	new_face.value += 1
 	new_face.face_name = get_face_display_name(new_face)
+
 	return new_face
 	
 func refresh_die_crafting_panel():
@@ -3882,6 +4153,8 @@ func select_die_face(face_index: int):
 		var max_allowed_value := get_max_face_value_for_die(selected_edit_die, fused_face)
 
 		if fused_face.value <= max_allowed_value:
+			capture_fusion_undo_state()
+
 			selected_edit_die.faces[selected_die_face_index] = fused_face
 			selected_edit_die.faces[selected_die_face_index_2] = create_miss_face()
 
@@ -3942,25 +4215,10 @@ func die_has_dodge(die: DiceData) -> bool:
 #######################################################################
 
 func get_face_display_name(face: DiceFace) -> String:
-	match face.result_type:
-		"hit":
-			return "Hit " + str(face.value)
-		"crit":
-			return "Crit " + str(face.value)
-		"block":
-			return "Block " + str(face.value)
-		"heal":
-			return "Heal " + str(face.value)
-		"gold":
-			return "Gold " + str(face.value)
-		"bleed":
-			return "Bleed " + str(face.value)
-		"freeze":
-			return "Freeze " + str(face.value)
-		"shield_bash":
-			return "Shield Bash"
-		_:
-			return face.result_type.capitalize()
+	if face == null:
+		return ""
+
+	return face.get_display_name()
 	
 func count_misses(die_data: DiceData) -> int:
 	var count := 0
@@ -4039,6 +4297,18 @@ func count_faces_of_type(die_data: DiceData, result_type: String) -> int:
 
 	return count
 	
+func get_fireball_damage(die: DiceNode) -> int:
+	if die == null or !is_instance_valid(die):
+		return 0
+
+	if die.dice_data == null:
+		return 0
+
+	return count_faces_of_type(
+		die.dice_data,
+		"miss"
+	)
+	
 func update_player_block_label():
 	player_block_label.text = "Block: " + str(player_block)
 	update_player_3d_node()
@@ -4063,35 +4333,71 @@ func calculate_auto_block():
 
 	update_player_block_label()
 
-func update_reserve_slots_label():
+func update_reserve_slots_display():
+	if reserve_locks_container == null:
+		return
+
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
 
-		# Selection and assignment always take priority over reserve.
 		if die.selected or die.assigned_enemy_index != -1:
 			if die.reserved:
 				die.reserved = false
 				die.update_visual()
 
-	var reserved := get_reserved_die_count()
+	var reserved_count: int = get_reserved_die_count()
 
-	reserve_slots_label.text = (
-		str(reserved)
-		+ "/"
-		+ str(reserve_slots)
-	)
-	
+	for child in reserve_locks_container.get_children():
+		child.queue_free()
+
+	for slot_index in reserve_slots:
+		var lock_icon := TextureRect.new()
+
+		lock_icon.custom_minimum_size = Vector2(76, 76)
+		lock_icon.size = Vector2(76, 76)
+		lock_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		lock_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		lock_icon.mouse_filter = Control.MOUSE_FILTER_PASS
+
+		if slot_index < reserved_count:
+			lock_icon.texture = reserve_locked_texture
+			lock_icon.tooltip_text = (
+				"Reserved slot "
+				+ str(slot_index + 1)
+				+ ": occupied"
+			)
+		else:
+			lock_icon.texture = reserve_unlocked_texture
+			lock_icon.tooltip_text = (
+				"Reserved slot "
+				+ str(slot_index + 1)
+				+ ": available"
+			)
+
+		reserve_locks_container.add_child(lock_icon)
+			
 func clear_assignments_for_enemy(enemy_index: int):
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
 
-		if die.assigned_enemy_index == enemy_index:
-			die.assigned_enemy_index = -1
-			die.selected = false
-			die.update_visual()
-			
+		if die.assigned_enemy_index != enemy_index:
+			continue
+
+		die.assigned_enemy_index = -1
+		die.selected = false
+		die.reserved = false
+
+		selected_dice_order.erase(die)
+
+		die.update_visual()
+
+	regroup_dice()
+	calculate_auto_block()
+	update_reserve_slots_display()
+	update_assigned_panel_visibility()
+	
 func has_unassigned_selected_offense() -> bool:
 	for die in dice_nodes:
 		if !is_instance_valid(die):
@@ -4495,7 +4801,298 @@ func hit_stop(duration: float = 0.05):
 	Engine.time_scale = 0.0
 	await get_tree().create_timer(duration, true, false, true).timeout
 	Engine.time_scale = 1.0
+
+func tween_face_icon_to_player(
+	die: DiceNode,
+	face: DiceFace
+):
+	if die == null or !is_instance_valid(die):
+		return
+
+	if face == null or face.icon == null:
+		return
+
+	if player_3d_node == null or !is_instance_valid(player_3d_node):
+		return
+
+	var camera := get_viewport().get_camera_3d()
+
+	if camera == null:
+		return
+
+	var flying_icon := TextureRect.new()
+
+	flying_icon.texture = face.icon
+	flying_icon.custom_minimum_size = Vector2(64, 64)
+	flying_icon.size = Vector2(64, 64)
+	flying_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flying_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	flying_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flying_icon.z_index = 1000
+
+	add_child(flying_icon)
+
+	var start_position := (
+		die.global_position
+		+ die.size * 0.5
+		- flying_icon.size * 0.5
+	)
+
+	var target_position := camera.unproject_position(
+		player_3d_node.global_position + Vector3(0, 1.0, 0)
+	)
+
+	target_position -= flying_icon.size * 0.5
+
+	flying_icon.global_position = start_position
+	flying_icon.pivot_offset = flying_icon.size * 0.5
+	flying_icon.scale = Vector2(0.8, 0.8)
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		flying_icon,
+		"global_position",
+		target_position,
+		0.28
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	tween.tween_property(
+		flying_icon,
+		"rotation",
+		TAU,
+		0.28
+	)
+
+	tween.tween_property(
+		flying_icon,
+		"scale",
+		Vector2(1.15, 1.15),
+		0.20
+	)
+
+	await tween.finished
+
+	var fade_tween := create_tween()
+	fade_tween.set_parallel(true)
+
+	fade_tween.tween_property(
+		flying_icon,
+		"scale",
+		Vector2(0.35, 0.35),
+		0.10
+	)
+
+	fade_tween.tween_property(
+		flying_icon,
+		"modulate:a",
+		0.0,
+		0.10
+	)
+
+	await fade_tween.finished
+
+	flying_icon.queue_free()
+		
+func tween_face_icon_to_enemy(
+	die: DiceNode,
+	face: DiceFace,
+	enemy_index: int
+):
+	if die == null or !is_instance_valid(die):
+		return
+
+	if face == null or face.icon == null:
+		return
+
+	if enemy_index < 0 or enemy_index >= enemy_3d_nodes.size():
+		return
+
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+
+	if enemy_node == null or !is_instance_valid(enemy_node):
+		return
+
+	var camera := get_viewport().get_camera_3d()
+
+	if camera == null:
+		return
+
+	var flying_icon := TextureRect.new()
+
+	flying_icon.texture = face.icon
+	flying_icon.custom_minimum_size = Vector2(72, 72)
+	flying_icon.size = Vector2(72, 72)
+	flying_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flying_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	flying_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flying_icon.z_index = 1000
+
+	add_child(flying_icon)
+
+	var start_position := (
+		die.global_position
+		+ die.size * 0.5
+		- flying_icon.size * 0.5
+	)
+
+	var target_position := camera.unproject_position(
+		enemy_node.global_position + Vector3(0, 1.0, 0)
+	)
+
+	target_position -= flying_icon.size * 0.5
+
+	flying_icon.global_position = start_position
+	flying_icon.pivot_offset = flying_icon.size * 0.5
+	flying_icon.scale = Vector2(0.7, 0.7)
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		flying_icon,
+		"global_position",
+		target_position,
+		0.34
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	tween.tween_property(
+		flying_icon,
+		"rotation",
+		TAU * 1.25,
+		0.34
+	)
+
+	tween.tween_property(
+		flying_icon,
+		"scale",
+		Vector2(1.2, 1.2),
+		0.28
+	)
+
+	await tween.finished
+
+	var impact_tween := create_tween()
+	impact_tween.set_parallel(true)
+
+	impact_tween.tween_property(
+		flying_icon,
+		"scale",
+		Vector2(1.5, 1.5),
+		0.08
+	)
+
+	impact_tween.tween_property(
+		flying_icon,
+		"modulate:a",
+		0.0,
+		0.08
+	)
+
+	await impact_tween.finished
+
+	flying_icon.queue_free()
 	
+func spawn_enemy_heal_icon_particles(
+	target_node: Node3D,
+	particle_count: int = 7
+):
+	if heal_icon_texture == null:
+		return
+
+	if target_node == null or !is_instance_valid(target_node):
+		return
+
+	var camera := get_viewport().get_camera_3d()
+
+	if camera == null:
+		return
+
+	var center_position := camera.unproject_position(
+		target_node.global_position + Vector3(0, 1.0, 0)
+	)
+
+	for i in particle_count:
+		var icon := TextureRect.new()
+
+		icon.texture = heal_icon_texture
+		icon.custom_minimum_size = Vector2(30, 30)
+		icon.size = Vector2(30, 30)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.z_index = 900
+		icon.modulate.a = 0.0
+
+		add_child(icon)
+
+		var start_offset := Vector2(
+			randf_range(-25.0, 25.0),
+			randf_range(-5.0, 20.0)
+		)
+
+		var end_offset := Vector2(
+			randf_range(-60.0, 60.0),
+			randf_range(-80.0, -45.0)
+		)
+
+		icon.global_position = (
+			center_position
+			+ start_offset
+			- icon.size * 0.5
+		)
+
+		icon.pivot_offset = icon.size * 0.5
+		icon.scale = Vector2(0.45, 0.45)
+		icon.rotation = randf_range(-0.3, 0.3)
+
+		var delay := float(i) * 0.035
+		var tween := create_tween()
+
+		tween.tween_interval(delay)
+
+		tween.tween_property(
+			icon,
+			"modulate:a",
+			1.0,
+			0.10
+		)
+
+		tween.set_parallel(true)
+
+		tween.tween_property(
+			icon,
+			"global_position",
+			center_position
+				+ end_offset
+				- icon.size * 0.5,
+			0.55
+		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+		tween.tween_property(
+			icon,
+			"scale",
+			Vector2(0.85, 0.85),
+			0.35
+		)
+
+		tween.tween_property(
+			icon,
+			"rotation",
+			icon.rotation + randf_range(-0.6, 0.6),
+			0.55
+		)
+
+		tween.chain().tween_property(
+			icon,
+			"modulate:a",
+			0.0,
+			0.20
+		)
+
+		tween.finished.connect(icon.queue_free)
+		
 func launch_die_at_enemy(die: DiceNode, enemy_index: int):
 	if enemy_index < 0 or enemy_index >= enemy_3d_nodes.size():
 		return
@@ -4954,7 +5551,125 @@ func resolve_single_die_impact(
 
 			update_enemy_3d_nodes()
 			return
+		# -----------------------------------------------------
+		# FIREBALL
+		# -----------------------------------------------------
+		"fireball":
+			var raw_damage: int = get_fireball_damage(die)
 
+			await play_fireball_cinematic(
+				die,
+				enemy_index
+			)
+
+			if raw_damage <= 0:
+				show_popup_text(
+					enemy_node,
+					"No Misses",
+					1.2,
+					Color.GRAY
+				)
+
+				add_combat_log_entry(
+					"Fireball dealt no damage because the die had no Miss faces."
+				)
+
+				update_enemy_3d_nodes()
+				return
+
+			var damage: int = apply_guardian_split(
+				enemy_index,
+				raw_damage,
+				false
+			)
+
+			var blocked_amount: int = min(
+				damage,
+				int(enemy["block"])
+			)
+
+			enemy["block"] -= blocked_amount
+			damage -= blocked_amount
+
+			if enemy["block"] < 0:
+				enemy["block"] = 0
+
+			if blocked_amount > 0:
+				add_combat_log_entry(
+					enemy_name
+						+ " blocked "
+						+ str(blocked_amount)
+						+ " Fireball damage."
+				)
+
+				await show_enemy_hit_sequence(
+					enemy_index,
+					blocked_amount,
+					0
+				)
+
+			if damage > 0:
+				var hp_before_fireball: int = enemy["hp"]
+
+				enemy["hp"] -= damage
+
+				if enemy["hp"] < 0:
+					enemy["hp"] = 0
+
+				var actual_damage: int = (
+					hp_before_fireball - enemy["hp"]
+				)
+
+				last_player_damage += actual_damage
+
+				show_damage_popup(
+					enemy_3d_nodes[enemy_index],
+					actual_damage
+				)
+
+				var fireball_shake_strength: float = clamp(
+					0.045 + float(actual_damage) * 0.004,
+					0.05,
+					0.12
+				)
+
+				var fireball_shake_duration: float = clamp(
+					0.12 + float(actual_damage) * 0.008,
+					0.14,
+					0.24
+				)
+
+				await shake_combat_camera(
+					fireball_shake_duration,
+					fireball_shake_strength
+				)
+
+				await get_tree().create_timer(0.25).timeout
+
+				add_combat_log_entry(
+					"Fireball dealt "
+						+ str(actual_damage)
+						+ " damage to "
+						+ enemy_name
+						+ " using "
+						+ str(raw_damage)
+						+ " Miss "
+						+ (
+							"face."
+							if raw_damage == 1
+							else "faces."
+						)
+				)
+			else:
+				add_combat_log_entry(
+					enemy_name
+						+ " blocked all "
+						+ str(raw_damage)
+						+ " Fireball damage."
+				)
+
+			update_enemy_3d_nodes()
+			return
 		# -----------------------------------------------------
 		# NORMAL HIT
 		# -----------------------------------------------------
@@ -4962,6 +5677,26 @@ func resolve_single_die_impact(
 			var base_damage: int = (
 				face.value + active_combat_bonus_damage
 			)
+
+			var berserker_bonus: int = (
+				get_player_berserker_bonus()
+			)
+
+			if berserker_bonus > 0:
+				base_damage += berserker_bonus
+
+				add_combat_log_entry(
+					"Player Berserker added "
+						+ str(berserker_bonus)
+						+ " damage to the Hit."
+				)
+
+				show_popup_text(
+					player_3d_node,
+					"Berserker +" + str(berserker_bonus),
+					1.1,
+					Color.ORANGE_RED
+				)
 
 			var exposed_bonus: int = 0
 			var axe_bonus: int = 0
@@ -5225,6 +5960,37 @@ func get_living_guardian_index(target_index: int) -> int:
 
 	return -1
 
+func shake_combat_camera(
+	duration: float = 0.18,
+	strength: float = 0.08
+):
+	var camera: Camera3D = combat_camera
+
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera == null:
+		return
+
+	var original_position: Vector3 = camera.position
+	var elapsed: float = 0.0
+
+	while elapsed < duration:
+		var shake_falloff: float = 1.0 - (
+			elapsed / duration
+		)
+
+		camera.position = original_position + Vector3(
+			randf_range(-strength, strength),
+			randf_range(-strength, strength),
+			0.0
+		) * shake_falloff
+
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+
+	camera.position = original_position
+	
 func apply_enemy_bleed():
 	for i in active_enemies.size():
 		if i < 0 or i >= active_enemies.size():
@@ -5354,6 +6120,7 @@ func launch_enemy_die_at_player(enemy_index: int, face: DiceFace):
 	flying_die.queue_free()
 
 func open_edit_dice_panel_from_town():
+	clear_fusion_undo_state()
 	reset_edit_panel_to_normal_mode()
 	edit_dice_return_context = "town"
 	town_panel.visible = false
@@ -5501,10 +6268,17 @@ func complete_current_bounty():
 	print("Bounty completed. Returned to town.")
 	
 	clear_all_combat_dice_state()
+
 	expedition_active = false
 	is_in_town = true
+	expedition_is_boss_fight = false
+	expedition_progress = 0
+
 	current_bounty = null
 	current_encounter = null
+	expedition_encounter_plan.clear()
+
+	save_run()
 	return_to_town_requested.emit()
 	
 func apply_bounty_reward(bounty: BountyData):
@@ -5522,7 +6296,7 @@ func apply_bounty_reward(bounty: BountyData):
 
 	if bounty.reward_reserve_slots > 0:
 		reserve_slots += bounty.reward_reserve_slots
-		update_reserve_slots_label()
+		update_reserve_slots_display()
 		
 	for relic in current_bounty.unlocked_relics:
 		if !owned_relics.has(relic):
@@ -5574,6 +6348,7 @@ func hide_combat_dice():
 	hide_all_groups()
 	
 func open_edit_dice_panel_from_camp():
+	clear_fusion_undo_state()
 	reset_edit_panel_to_normal_mode()
 	edit_dice_return_context = "camp"
 	expedition_camp_panel.visible = false
@@ -5590,8 +6365,10 @@ func continue_expedition():
 
 	expedition_camp_panel.visible = false
 	if expedition_progress >= expedition_required_encounters:
-		expedition_is_boss_fight = true
 		current_encounter = current_bounty.boss_encounter
+		expedition_is_boss_fight = true
+
+		save_run()
 		start_new_combat()
 		return
 	var node := get_current_plan_node()
@@ -5611,6 +6388,28 @@ func continue_expedition():
 		PLAN_WELL:
 			expedition_started.emit("well")
 			
+func is_current_encounter_boss() -> bool:
+	if current_bounty == null:
+		return false
+
+	if current_bounty.boss_encounter == null:
+		return false
+
+	if current_encounter == null:
+		return false
+
+	if current_encounter == current_bounty.boss_encounter:
+		return true
+
+	var current_path: String = current_encounter.resource_path
+	var boss_path: String = current_bounty.boss_encounter.resource_path
+
+	return (
+		current_path != ""
+		and boss_path != ""
+		and current_path == boss_path
+	)
+	
 func claim_well_relic() -> RelicData:
 	var valid_relics: Array[RelicData] = []
 
@@ -5661,12 +6460,13 @@ func open_prepare_expedition():
 	if current_bounty == null:
 		print("No bounty selected.")
 		return
-
+	
 	prepare_return_context = "town"
 	town_panel.visible = false
 	prepare_selected_bounty_label.visible = true
 	prepare_expedition_panel.visible = true
 	prepare_cancel_button.visible = true
+	prepare_hp_label.visible = false
 	prepare_start_expedition_button.text = "Start Expedition"
 	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
 	prepare_expedition_label.text = "Prepare Expedition"
@@ -5936,30 +6736,43 @@ func buy_consumable(item: ConsumableItem):
 func rebuild_prepare_consumables():
 	clear_container(prepare_consumables_container)
 
-	var item_counts := {}
-	var item_lookup := {}
+	var item_counts: Dictionary = {}
+	var item_lookup: Dictionary = {}
+	var item_order: Array[String] = []
 
 	for item in consumable_inventory:
+		if item == null:
+			continue
+
 		if !item_counts.has(item.item_name):
 			item_counts[item.item_name] = 0
 			item_lookup[item.item_name] = item
+			item_order.append(item.item_name)
 
 		item_counts[item.item_name] += 1
 
-	for item_name in item_counts.keys():
+	for item_name in item_order:
 		var item: ConsumableItem = item_lookup[item_name]
+		var count: int = item_counts[item_name]
 
 		var button = item_button_scene.instantiate()
 		prepare_consumables_container.add_child(button)
 
 		button.setup(
 			item.icon,
-			"x" + str(item_counts[item_name]),
+			"x" + str(count),
 			""
 		)
 
-		button.tooltip_text = item.item_name + "\n" + item.description
-		button.pressed.connect(use_consumable_item.bind(item))
+		button.tooltip_text = (
+			item.item_name
+			+ "\n"
+			+ item.description
+		)
+
+		button.pressed.connect(
+			use_consumable_item.bind(item)
+		)
 		
 func use_consumable(index: int):
 	if index < 0 or index >= consumable_inventory.size():
@@ -5986,15 +6799,24 @@ func use_consumable_item(item: ConsumableItem):
 		return
 	AudioManager.play_one_shot(food_eat_sound)
 	# Instant heal food: can be used multiple times, does not become an active buff.
-	if item.heal_amount > 0 and item.next_combat_block == 0 and item.next_combat_damage == 0 and item.next_combat_max_hp == 0:
+	if (
+		item.heal_amount > 0
+		and item.next_combat_block == 0
+		and item.next_combat_damage == 0
+		and item.next_combat_max_hp == 0
+	):
 		player_hp += item.heal_amount
 
 		if player_hp > combat_max_player_hp:
 			player_hp = combat_max_player_hp
 
 		consumable_inventory.remove_at(index)
+
 		update_player_hp_label()
+		update_camp_hp_label()
+		update_prepare_hp_label()
 		rebuild_prepare_consumables()
+		save_run()
 		return
 
 	# Buff food: only one of each active at a time.
@@ -6002,15 +6824,17 @@ func use_consumable_item(item: ConsumableItem):
 		return
 
 	active_food_items.append(item)
-	if item.grants_trait != null:
-		player_statuses[item.grants_trait.trait_id] = item.grants_trait.value
-		update_player_status_icons()
+	apply_consumable_trait(item)
 	next_combat_bonus_block += item.next_combat_block
 	next_combat_bonus_damage += item.next_combat_damage
 	next_combat_bonus_max_hp += item.next_combat_max_hp
 	player_hp += item.next_combat_max_hp
 	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+
 	update_player_hp_label()
+	update_camp_hp_label()
+	update_prepare_hp_label()
+
 	var temporary_max_hp := max_player_hp + next_combat_bonus_max_hp
 
 	if player_hp > temporary_max_hp:
@@ -6020,6 +6844,8 @@ func use_consumable_item(item: ConsumableItem):
 
 	rebuild_prepare_consumables()
 	update_active_food_icons()
+	update_prepare_hp_label()
+	save_run()
 
 func find_consumable_index_by_name(item_name: String) -> int:
 	for i in consumable_inventory.size():
@@ -6139,6 +6965,8 @@ func handle_face_drop(
 					show_edit_message("Every die must keep at least 1 Miss.")
 					return
 
+				capture_fusion_undo_state()
+
 				selected_edit_die.faces[target_slot_index] = fused_face
 				face_inventory.erase(dragged_face)
 
@@ -6204,6 +7032,8 @@ func handle_face_drop(
 					show_edit_message("Every die must keep at least 1 Miss.")
 					return
 
+				capture_fusion_undo_state()
+
 				selected_edit_die.faces[target_slot_index] = fused_face
 				selected_edit_die.faces[source_slot] = create_basic_miss_face()
 
@@ -6216,6 +7046,89 @@ func handle_face_drop(
 
 	refresh_edit_dice_panel()
 	save_run()
+	
+func capture_fusion_undo_state():
+	fusion_undo_inventory.clear()
+
+	for face in face_inventory:
+		fusion_undo_inventory.append(face)
+
+	fusion_undo_die_faces.clear()
+
+	for die_data in owned_dice:
+		if die_data == null:
+			continue
+
+		var saved_faces: Array[DiceFace] = []
+
+		for face in die_data.faces:
+			saved_faces.append(face)
+
+		fusion_undo_die_faces[die_data] = saved_faces
+
+	fusion_undo_available = true
+	update_fusion_undo_button()
+
+
+func undo_last_fusion():
+	if !fusion_undo_available:
+		return
+
+	face_inventory.clear()
+
+	for face in fusion_undo_inventory:
+		face_inventory.append(face)
+
+	for die_data in fusion_undo_die_faces.keys():
+		if die_data == null:
+			continue
+
+		var saved_faces: Array = fusion_undo_die_faces[die_data]
+
+		die_data.faces.clear()
+
+		for face in saved_faces:
+			die_data.faces.append(face)
+
+	fusion_undo_inventory.clear()
+	fusion_undo_die_faces.clear()
+	fusion_undo_available = false
+
+	selected_die_face_index = -1
+	selected_die_face_index_2 = -1
+	selected_inventory_face_indices.clear()
+
+	update_fusion_undo_button()
+	refresh_edit_dice_panel()
+	save_run()
+
+	show_edit_message("Last fusion undone.")
+
+
+func update_fusion_undo_button():
+	if undo_fusion_button == null:
+		return
+
+	undo_fusion_button.disabled = (
+		!fusion_undo_available
+		or dice_panel_read_only
+	)
+
+	if fusion_undo_available:
+		undo_fusion_button.tooltip_text = (
+			"Restore the inventory and dice to their state "
+			+ "before the most recent fusion."
+		)
+	else:
+		undo_fusion_button.tooltip_text = (
+			"No fusion is available to undo."
+		)
+	
+func clear_fusion_undo_state():
+	fusion_undo_inventory.clear()
+	fusion_undo_die_faces.clear()
+	fusion_undo_available = false
+	update_fusion_undo_button()
 	
 func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
 	if dice_panel_read_only:
@@ -6243,6 +7156,8 @@ func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
 
 	var high_index: int = max(index_a, index_b)
 	var low_index: int = min(index_a, index_b)
+
+	capture_fusion_undo_state()
 
 	face_inventory.remove_at(high_index)
 	face_inventory.remove_at(low_index)
@@ -6394,6 +7309,8 @@ func handle_inventory_face_drop(
 		if is_last_miss_slot(selected_edit_die, source_slot):
 			show_edit_message("Every die must keep at least 1 Miss.")
 			return
+
+		capture_fusion_undo_state()
 
 		selected_edit_die.faces[source_slot] = fused_face
 		face_inventory.remove_at(target_inventory_index)
@@ -6562,26 +7479,44 @@ func update_active_food_icons():
 		
 func open_camp_items():
 	prepare_return_context = "camp"
+
 	prepare_selected_bounty_label.visible = false
 	expedition_camp_panel.visible = false
 	prepare_expedition_panel.visible = true
 	prepare_cancel_button.visible = false
+
 	prepare_start_expedition_button.text = "Return to Camp"
 	prepare_expedition_label.text = "Use Items"
+
 	if current_bounty != null:
-		prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
+		prepare_selected_bounty_label.text = (
+			"Bounty: "
+			+ current_bounty.bounty_name
+		)
 	else:
 		prepare_selected_bounty_label.text = "Expedition Items"
-	camp_hp_label.visible = true
-	update_camp_hp_label()
+
+	prepare_hp_label.visible = true
+	update_prepare_hp_label()
 	rebuild_prepare_consumables()
 
 func apply_damage_bonus_to_dice_visuals():
+	var berserker_bonus: int = get_player_berserker_bonus()
+
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
 
-		die.temporary_value_bonus = active_combat_bonus_damage
+		var total_visual_bonus: int = 0
+
+		if (
+			die.current_face != null
+			and die.current_face.result_type == "hit"
+		):
+			total_visual_bonus += active_combat_bonus_damage
+			total_visual_bonus += berserker_bonus
+
+		die.temporary_value_bonus = total_visual_bonus
 		die.update_visual()
 
 
@@ -6596,26 +7531,53 @@ func get_enemy_trait_text(enemy: Dictionary) -> String:
 	
 func apply_enemy_end_round_traits():
 	for enemy in active_enemies:
-		var regen_value := get_enemy_trait_value(enemy, "regenerating")
+		var regen_value := get_enemy_trait_value(
+			enemy,
+			"regenerating"
+		)
 
 		if regen_value <= 0:
 			continue
+
+		var hp_before_regen: int = enemy["hp"]
 
 		enemy["hp"] += regen_value
 
 		if enemy["hp"] > enemy["max_hp"]:
 			enemy["hp"] = enemy["max_hp"]
 
+		var actual_healing: int = (
+			enemy["hp"] - hp_before_regen
+		)
+
+		if actual_healing <= 0:
+			continue
+
 		var enemy_index := active_enemies.find(enemy)
 
-		if enemy_index != -1 and enemy_index < enemy_3d_nodes.size():
-			if is_instance_valid(enemy_3d_nodes[enemy_index]):
-				show_popup_text(
-					enemy_3d_nodes[enemy_index],
-					"+" + str(regen_value),
-					1.8,
-					Color.GREEN
-				)
+		if (
+			enemy_index != -1
+			and enemy_index < enemy_3d_nodes.size()
+			and is_instance_valid(enemy_3d_nodes[enemy_index])
+		):
+			show_popup_text(
+				enemy_3d_nodes[enemy_index],
+				"+" + str(actual_healing),
+				1.8,
+				Color.GREEN
+			)
+
+			spawn_enemy_heal_icon_particles(
+				enemy_3d_nodes[enemy_index],
+				5
+			)
+
+			add_combat_log_entry(
+				enemy["data"].enemy_name
+					+ "'s Regenerating trait restored "
+					+ str(actual_healing)
+					+ " HP."
+			)
 
 func show_status_tooltip(text: String):
 	status_tooltip_label.text = text
@@ -6950,7 +7912,10 @@ func play_purchase_sound():
 	AudioManager.play_one_shot(coin_purchase_sound)
 
 func add_mulligems(amount: int):
-	mulligems = min(mulligems + amount, MAX_MULLIGEMS)
+	if amount <= 0:
+		return
+
+	mulligems += amount
 	update_mulligem_button()
 
 func update_player_status_icons():
@@ -7093,19 +8058,85 @@ func _on_resolution_selected(index: int):
 		DisplayServer.window_set_size(resolution)
 
 	save_settings()
+	
 func save_settings():
+	if !ensure_save_directory():
+		return
+
 	var config := ConfigFile.new()
 
-	config.set_value("audio", "master", master_volume_slider.value)
-	config.set_value("audio", "music", music_volume_slider.value)
-	config.set_value("audio", "sfx", sfx_volume_slider.value)
-	config.set_value("player", "hp_at_combat_start", player_hp_at_combat_start)
-	config.set_value("display", "fullscreen", fullscreen_check_box.button_pressed)
-	config.set_value("display", "resolution_index", resolution_option.selected)
+	config.set_value(
+		"audio",
+		"master",
+		master_volume_slider.value
+	)
 
-	config.save(SETTINGS_SAVE_PATH)
+	config.set_value(
+		"audio",
+		"music",
+		music_volume_slider.value
+	)
+
+	config.set_value(
+		"audio",
+		"sfx",
+		sfx_volume_slider.value
+	)
+
+	config.set_value(
+		"display",
+		"fullscreen",
+		fullscreen_check_box.button_pressed
+	)
+
+	config.set_value(
+		"display",
+		"resolution_index",
+		resolution_option.selected
+	)
+
+	var err := config.save(SETTINGS_SAVE_PATH)
+
+	if err == OK:
+		print(
+			"Settings saved to: ",
+			ProjectSettings.globalize_path(
+				SETTINGS_SAVE_PATH
+			)
+		)
+	else:
+		push_error(
+			"Failed to save settings. Error: "
+			+ str(err)
+		)
+
+func ensure_save_directory() -> bool:
+	var absolute_path: String = (
+		ProjectSettings.globalize_path(
+			SAVE_DIRECTORY
+		)
+	)
+
+	var err := DirAccess.make_dir_recursive_absolute(
+		absolute_path
+	)
+
+	if err != OK and err != ERR_ALREADY_EXISTS:
+		push_error(
+			"Failed to create save directory: "
+			+ absolute_path
+			+ " Error: "
+			+ str(err)
+		)
+
+		return false
+
+	return true
 
 func save_run():
+	if !ensure_save_directory():
+		return
+
 	var config := ConfigFile.new()
 	
 	config.set_value("run", "encounters_completed", run_encounters_completed)
@@ -7116,7 +8147,6 @@ func save_run():
 	var should_save_pending_encounter := expedition_active \
 		and !expedition_camp_panel.visible \
 		and current_encounter != null
-	config.set_value("player", "max_player_hp", max_player_hp)
 	config.set_value(
 		"expedition",
 		"current_encounter",
@@ -7142,11 +8172,20 @@ func save_run():
 		if node_type == PLAN_COMBAT:
 			saved_plan.append({
 				"type": PLAN_COMBAT,
-				"encounter_path": get_resource_path(node["encounter"])
+				"encounter_path": get_resource_path(
+					node["encounter"]
+				)
 			})
+
 		elif node_type == PLAN_WITCH:
 			saved_plan.append({
 				"type": PLAN_WITCH,
+				"encounter_path": ""
+			})
+
+		elif node_type == PLAN_WELL:
+			saved_plan.append({
+				"type": PLAN_WELL,
 				"encounter_path": ""
 			})
 
@@ -7189,11 +8228,22 @@ func save_run():
 
 	config.set_value("inventory", "consumables", consumable_save)
 
-	var owned_relic_names := []
+	var owned_relic_names: Array[String] = []
+
 	for relic in owned_relics:
-		if relic != null:
-			owned_relic_names.append(relic.relic_name)
-		config.set_value("relics", "owned_relics", owned_relic_names)
+		if relic == null:
+			continue
+
+		if relic.relic_name.is_empty():
+			continue
+
+		owned_relic_names.append(relic.relic_name)
+
+	config.set_value(
+		"relics",
+		"owned_relics",
+		owned_relic_names
+	)
 	var active_food_save_data: Array = []
 
 	for item in active_food_items:
@@ -7326,10 +8376,43 @@ func load_run():
 	die_fragments = config.get_value("run", "die_fragments", die_fragments)
 	expedition_active = config.get_value("expedition", "expedition_active", false)
 	is_in_town = config.get_value("expedition", "is_in_town", true)
-	player_hp = config.get_value("player", "hp", player_hp)
-	player_hp_at_combat_start = config.get_value("player", "hp_at_combat_start", player_hp)
-	max_player_hp = config.get_value("player", "max_hp", max_player_hp)
+	max_player_hp = int(
+		config.get_value(
+			"player",
+			"max_hp",
+			max_player_hp
+		)
+	)
+
+	player_hp = int(
+		config.get_value(
+			"player",
+			"hp",
+			max_player_hp
+		)
+	)
+
+	player_hp_at_combat_start = int(
+		config.get_value(
+			"player",
+			"hp_at_combat_start",
+			player_hp
+		)
+	)
+
 	combat_max_player_hp = max_player_hp
+
+	player_hp = clamp(
+		player_hp,
+		0,
+		combat_max_player_hp
+	)
+
+	player_hp_at_combat_start = clamp(
+		player_hp_at_combat_start,
+		0,
+		combat_max_player_hp
+	)
 	run_encounters_completed = config.get_value("run", "encounters_completed", run_encounters_completed)
 	expedition_progress = config.get_value("expedition", "progress", expedition_progress)
 	expedition_required_encounters = config.get_value("expedition", "required_encounters", expedition_required_encounters)
@@ -7337,8 +8420,7 @@ func load_run():
 	reserve_slots = config.get_value("run", "reserve_slots", reserve_slots)
 	witch_seen_this_run = config.get_value("run", "witch_seen", false)
 	well_seen_this_run = config.get_value("run", "well_seen", false)
-	max_player_hp = config.get_value("player", "max_player_hp", 30)
-	update_reserve_slots_label()
+	update_reserve_slots_display()
 	var encounter_path: String = config.get_value("expedition", "current_encounter", "")
 	if encounter_path != "":
 		var loaded_encounter = load(encounter_path)
@@ -7455,6 +8537,8 @@ func load_run():
 	unlocked_food_tier = config.get_value("unlock", "unlocked_food_tier", unlocked_food_tier)
 	has_meditation_charm = has_relic_name("Meditation Beads")
 	selected_edit_die = null
+	update_camp_hp_label()
+	update_prepare_hp_label()
 	update_active_food_icons()
 	update_gold_label()
 	update_player_hp_label()
@@ -7533,18 +8617,52 @@ func update_expedition_progress_labels():
 		]
 		
 func find_relic_by_name(relic_name: String) -> RelicData:
-	if witch_charm_relic != null and witch_charm_relic.relic_name == relic_name:
+	if relic_name.is_empty():
+		return null
+
+	if (
+		witch_charm_relic != null
+		and witch_charm_relic.relic_name == relic_name
+	):
 		return witch_charm_relic
 
 	for relic in merchant_relic_pool:
-		if relic != null and relic.relic_name == relic_name:
+		if relic == null:
+			continue
+
+		if relic.relic_name == relic_name:
 			return relic
 
 	for relic in combat_relic_drop_pool:
-		if relic != null and relic.relic_name == relic_name:
+		if relic == null:
+			continue
+
+		if relic.relic_name == relic_name:
 			return relic
 
+	# Boss and bounty completion relics.
+	for bounty in bounty_pool:
+		if bounty == null:
+			continue
+
+		for relic in bounty.unlocked_relics:
+			if relic == null:
+				continue
+
+			if relic.relic_name == relic_name:
+				return relic
+
+	# The final boss may be stored separately from bounty_pool.
+	if final_boss_bounty != null:
+		for relic in final_boss_bounty.unlocked_relics:
+			if relic == null:
+				continue
+
+			if relic.relic_name == relic_name:
+				return relic
+
 	return null
+	
 func hide_all_combat_ui():
 	end_round_button.visible = false
 	mulligem_button.visible = false
@@ -7552,7 +8670,6 @@ func hide_all_combat_ui():
 	player_health_label.visible = false
 	assigned_dice_overlay.visible = false
 	enemy_roll_overlay.visible = false
-	reserve_slots_label.visible = false
 	combat_number_label.visible = false
 	player_hp_label.visible = false
 	player_block_label.visible = false
@@ -7605,25 +8722,62 @@ func build_expedition_plan():
 		push_error("Current bounty has no normal encounters.")
 		return
 
-	# First node stays combat because starting an expedition expects combat.
-	expedition_encounter_plan.append({
-		"type": PLAN_COMBAT,
-		"encounter": current_bounty.expedition_encounter_pool[0]
-	})
+	if expedition_required_encounters <= 0:
+		push_error("Expedition required encounter count is invalid.")
+		return
 
-	# Force the Well as the next node.
-	expedition_encounter_plan.append({
-		"type": PLAN_WELL,
-		"encounter": null
-	})
+	var available_events: Array[String] = []
 
-	# Boss still ends the expedition.
+	if !well_seen_this_run:
+		available_events.append(PLAN_WELL)
+
+	if !witch_seen_this_run:
+		available_events.append(PLAN_WITCH)
+
+	# Build every pre-boss node.
+	for node_index in expedition_required_encounters:
+		# The first node must always be combat because expedition
+		# startup expects an EncounterData resource.
+		if node_index == 0:
+			expedition_encounter_plan.append({
+				"type": PLAN_COMBAT,
+				"encounter":
+					current_bounty.expedition_encounter_pool.pick_random()
+			})
+
+			continue
+
+		var should_use_event: bool = (
+			!available_events.is_empty()
+			and randf() < 0.5
+		)
+
+		if should_use_event:
+			var event_type: String = available_events.pick_random()
+			available_events.erase(event_type)
+
+			expedition_encounter_plan.append({
+				"type": event_type,
+				"encounter": null
+			})
+		else:
+			expedition_encounter_plan.append({
+				"type": PLAN_COMBAT,
+				"encounter":
+					current_bounty.expedition_encounter_pool.pick_random()
+			})
+
+	# The boss always follows all required pre-boss nodes.
 	expedition_encounter_plan.append({
 		"type": PLAN_COMBAT,
 		"encounter": current_bounty.boss_encounter
 	})
 
-	expedition_required_encounters = 2
+	print(
+		"Built expedition plan with ",
+		expedition_required_encounters,
+		" pre-boss nodes and 1 boss node."
+	)
 func get_current_plan_node() -> Dictionary:
 	if expedition_encounter_plan.is_empty():
 		return {}
@@ -8244,7 +9398,10 @@ func populate_dice_bag():
 			icon.custom_minimum_size = Vector2(40, 40)
 			icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon.tooltip_text = get_face_tooltip_text(face)
+			icon.tooltip_text = get_face_tooltip_text(
+				face,
+				die
+			)
 
 			var value := Label.new()
 			value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -8263,39 +9420,14 @@ func populate_dice_bag():
 		await get_tree().process_frame
 		dice_bag_list.queue_sort()
 		
-func get_face_tooltip_text(face: DiceFace) -> String:
-	var title := get_face_display_name(face)
+func get_face_tooltip_text(
+	face: DiceFace,
+	die_data: DiceData = null
+) -> String:
+	if face == null:
+		return ""
 
-	if title == "":
-		title = face.result_type.capitalize()
-
-	var text := title
-
-	match face.result_type:
-		"hit":
-			text += "\nDeals " + str(face.value) + " damage."
-		"crit":
-			text += "\nDeals " + str(face.value) + " damage that ignores Block."
-		"block":
-			text += "\nGain " + str(face.value) + " Block."
-		"heal":
-			text += "\nRestore " + str(face.value) + " HP."
-		"gold":
-			text += "\nGain " + str(face.value) + " Gold."
-		"miss":
-			text += "\nDoes nothing."
-		"freeze":
-			text += "\nApply " + str(face.value) + " Freeze."
-		"bleed":
-			text += "\nApply " + str(face.value) + " Bleed."
-		"shield_bash":
-			text += "\nConsumes all Block and deals that much damage."
-		"pain":
-			text += "\nDeals damage to the player."
-		_:
-			text += "\n" + face.result_type
-
-	return text
+	return face.get_tooltip(die_data)
 
 func reset_edit_panel_to_normal_mode():
 	dice_panel_read_only = false
@@ -8512,3 +9644,226 @@ func add_colored_combat_log_entry(text: String, color: Color):
 	var color_hex := color.to_html(false)
 	combat_log_entries.append("[color=#" + color_hex + "]" + text + "[/color]")
 	refresh_combat_log()
+
+func play_fireball_cinematic(
+	die: DiceNode,
+	enemy_index: int
+):
+	if die == null or !is_instance_valid(die):
+		return
+
+	if enemy_index < 0 or enemy_index >= enemy_3d_nodes.size():
+		return
+
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+
+	if enemy_node == null or !is_instance_valid(enemy_node):
+		return
+
+	var camera: Camera3D = combat_camera
+
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera == null:
+		return
+
+	var original_transform: Transform3D = camera.global_transform
+	var original_size: float = camera.size
+
+	var cinematic_die: DiceNode = dice_scene.instantiate()
+	add_child(cinematic_die)
+
+	cinematic_die.setup(die.dice_data)
+	cinematic_die.current_face_index = die.current_face_index
+	cinematic_die.current_face = die.current_face
+	cinematic_die.used = true
+	cinematic_die.selected = false
+	cinematic_die.reserved = false
+	cinematic_die.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cinematic_die.z_index = 1900
+
+	cinematic_die.set_compact_mode(false)
+	cinematic_die.update_visual()
+
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var viewport_center: Vector2 = viewport_size * 0.5
+
+	cinematic_die.pivot_offset = cinematic_die.size * 0.5
+	cinematic_die.global_position = (
+		die.global_position
+		+ die.size * 0.5
+		- cinematic_die.size * 0.5
+	)
+
+	cinematic_die.scale = Vector2(0.75, 0.75)
+	cinematic_die.modulate.a = 1.0
+
+	if fireball_sound != null:
+		AudioManager.play_one_shot(
+			fireball_sound,
+			1.0,
+			1.0
+		)
+
+	# ---------------------------------------------------------
+	# 0.00–0.18: quick zoom onto the Fireball die.
+	# ---------------------------------------------------------
+	var die_zoom := create_tween()
+	die_zoom.set_parallel(true)
+
+	die_zoom.tween_property(
+		cinematic_die,
+		"global_position",
+		viewport_center - cinematic_die.size * 0.5,
+		0.18
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+
+	die_zoom.tween_property(
+		cinematic_die,
+		"scale",
+		Vector2(2.0, 2.0),
+		0.18
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	await die_zoom.finished
+
+	# ---------------------------------------------------------
+	# 0.18–0.62: dramatic hold with a small slow-motion pulse.
+	# ---------------------------------------------------------
+	var hold_tween := create_tween()
+	hold_tween.set_parallel(true)
+
+	hold_tween.tween_property(
+		cinematic_die,
+		"scale",
+		Vector2(2.18, 2.18),
+		0.44
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	hold_tween.tween_property(
+		cinematic_die,
+		"rotation",
+		0.10,
+		0.22
+	).set_trans(Tween.TRANS_SINE)
+
+	await hold_tween.finished
+
+	# ---------------------------------------------------------
+	# 0.62–0.76: snap the die away.
+	# ---------------------------------------------------------
+	var die_exit := create_tween()
+	die_exit.set_parallel(true)
+
+	die_exit.tween_property(
+		cinematic_die,
+		"scale",
+		Vector2(0.25, 0.25),
+		0.14
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+
+	die_exit.tween_property(
+		cinematic_die,
+		"modulate:a",
+		0.0,
+		0.14
+	)
+
+	await die_exit.finished
+
+	if is_instance_valid(cinematic_die):
+		cinematic_die.queue_free()
+
+	# ---------------------------------------------------------
+	# 0.76–1.00: rapid camera push toward the target.
+	# ---------------------------------------------------------
+	var direction_to_enemy: Vector3 = (
+		enemy_node.global_position - camera.global_position
+	).normalized()
+
+	var impact_transform: Transform3D = camera.global_transform
+	impact_transform.origin += direction_to_enemy * 1.0
+
+	var impact_size: float = max(
+		original_size * 0.72,
+		0.1
+	)
+
+	var target_zoom := create_tween()
+	target_zoom.set_parallel(true)
+
+	target_zoom.tween_property(
+		camera,
+		"global_transform",
+		impact_transform,
+		0.24
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+
+	target_zoom.tween_property(
+		camera,
+		"size",
+		impact_size,
+		0.24
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+
+	await target_zoom.finished
+
+	# ---------------------------------------------------------
+	# 1.00: flash exactly when the audio explosion occurs.
+	# ---------------------------------------------------------
+	if fireball_flash != null:
+		fireball_flash.visible = true
+		fireball_flash.modulate.a = 0.9
+
+		var flash_tween := create_tween()
+
+		flash_tween.tween_property(
+			fireball_flash,
+			"modulate:a",
+			0.0,
+			0.12
+		)
+
+		await flash_tween.finished
+
+		fireball_flash.visible = false
+		fireball_flash.modulate.a = 0.0
+
+	# Restore the camera quickly after impact.
+	var restore_tween := create_tween()
+	restore_tween.set_parallel(true)
+
+	restore_tween.tween_property(
+		camera,
+		"global_transform",
+		original_transform,
+		0.16
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+
+	restore_tween.tween_property(
+		camera,
+		"size",
+		original_size,
+		0.16
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+
+	await restore_tween.finished
+
+	camera.global_transform = original_transform
+	camera.size = original_size
+	camera.current = true
+	
+func get_player_berserker_bonus() -> int:
+	var value: int = player_statuses.get(
+		"berserker",
+		0
+	)
+
+	if value <= 0:
+		return 0
+
+	if player_hp > combat_max_player_hp / 2:
+		return 0
+
+	return value

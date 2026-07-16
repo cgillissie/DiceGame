@@ -22,7 +22,6 @@
 [ext_resource type="Resource" uid="uid://5gpwcvp6nbm4" path="res://Resources/Enemies/acolyte.tres" id="12_qp1s2"]
 [ext_resource type="PackedScene" uid="uid://wyx6nrds81fu" path="res://Scenes/damage_popup_3d.tscn" id="13_b4fdd"]
 [ext_resource type="AudioStream" uid="uid://bic5prsgjpvct" path="res://Assets/Sounds/DiceSFX/DiceClick01.wav" id="14_jcm61"]
-[ext_resource type="Texture2D" uid="uid://d1ck73cvwcthh" path="res://Assets/Sprites/UI/Menus/ReservedDieIcon.png" id="14_y3gh1"]
 [ext_resource type="AudioStream" uid="uid://btr6pneseftkw" path="res://Assets/Sounds/DiceSFX/DiceGrab02.wav" id="15_ley77"]
 [ext_resource type="AudioStream" uid="uid://cl2nrxpwywjn6" path="res://Assets/Sounds/DiceSFX/DiceClick02.wav" id="16_tmuf1"]
 [ext_resource type="PackedScene" uid="uid://cbsgq1ayk5uoq" path="res://Scenes/equipped_face_button.tscn" id="17_5g3cp"]
@@ -52,7 +51,6 @@
 [ext_resource type="Theme" uid="uid://m4nfa8q8nfv" path="res://Resources/Themes/GameUITheme.tres" id="36_47v24"]
 [ext_resource type="Texture2D" uid="uid://bu0l7vb0vya7w" path="res://Assets/Sprites/UI/Menus/DieBlank.png" id="36_xu8d0"]
 [ext_resource type="AudioStream" uid="uid://dqjvu2h4wi1dg" path="res://Assets/Sounds/Crafting/CookingSizzle.wav" id="37_fx8i1"]
-[ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="38_8is30"]
 [ext_resource type="AudioStream" uid="uid://dx7cwokc14qv4" path="res://Assets/Sounds/BeastMaster/BeastMasterWindHowling.wav" id="38_dmd4c"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="38_g5yct"]
 [ext_resource type="AudioStream" uid="uid://br7pd7kga6oj2" path="res://Assets/Sounds/BeastMaster/BeastMasterPanting.wav" id="39_avtp3"]
@@ -102,7 +100,6 @@ hit_2_face = ExtResource("7_3w34b")
 basic_d6 = ExtResource("4_yt1oa")
 encounter_pool = Array[ExtResource("6_8xcd4")]([SubResource("Resource_v3f3w"), ExtResource("8_50454"), ExtResource("9_ceo1n")])
 damage_popup_scene = ExtResource("13_b4fdd")
-reserve_icon_texture = ExtResource("14_y3gh1")
 random_die_pool = Array[ExtResource("3_ut0kg")]([ExtResource("4_yt1oa"), ExtResource("10_8xcd4"), ExtResource("11_f8ge6"), ExtResource("12_50454")])
 owned_die_button_scene = ExtResource("6_nar6d")
 equipped_face_button_scene = ExtResource("17_5g3cp")
@@ -717,6 +714,12 @@ mouse_filter = 2
 theme_override_constants/separation = 16
 alignment = 1
 
+[node name="UndoFusionButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox" unique_id=1395351150]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+disabled = true
+text = "Undo Fusion"
+
 [node name="CloseEditButton" type="Button" parent="EditDicePanel/MarginContainer/MainVBox/BottomButtonsHBox" unique_id=1863397998]
 custom_minimum_size = Vector2(90, 35)
 layout_mode = 2
@@ -1010,25 +1013,31 @@ grow_vertical = 0
 mouse_filter = 2
 
 [node name="ReserveHBox" type="HBoxContainer" parent="DiceArea" unique_id=233726623]
-custom_minimum_size = Vector2(64, 64)
-layout_mode = 0
-offset_left = 941.0
-offset_top = -80.0
-offset_right = 978.0
-offset_bottom = -48.0
+custom_minimum_size = Vector2(400, 64)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -308.0
+offset_right = 200.0
+offset_bottom = -223.0
+grow_horizontal = 2
+grow_vertical = 0
 alignment = 1
 
-[node name="ReserveIcon" type="TextureRect" parent="DiceArea/ReserveHBox" unique_id=368093409]
-custom_minimum_size = Vector2(32, 32)
+[node name="ReserveLocksCenter" type="CenterContainer" parent="DiceArea/ReserveHBox" unique_id=719472060]
 layout_mode = 2
-texture = ExtResource("14_y3gh1")
-expand_mode = 2
-stretch_mode = 5
+size_flags_horizontal = 3
 
-[node name="ReserveSlotsLabel" type="Label" parent="DiceArea/ReserveHBox" unique_id=1789168277]
+[node name="ReserveLocksContainer" type="HBoxContainer" parent="DiceArea/ReserveHBox/ReserveLocksCenter" unique_id=220843513]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("8_d53gg")
-theme_override_font_sizes/font_size = 32
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 6
+alignment = 1
 
 [node name="CenterContainer" type="CenterContainer" parent="DiceArea" unique_id=900916830]
 layout_mode = 1
@@ -1146,9 +1155,22 @@ theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
 theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
 theme_override_colors/icon_hover_pressed_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("8_d53gg")
-icon = ExtResource("38_8is30")
 alignment = 2
 icon_alignment = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="DiceArea/MulligemButton" unique_id=98662816]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MulligemIconsContainer" type="HBoxContainer" parent="DiceArea/MulligemButton/CenterContainer" unique_id=1293997168]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
 
 [node name="RelicLabel" type="Label" parent="." unique_id=73021013]
 layout_mode = 0
@@ -1515,6 +1537,12 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Prepare Expedition"
+
+[node name="PrepareHPLabel" type="Label" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=745708319]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "30/30"
+horizontal_alignment = 1
 
 [node name="SelectedBountyLabel" type="Label" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=239376296]
 layout_mode = 2
@@ -2034,6 +2062,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="RelicRewardOverlay" type="ColorRect" parent="." unique_id=1663083129]
+visible = false
 z_index = 500
 layout_mode = 1
 anchors_preset = 15
@@ -2061,26 +2090,40 @@ grow_vertical = 2
 layout_mode = 2
 
 [node name="GlowContainer" type="Control" parent="RelicRewardOverlay/CenterContainer/RewardVBox" unique_id=583939138]
-custom_minimum_size = Vector2(260, 260)
+custom_minimum_size = Vector2(360, 360)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
 [node name="GlowBack" type="TextureRect" parent="RelicRewardOverlay/CenterContainer/RewardVBox/GlowContainer" unique_id=35069742]
 modulate = Color(1, 0.83137256, 0.29411766, 0.7058824)
+custom_minimum_size = Vector2(360, 360)
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -64.0
+offset_right = 64.0
+offset_bottom = 64.0
 grow_horizontal = 2
 grow_vertical = 2
+pivot_offset_ratio = Vector2(0.5, 0.5)
+mouse_filter = 2
 texture = ExtResource("76_cda1e")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="RewardIcon" type="TextureRect" parent="RelicRewardOverlay/CenterContainer/RewardVBox/GlowContainer" unique_id=262586045]
+custom_minimum_size = Vector2(220, 220)
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 stretch_mode = 5
@@ -2155,3 +2198,14 @@ offset_right = 152.0
 offset_bottom = 134.0
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Combat Log"
+
+[node name="FireballFlash" type="ColorRect" parent="." unique_id=318791311]
+visible = false
+z_index = 2000
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

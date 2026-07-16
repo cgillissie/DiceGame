@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DiceData" format=3 uid="uid://cg7amsj6tyguq"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_ycrwg"]
+[ext_resource type="Resource" uid="uid://bwylkdosqjwv8" path="res://Resources/Faces/miss_face.tres" id="2_kjpo1"]
+[ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="2_sbg8c"]
+[ext_resource type="Resource" uid="uid://dscnflctgts6" path="res://Resources/Faces/fireball_face.tres" id="3_b2x5v"]
+
+[resource]
+script = ExtResource("2_sbg8c")
+die_name = "Fireball D6"
+faces = Array[ExtResource("1_ycrwg")]([ExtResource("2_kjpo1"), ExtResource("2_kjpo1"), ExtResource("2_kjpo1"), ExtResource("2_kjpo1"), ExtResource("2_kjpo1"), ExtResource("3_b2x5v")])
+metadata/_custom_type_script = "uid://2s2qkfsmu0bc"

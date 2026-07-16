@@ -6,6 +6,7 @@
 [ext_resource type="Resource" uid="uid://bxhdjt8rdci25" path="res://Resources/Dice/priest_d8.tres" id="3_wuu4g"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="5_wuu4g"]
 [ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_1_face.tres" id="7_iaovh"]
+[ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="8_rvi0j"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="10_lut8i"]
 [ext_resource type="SpriteFrames" uid="uid://cbl1o38c3eud6" path="res://Resources/SpriteFrames/PriestSpriteFrames.tres" id="11_rvi0j"]
 [ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="11_w4y3r"]
@@ -22,5 +23,5 @@ gold_reward = 12
 sprite_frames = ExtResource("11_rvi0j")
 sprite_scale = Vector3(4, 4, 4)
 food_drop_chance = 0.1
-food_drop_pool = Array[ExtResource("10_lut8i")]([ExtResource("11_w4y3r")])
+food_drop_pool = Array[ExtResource("10_lut8i")]([ExtResource("11_w4y3r"), ExtResource("8_rvi0j")])
 metadata/_custom_type_script = "uid://cm05r1bi3m8a7"
