@@ -39,7 +39,9 @@ var player_position: Node3D
 
 
 var camera_original_position: Vector3
-
+var shatter_camera_running: bool = false
+var shatter_camera_original_transform: Transform3D
+var shatter_camera_original_size: float
 
 @onready var actions_button: Button = $DiceArea/CenterContainer/DiceGroupsContainer/ActionsGroup/ActionsButton
 @onready var hits_button: Button = $DiceArea/CenterContainer/DiceGroupsContainer/HitsGroup/HitsButton
@@ -2815,10 +2817,29 @@ func remove_defeated_enemies():
 				shattered = int(enemy["freeze_stacks"]) > 0
 
 			if shattered:
-				cinematic_shatter_focus(enemy_node)
-				await enemy_node.play_shatter_death(shatter_death_sound)
+				var camera_focused: bool = await cinematic_shatter_focus(
+					enemy_node
+				)
+
+				await enemy_node.play_shatter_death(
+					shatter_death_sound
+				)
+
+				if camera_focused:
+					await shatter_camera_shake(
+						combat_camera,
+						0.32,
+						0.22
+					)
+
+					await restore_shatter_camera()
 			else:
-				AudioManager.play_one_shot(enemy_death_sound, 1.05, 1.4)
+				AudioManager.play_one_shot(
+					enemy_death_sound,
+					1.05,
+					1.4
+				)
+
 				await enemy_node.death_animation()
 
 		active_enemies.remove_at(index)
@@ -3402,15 +3423,33 @@ func hide_all_groups():
 	actions_container.get_parent().visible = false
 	
 func update_combat_number_label():
-	if expedition_is_boss_fight:
-		combat_number_label.text = "Boss Encounter"
-	else:
-		combat_number_label.text = "Encounter: %d/%d" % [
-			expedition_progress + 1,
-			expedition_required_encounters
-		]
+	if is_in_town or !expedition_active:
+		combat_number_label.visible = false
+		return
 
-	combat_number_label.visible = !is_in_town
+	var total_encounters: int = expedition_required_encounters + 1
+	var current_encounter_number: int = expedition_progress + 1
+
+	if expedition_is_boss_fight or is_current_encounter_boss():
+		current_encounter_number = total_encounters
+
+	current_encounter_number = clamp(
+		current_encounter_number,
+		1,
+		total_encounters
+	)
+
+	combat_number_label.text = (
+		"Encounter: "
+		+ str(current_encounter_number)
+		+ "/"
+		+ str(total_encounters)
+	)
+
+	if expedition_is_boss_fight or is_current_encounter_boss():
+		combat_number_label.text += " — Boss"
+
+	combat_number_label.visible = true
 	
 func clear_all_combat_dice_state():
 	selected_dice_order.clear()
@@ -3926,13 +3965,6 @@ func can_fuse_faces(
 	# ---------------------------------------------------------
 
 	if (
-		(type_a == "hit" and type_b == "block")
-		or
-		(type_a == "block" and type_b == "hit")
-	):
-		return true
-
-	if (
 		(type_a == "dodge" and type_b == "crit")
 		or
 		(type_a == "crit" and type_b == "dodge")
@@ -3996,13 +4028,6 @@ func create_fused_face(
 
 	var type_a: String = face_a.result_type
 	var type_b: String = face_b.result_type
-
-	if (
-		(type_a == "hit" and type_b == "block")
-		or
-		(type_a == "block" and type_b == "hit")
-	):
-		return shield_bash_face_template.duplicate(true)
 
 	if (
 		(type_a == "dodge" and type_b == "crit")
@@ -8863,34 +8888,120 @@ func hide_all_major_panels():
 	mulligem_button.visible = false
 	dice_bag_panel.visible = false
 
-func cinematic_shatter_focus(enemy_node: Node3D):
-	var camera := combat_camera
+func cinematic_shatter_focus(
+	enemy_node: Node3D
+) -> bool:
+	while shatter_camera_running:
+		await get_tree().process_frame
+
+	var camera: Camera3D = combat_camera
 
 	if camera == null:
 		camera = get_viewport().get_camera_3d()
 
-	if camera == null or !is_instance_valid(enemy_node):
-		return
+	if (
+		camera == null
+		or enemy_node == null
+		or !is_instance_valid(enemy_node)
+	):
+		return false
 
-	var original_size := camera.size
-	var zoom_size := original_size * 0.60
-	var original_position := camera.global_position
-	var direction_to_enemy := (enemy_node.global_position - camera.global_position).normalized()
-	var zoom_position := original_position + direction_to_enemy * 18.0
+	shatter_camera_running = true
+
+	shatter_camera_original_transform = (
+		camera.global_transform
+	)
+
+	shatter_camera_original_size = camera.size
+	camera.current = true
+
+	var direction_to_enemy: Vector3 = (
+		enemy_node.global_position
+		- camera.global_position
+	).normalized()
+
+	var target_transform: Transform3D = (
+		camera.global_transform
+	)
+
+	target_transform.origin += (
+		direction_to_enemy * 18.0
+	)
+
+	var target_size: float = max(
+		shatter_camera_original_size * 0.60,
+		0.1
+	)
 
 	var tween := create_tween()
-	tween.tween_property(camera, "global_position", zoom_position, 0.22)
-	tween.parallel().tween_property(camera, "size", zoom_size, 0.22)
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_IN_OUT)
 
-	await get_tree().create_timer(0.75).timeout
+	tween.tween_property(
+		camera,
+		"global_transform",
+		target_transform,
+		0.22
+	)
 
-	await shatter_camera_shake(camera, 0.32, 0.22)
+	tween.tween_property(
+		camera,
+		"size",
+		target_size,
+		0.22
+	)
 
-	var out := create_tween()
-	out.tween_property(camera, "global_position", original_position, 0.18)
-	out.parallel().tween_property(camera, "size", original_size, 0.18)
-	await out.finished
+	await tween.finished
 
+	return true
+func restore_shatter_camera():
+	var camera: Camera3D = combat_camera
+
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera == null:
+		shatter_camera_running = false
+		return
+
+	camera.current = true
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_IN_OUT)
+
+	tween.tween_property(
+		camera,
+		"global_transform",
+		shatter_camera_original_transform,
+		0.22
+	)
+
+	tween.tween_property(
+		camera,
+		"size",
+		shatter_camera_original_size,
+		0.22
+	)
+
+	await tween.finished
+
+	# Force exact restoration so repeated camera effects cannot drift.
+	camera.global_transform = (
+		shatter_camera_original_transform
+	)
+
+	camera.size = shatter_camera_original_size
+	camera.current = true
+
+	shatter_camera_running = false
+
+	# Ensure anything waiting to start a new cinematic gets
+	# one fully restored frame.
+	await get_tree().process_frame
+	
 func shatter_camera_shake(camera: Camera3D, duration: float = 0.28, strength: float = 0.18):
 	if camera == null:
 		return
@@ -8931,158 +9042,284 @@ func beastmaster_phase_transition(enemy_index: int):
 
 	beastmaster_transition_running = true
 	begin_expedition_button.visible = false
+
+	# Lock combat immediately.
+	is_resolving_turn = true
+	end_round_button.disabled = true
+	mulligem_button.disabled = true
+	set_combat_ui_enabled(false)
+
 	if enemy_index < 0 or enemy_index >= active_enemies.size():
-		beastmaster_transition_running = false
-		update_begin_expedition_button_visibility()
+		push_error(
+			"Invalid Beast Master enemy index: "
+			+ str(enemy_index)
+		)
+
+		finish_failed_beastmaster_transition()
 		return
 
 	if enemy_index >= enemy_3d_nodes.size():
-		beastmaster_transition_running = false
-		update_begin_expedition_button_visibility()
+		push_error(
+			"Beast Master has no matching Enemy3D node at index "
+			+ str(enemy_index)
+		)
+
+		finish_failed_beastmaster_transition()
 		return
 
-		is_resolving_turn = false
-		end_round_button.disabled = false
-		set_combat_ui_enabled(true)
-		beastmaster_transition_running = false
-		update_begin_expedition_button_visibility()
-		return
-	var enemy = active_enemies[enemy_index]
-	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var beastmaster_enemy: Dictionary = active_enemies[enemy_index]
+	var beastmaster_node: Enemy3D = enemy_3d_nodes[enemy_index]
 
-	enemy["downed"] = false
-	enemy["phase_two_started"] = true
+	if !is_instance_valid(beastmaster_node):
+		push_error("Beast Master Enemy3D node is invalid.")
+
+		finish_failed_beastmaster_transition()
+		return
+
+	beastmaster_enemy["downed"] = false
+	beastmaster_enemy["phase_two_started"] = true
 
 	add_combat_log_entry(
 		"The Beast Master called his pack."
 	)
-	
-	end_round_button.disabled = true
-	mulligem_button.disabled = true
+
 	await reset_all_dice_assignments_for_phase_transition()
-	set_combat_ui_enabled(false)
 
 	request_music_fade_out.emit()
 
-	await cinematic_beastmaster_focus(enemy_node)
+	var focus_succeeded: bool = await cinematic_beastmaster_focus(
+		beastmaster_node
+	)
 
-	var sprite := enemy_node.sprite
+	if !focus_succeeded:
+		push_warning(
+			"Beast Master camera focus failed. "
+			+ "Continuing the phase transition."
+		)
 
-	sprite.play("cutscene")
+	var sprite: AnimatedSprite3D = beastmaster_node.sprite
 
-	AudioManager.play_one_shot(beastmaster_pant_sound)
+	if sprite != null and sprite.sprite_frames.has_animation("cutscene"):
+		sprite.play("cutscene")
 
-	AudioManager.play_one_shot(beastmaster_wind_sound)
+		if beastmaster_pant_sound != null:
+			AudioManager.play_one_shot(
+				beastmaster_pant_sound
+			)
 
-	await wait_until_sprite_frame(sprite, 32)
-	AudioManager.play_one_shot(beastmaster_inhale_sound)
+		if beastmaster_wind_sound != null:
+			AudioManager.play_one_shot(
+				beastmaster_wind_sound
+			)
 
-	await wait_until_sprite_frame(sprite, 38)
-	AudioManager.play_one_shot(beastmaster_horn_sound)
+		await wait_until_sprite_frame(
+			sprite,
+			32,
+			3.0
+		)
+
+		if beastmaster_inhale_sound != null:
+			AudioManager.play_one_shot(
+				beastmaster_inhale_sound
+			)
+
+		await wait_until_sprite_frame(
+			sprite,
+			38,
+			3.0
+		)
+
+		if beastmaster_horn_sound != null:
+			AudioManager.play_one_shot(
+				beastmaster_horn_sound
+			)
+
+		await shatter_camera_shake(
+			combat_camera,
+			0.35,
+			0.28
+		)
+
+		await wait_for_sprite_animation(
+			sprite,
+			4.0
+		)
+	else:
+		push_warning(
+			"Beast Master has no cutscene animation. "
+			+ "Skipping directly to Phase Two."
+		)
+
+	await get_tree().create_timer(0.25).timeout
+
+	request_music_change.emit(
+		beastmaster_phase2_music
+	)
+
+	# Set the Beast Master's Phase Two HP before rebuilding the roster.
+	beastmaster_enemy["max_hp"] = (
+		beastmaster_enemy["data"].max_hp
+	)
+
+	beastmaster_enemy["hp"] = max(
+		1,
+		int(
+			beastmaster_enemy["max_hp"]
+			* beastmaster_enemy["data"].phase_two_hp_percent
+		)
+	)
+
+	beastmaster_enemy["attack"] = 0
+	beastmaster_enemy["crit"] = 0
+	beastmaster_enemy["block"] = 0
+	beastmaster_enemy["heal"] = 0
+	beastmaster_enemy["rolled_faces"] = []
+	beastmaster_enemy["roll_text"] = "Recovering"
+
+	var pack_created: bool = await spawn_beastmaster_phase2_pack(
+		enemy_index
+	)
+
+	if !pack_created:
+		push_error(
+			"Beast Master Phase Two pack could not be created."
+		)
+
+		await cinematic_beastmaster_zoom_out()
+		finish_failed_beastmaster_transition()
+		return
+
 	await shatter_camera_shake(
 		combat_camera,
 		0.35,
 		0.28
 	)
-		
-	await sprite.animation_finished
-	await get_tree().create_timer(0.8).timeout
 
-	request_music_change.emit(beastmaster_phase2_music)
-	if enemy_node.enemy_data != null and sprite.sprite_frames.has_animation(enemy_node.enemy_data.idle_animation_name):
-		sprite.play(enemy_node.enemy_data.idle_animation_name)
-
-	enemy["max_hp"] = enemy["data"].max_hp
-	enemy["hp"] = max(1, int(enemy["max_hp"] * enemy["data"].phase_two_hp_percent))
-
-	await spawn_beastmaster_phase2_pack(enemy_index)
-	enemy["attack"] = 0
-	enemy["crit"] = 0
-	enemy["block"] = 0
-	enemy["heal"] = 0
-	enemy["rolled_faces"] = []
-	enemy["roll_text"] = "Recovering"
-	update_enemy_3d_nodes()
-	await shatter_camera_shake(
-		combat_camera,
-		0.35,
-		0.28
-	)
 	await cinematic_beastmaster_zoom_out()
 
+	# Perform one authoritative visual rebuild using the complete
+	# Phase Two active_enemies array.
 	await clear_all_enemy_3d_nodes()
 	spawn_enemy_3d_nodes()
 
+	await get_tree().process_frame
+
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
-	if active_enemies.size() != 4 or enemy_3d_nodes.size() != 4:
+
+	var phase_two_valid: bool = (
+		active_enemies.size() == 4
+		and enemy_3d_nodes.size() == 4
+	)
+
+	if !phase_two_valid:
 		push_error(
-			"Beast Master phase two failed. Enemies: "
+			"Beast Master Phase Two visual rebuild failed. "
+			+ "Enemies: "
 			+ str(active_enemies.size())
 			+ ", nodes: "
 			+ str(enemy_3d_nodes.size())
 		)
 
-		is_resolving_turn = false
-		end_round_button.disabled = false
-		set_combat_ui_enabled(true)
-		beastmaster_transition_running = false
-		update_begin_expedition_button_visibility()
+		finish_failed_beastmaster_transition()
 		return
+
 	regroup_dice()
 	update_group_visibility()
 	update_assigned_panel_visibility()
+	update_enemy_button_texts()
+	update_player_3d_node()
 
 	set_combat_ui_enabled(true)
-	update_mulligem_button()
+
+	is_resolving_turn = false
 	end_round_button.disabled = false
 	beastmaster_transition_running = false
+
+	update_mulligem_button()
+	update_begin_expedition_button_visibility()
+
+	add_combat_log_entry(
+		"Beast Master Phase Two began."
+	)
+	
+func finish_failed_beastmaster_transition():
+	is_resolving_turn = false
+	end_round_button.disabled = false
+	beastmaster_transition_running = false
+
+	set_combat_ui_enabled(true)
+
+	update_mulligem_button()
 	update_begin_expedition_button_visibility()
 	
 func clear_all_enemy_3d_nodes():
 	for enemy_node in enemy_3d_nodes:
-		if is_instance_valid(enemy_node):
-			enemy_node.queue_free()
+		if !is_instance_valid(enemy_node):
+			continue
+
+		enemy_node.queue_free()
 
 	enemy_3d_nodes.clear()
 
+	# Allow queued nodes to leave the scene tree before rebuilding.
+	await get_tree().process_frame
 	await get_tree().process_frame
 	
-func cinematic_beastmaster_focus(enemy_node: Node3D):
+func cinematic_beastmaster_focus(
+	enemy_node: Node3D
+) -> bool:
 	var camera: Camera3D = combat_camera
 
 	if camera == null:
 		camera = get_viewport().get_camera_3d()
 
 	if camera == null:
-		push_error("Beast Master cutscene could not find a camera.")
-		return
+		push_error(
+			"Beast Master cutscene could not find a camera."
+		)
 
-	if !is_instance_valid(enemy_node):
-		push_error("Beast Master cutscene received an invalid enemy node.")
-		return
+		return false
 
-	beastmaster_camera_original_transform = camera.global_transform
+	if enemy_node == null or !is_instance_valid(enemy_node):
+		push_error(
+			"Beast Master cutscene received an invalid enemy node."
+		)
+
+		return false
+
+	beastmaster_camera_original_transform = (
+		camera.global_transform
+	)
+
 	beastmaster_camera_original_size = camera.size
 
 	camera.current = true
 
-	var zoom_size: float = beastmaster_camera_original_size * 0.65
+	var zoom_size: float = max(
+		beastmaster_camera_original_size * 0.65,
+		0.1
+	)
+
 	var direction_to_enemy: Vector3 = (
-		enemy_node.global_position - camera.global_position
+		enemy_node.global_position
+		- camera.global_position
 	).normalized()
 
-	var zoom_position: Vector3 = (
+	var target_transform: Transform3D = (
+		camera.global_transform
+	)
+
+	target_transform.origin = (
 		camera.global_position
 		+ direction_to_enemy * 1.4
 	)
 
-	var target_transform := camera.global_transform
-	target_transform.origin = zoom_position
-
 	var tween := create_tween()
+
 	tween.set_trans(Tween.TRANS_QUAD)
 	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.set_parallel(true)
 
 	tween.tween_property(
 		camera,
@@ -9091,7 +9328,7 @@ func cinematic_beastmaster_focus(enemy_node: Node3D):
 		0.35
 	)
 
-	tween.parallel().tween_property(
+	tween.tween_property(
 		camera,
 		"size",
 		zoom_size,
@@ -9099,6 +9336,8 @@ func cinematic_beastmaster_focus(enemy_node: Node3D):
 	)
 
 	await tween.finished
+
+	return true
 	
 func restore_beastmaster_camera():
 	var camera: Camera3D = combat_camera
@@ -9107,42 +9346,95 @@ func restore_beastmaster_camera():
 		camera = get_viewport().get_camera_3d()
 
 	if camera == null:
-		push_error("Could not restore the Beast Master camera.")
+		push_error(
+			"Could not restore the Beast Master camera."
+		)
+
 		return
 
 	camera.current = true
 
 	var tween := create_tween()
+
 	tween.set_trans(Tween.TRANS_QUAD)
 	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.set_parallel(true)
 
 	tween.tween_property(
 		camera,
 		"global_transform",
 		beastmaster_camera_original_transform,
-		0.6
+		0.35
 	)
 
-	tween.parallel().tween_property(
+	tween.tween_property(
 		camera,
 		"size",
 		beastmaster_camera_original_size,
-		0.6
+		0.35
 	)
 
 	await tween.finished
 
-	camera.global_transform = beastmaster_camera_original_transform
+	camera.global_transform = (
+		beastmaster_camera_original_transform
+	)
+
 	camera.size = beastmaster_camera_original_size
 	camera.current = true
 	
-func wait_until_sprite_frame(sprite: AnimatedSprite3D, target_frame: int):
-	while sprite != null \
-		and sprite.is_playing() \
-		and sprite.animation == "cutscene" \
-		and sprite.frame < target_frame:
-		await get_tree().process_frame
+func wait_until_sprite_frame(
+	sprite: AnimatedSprite3D,
+	target_frame: int,
+	timeout_seconds: float = 3.0
+):
+	if sprite == null or !is_instance_valid(sprite):
+		return
 
+	var elapsed: float = 0.0
+
+	while (
+		is_instance_valid(sprite)
+		and sprite.is_playing()
+		and sprite.animation == "cutscene"
+		and sprite.frame < target_frame
+		and elapsed < timeout_seconds
+	):
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+
+	if elapsed >= timeout_seconds:
+		push_warning(
+			"Timed out waiting for Beast Master cutscene frame "
+			+ str(target_frame)
+			+ "."
+		)
+
+func wait_for_sprite_animation(
+	sprite: AnimatedSprite3D,
+	timeout_seconds: float = 4.0
+):
+	if sprite == null or !is_instance_valid(sprite):
+		return
+
+	var elapsed: float = 0.0
+
+	while (
+		is_instance_valid(sprite)
+		and sprite.is_playing()
+		and elapsed < timeout_seconds
+	):
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+
+	if elapsed >= timeout_seconds:
+		push_warning(
+			"Beast Master cutscene animation timed out."
+		)
+
+		if is_instance_valid(sprite):
+			sprite.stop()
+			
 func cinematic_beastmaster_zoom_out():
 	var camera: Camera3D = combat_camera
 
@@ -9150,14 +9442,19 @@ func cinematic_beastmaster_zoom_out():
 		camera = get_viewport().get_camera_3d()
 
 	if camera == null:
-		push_error("Could not restore Beast Master camera.")
+		push_error(
+			"Could not restore the Beast Master camera."
+		)
+
 		return
 
 	camera.current = true
 
 	var tween := create_tween()
+
 	tween.set_trans(Tween.TRANS_QUAD)
 	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.set_parallel(true)
 
 	tween.tween_property(
 		camera,
@@ -9166,7 +9463,7 @@ func cinematic_beastmaster_zoom_out():
 		0.55
 	)
 
-	tween.parallel().tween_property(
+	tween.tween_property(
 		camera,
 		"size",
 		beastmaster_camera_original_size,
@@ -9175,52 +9472,85 @@ func cinematic_beastmaster_zoom_out():
 
 	await tween.finished
 
-	# Force the exact values after the tween to prevent drift.
-	camera.global_transform = beastmaster_camera_original_transform
+	camera.global_transform = (
+		beastmaster_camera_original_transform
+	)
+
 	camera.size = beastmaster_camera_original_size
 	camera.current = true
 	
-func spawn_beastmaster_phase2_pack(beastmaster_index: int):
+func spawn_beastmaster_phase2_pack(
+	beastmaster_index: int
+) -> bool:
 	print("========================")
-	print("PHASE 2 START")
-	if beastmaster_index < 0 or beastmaster_index >= active_enemies.size():
-		push_error("Invalid Beast Master index: " + str(beastmaster_index))
-		return
+	print("BEAST MASTER PHASE TWO PACK BUILD")
+
+	if (
+		beastmaster_index < 0
+		or beastmaster_index >= active_enemies.size()
+	):
+		push_error(
+			"Invalid Beast Master index: "
+			+ str(beastmaster_index)
+		)
+
+		return false
 
 	if beastmaster_exvellus_enemy == null:
-		push_error("Beast Master Exvellus resource is not assigned.")
-		return
+		push_error(
+			"Beast Master Exvellus resource is not assigned."
+		)
+
+		return false
 
 	if beastmaster_nigel_enemy == null:
-		push_error("Beast Master Nigel resource is not assigned.")
-		return
+		push_error(
+			"Beast Master Nigel resource is not assigned."
+		)
+
+		return false
 
 	if beastmaster_noir_enemy == null:
-		push_error("Beast Master Noir resource is not assigned.")
-		return
+		push_error(
+			"Beast Master Noir resource is not assigned."
+		)
+
+		return false
 
 	if beastmaster_phase2_support_die == null:
-		push_error("Beast Master phase-two support die is not assigned.")
-		return
+		push_error(
+			"Beast Master Phase Two support die is not assigned."
+		)
+
+		return false
 
 	if enemy_positions == null:
-		push_error("EnemyPositions is null during Beast Master phase two.")
-		return
+		push_error(
+			"EnemyPositions is null during Beast Master Phase Two."
+		)
+
+		return false
 
 	if enemy_positions.get_child_count() < 4:
 		push_error(
-			"Beast Master level requires 4 enemy positions, but only has "
+			"Beast Master level requires four enemy positions, "
+			+ "but only has "
 			+ str(enemy_positions.get_child_count())
 			+ "."
 		)
-		return
 
-	var beastmaster_enemy: Dictionary = active_enemies[beastmaster_index]
-	
-	# Prepare the Beast Master before replacing the array.
+		return false
+
+	var beastmaster_enemy: Dictionary = (
+		active_enemies[beastmaster_index]
+	)
+
 	beastmaster_enemy["downed"] = false
 	beastmaster_enemy["phase_two_started"] = true
-	beastmaster_enemy["phase_two_support_die"] = beastmaster_phase2_support_die
+	beastmaster_enemy["phase_two_support_die"] = (
+		beastmaster_phase2_support_die
+	)
+
 	beastmaster_enemy["attack"] = 0
 	beastmaster_enemy["crit"] = 0
 	beastmaster_enemy["block"] = 0
@@ -9228,54 +9558,74 @@ func spawn_beastmaster_phase2_pack(beastmaster_index: int):
 	beastmaster_enemy["rolled_faces"] = []
 	beastmaster_enemy["roll_text"] = "Recovering"
 
+	print("PHASE TWO: Creating Exvellus...")
+
 	var exvellus: Dictionary = create_enemy_instance(
 		beastmaster_exvellus_enemy
 	)
+
+	print(
+		"PHASE TWO: Exvellus created. Data: ",
+		exvellus.get("data", null)
+	)
+
+	print("PHASE TWO: Creating Nigel...")
+
 	var nigel: Dictionary = create_enemy_instance(
 		beastmaster_nigel_enemy
 	)
+
+	print(
+		"PHASE TWO: Nigel created. Data: ",
+		nigel.get("data", null)
+	)
+
+	print("PHASE TWO: Creating Noir...")
+
 	var noir: Dictionary = create_enemy_instance(
 		beastmaster_noir_enemy
 	)
 
-	# Build the complete phase-two array before touching the current one.
+	print(
+		"PHASE TWO: Noir created. Data: ",
+		noir.get("data", null)
+	)
+
+	print("PHASE TWO: All animal dictionaries created.")
+
 	var phase_two_enemies: Array = [
 		exvellus,
 		nigel,
 		beastmaster_enemy,
 		noir
 	]
-	print("Enemies:", active_enemies.size())
-
-	for i in active_enemies.size():
-		print(
-			i,
-			active_enemies[i]["data"].enemy_name
-		)
-	# Remove phase-one visuals before replacing the enemy data.
-	await clear_enemy_3d_nodes_immediately()
 
 	active_enemies.clear()
 
 	for phase_two_enemy in phase_two_enemies:
 		active_enemies.append(phase_two_enemy)
 
-	print("PHASE TWO ENEMY COUNT: ", active_enemies.size())
+	print(
+		"PHASE TWO ENEMY COUNT: ",
+		active_enemies.size()
+	)
 
 	for i in active_enemies.size():
-		var enemy_name: String = active_enemies[i]["data"].enemy_name
-		print("PHASE TWO INDEX ", i, ": ", enemy_name)
+		var enemy_data: EnemyData = (
+			active_enemies[i]["data"]
+		)
 
-	spawn_enemy_3d_nodes()
-	
-	# Confirm that all four visual nodes were created.
-	print("PHASE TWO NODE COUNT: ", enemy_3d_nodes.size())
+		print(
+			"PHASE TWO INDEX ",
+			i,
+			": ",
+			enemy_data.enemy_name
+		)
 
-	refresh_enemy_buttons()
-	print("Enemy buttons rebuilt")
-	update_enemy_3d_nodes()
-	print("Enemy nodes updated")
 	print("========================")
+
+	return active_enemies.size() == 4
+	
 func reset_all_dice_assignments_for_phase_transition():
 	selected_dice_order.clear()
 	selected_enemy_index = -1
@@ -9288,13 +9638,13 @@ func reset_all_dice_assignments_for_phase_transition():
 		die.selected = false
 		die.reserved = false
 		die.visible = true
+
 		die.set_compact_mode(false)
 		die.update_visual()
 
 		if die.get_parent() != rolling_hidden_area:
 			die.reparent(rolling_hidden_area)
 
-	# Remove the old assignment containers.
 	for child in assigned_dice_overlay.get_children():
 		child.queue_free()
 
@@ -9303,6 +9653,8 @@ func reset_all_dice_assignments_for_phase_transition():
 	await get_tree().process_frame
 
 	regroup_dice()
+	calculate_auto_block()
+	update_reserve_slots_display()
 	update_group_visibility()
 	update_assigned_panel_visibility()
 	

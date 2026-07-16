@@ -5,6 +5,7 @@
 [ext_resource type="Resource" uid="uid://cip0r1wht8x4h" path="res://Resources/Dice/acolyte_d10.tres" id="2_gktwq"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="3_ebmd8"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="4_gd8pt"]
+[ext_resource type="Resource" uid="uid://c4priatr1lxxg" path="res://Resources/Faces/bleed_1_face.tres" id="4_u5rpa"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="5_gktwq"]
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="5_rg5ed"]
 [ext_resource type="SpriteFrames" uid="uid://cploobw2y5utp" path="res://Resources/SpriteFrames/WolfSpriteFrames.tres" id="7_u5rpa"]
@@ -16,6 +17,7 @@ script = ExtResource("4_gd8pt")
 enemy_name = "Exvellus"
 max_hp = 18
 dice_pool = Array[ExtResource("1_bbbgj")]([ExtResource("2_gktwq"), ExtResource("2_gktwq")])
+face_drop_pool = Array[ExtResource("2_dhik5")]([ExtResource("4_u5rpa")])
 sprite_frames = ExtResource("7_u5rpa")
 sprite_scale = Vector3(4, 4, 4)
 traits = Array[ExtResource("5_gktwq")]([ExtResource("9_b4iim"), ExtResource("10_rg5ed")])
