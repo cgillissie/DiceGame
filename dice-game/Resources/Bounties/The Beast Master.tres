@@ -14,7 +14,6 @@
 [ext_resource type="Resource" uid="uid://cvkofa3fdpxj2" path="res://Resources/Encounters/The Beast Master/raven_flock.tres" id="8_kwqcf"]
 [ext_resource type="Resource" uid="uid://6hqvuwyfp4aw" path="res://Resources/Encounters/The Beast Master/stampede.tres" id="9_bkmbr"]
 [ext_resource type="Resource" uid="uid://bf23o57mj8xi2" path="res://Resources/Encounters/The Beast Master/wolf_pack.tres" id="10_vyxp2"]
-[ext_resource type="Resource" uid="uid://bsmdc53g4o3c5" path="res://Resources/Faces/crit_3_face.tres" id="13_oc61x"]
 
 [resource]
 script = ExtResource("2_i80lr")
@@ -27,5 +26,4 @@ reward_food_tier_unlock = 2
 reward_volatile_cores = 1
 reward_gold = 300
 reward_reserve_slots = 1
-unlocked_merchant_faces = Array[ExtResource("3_0ry4k")]([ExtResource("13_oc61x")])
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

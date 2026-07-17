@@ -891,14 +891,18 @@ func get_current_incoming_damage() -> int:
 	return incoming
 
 func update_begin_expedition_button_visibility():
-	begin_expedition_button.visible = is_in_town \
-		and !beastmaster_transition_running \
-		and !merchant_panel.visible \
-		and !food_craft_panel.visible \
-		and !edit_dice_panel.visible \
-		and !bounty_board_panel.visible \
-		and !prepare_expedition_panel.visible \
+	begin_expedition_button.visible = (
+		is_in_town
+		and !expedition_active
+		and !beastmaster_transition_running
+		and !is_resolving_turn
+		and !merchant_panel.visible
+		and !food_craft_panel.visible
+		and !edit_dice_panel.visible
+		and !bounty_board_panel.visible
+		and !prepare_expedition_panel.visible
 		and !expedition_camp_panel.visible
+	)
 
 func update_enemy_hover_preview():
 	if is_menu_blocking_input():
@@ -1002,28 +1006,56 @@ func select_encounter(index: int):
 func get_encounter_text(encounter: EncounterData) -> String:
 	return encounter.encounter_name
 	
-func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
-	var scaled_max_hp = enemy_data.max_hp
-	
+func create_enemy_instance(
+	enemy_data: EnemyData
+) -> Dictionary:
+	if enemy_data == null:
+		push_error(
+			"create_enemy_instance received null EnemyData."
+		)
+		return {}
+
+	var scaled_max_hp: int = enemy_data.max_hp
 	var bonus_traits: Array[EnemyTrait] = []
-	
-	if run_encounters_completed >= random_trait_scaling_threshold:
-		if randf() <= random_trait_chance:
-			var valid_traits: Array[EnemyTrait] = []
 
-			for possible_trait in random_enemy_trait_pool:
-				var already_has_trait := false
+	if (
+		run_encounters_completed
+		>= random_trait_scaling_threshold
+		and randf() <= random_trait_chance
+	):
+		var valid_traits: Array[EnemyTrait] = []
 
-				for existing_trait in enemy_data.traits:
-					if existing_trait.trait_id == possible_trait.trait_id:
-						already_has_trait = true
-						break
+		for possible_trait in random_enemy_trait_pool:
+			if possible_trait == null:
+				continue
 
-				if !already_has_trait:
-					valid_traits.append(possible_trait)
+			var already_has_trait: bool = false
 
-			if valid_traits.size() > 0:
-				bonus_traits.append(valid_traits.pick_random())
+			for existing_trait in enemy_data.traits:
+				if existing_trait == null:
+					continue
+
+				if (
+					existing_trait.trait_id
+					== possible_trait.trait_id
+				):
+					already_has_trait = true
+					break
+
+			if !already_has_trait:
+				valid_traits.append(
+					possible_trait
+				)
+
+		if !valid_traits.is_empty():
+			var chosen_trait: EnemyTrait = (
+				valid_traits.pick_random()
+			)
+
+			if chosen_trait != null:
+				bonus_traits.append(
+					chosen_trait
+				)
 
 	return {
 		"data": enemy_data,
@@ -1043,7 +1075,7 @@ func create_enemy_instance(enemy_data: EnemyData) -> Dictionary:
 		"bonus_traits": bonus_traits,
 		"phase_two_started": false,
 		"agile_used": false,
-		"downed": false,
+		"downed": false
 	}
 	
 func spawn_enemy_3d_nodes():
@@ -1073,6 +1105,85 @@ func spawn_enemy_3d_nodes():
 		enemy_node.status_hovered.connect(show_status_tooltip)
 		enemy_node.status_unhovered.connect(hide_status_tooltip)
 		
+func rebuild_enemy_3d_nodes() -> bool:
+	if enemy_positions == null:
+		push_error("Cannot rebuild enemies: enemy_positions is null.")
+		return false
+
+	if enemy_positions.get_child_count() < active_enemies.size():
+		push_error(
+			"Not enough enemy positions. Need "
+			+ str(active_enemies.size())
+			+ ", have "
+			+ str(enemy_positions.get_child_count())
+			+ "."
+		)
+		return false
+
+	# Remove every existing enemy immediately.
+	# Using free() here avoids queue_free timing races during cinematics.
+	for enemy_node in enemy_3d_nodes:
+		if is_instance_valid(enemy_node):
+			enemy_node.free()
+
+	enemy_3d_nodes.clear()
+
+	# Also clear anything left directly inside the spawn slots.
+	for slot in enemy_positions.get_children():
+		for child in slot.get_children():
+			if child is Enemy3D and is_instance_valid(child):
+				child.free()
+
+	await get_tree().process_frame
+
+	for i in active_enemies.size():
+		var enemy: Dictionary = active_enemies[i]
+		var enemy_data: EnemyData = enemy.get("data", null)
+
+		if enemy_data == null:
+			push_error(
+				"Enemy at index "
+				+ str(i)
+				+ " has no EnemyData."
+			)
+			return false
+
+		var slot: Node3D = enemy_positions.get_child(i)
+		var enemy_node: Enemy3D = enemy_3d_scene.instantiate()
+
+		slot.add_child(enemy_node)
+		enemy_node.position = Vector3.ZERO
+		enemy_node.visible = true
+
+		enemy_node.setup(i, enemy)
+
+		enemy_node.selected.connect(
+			select_enemy_target
+		)
+
+		enemy_node.status_hovered.connect(
+			show_status_tooltip
+		)
+
+		enemy_node.status_unhovered.connect(
+			hide_status_tooltip
+		)
+
+		enemy_3d_nodes.append(enemy_node)
+
+	await get_tree().process_frame
+
+	if enemy_3d_nodes.size() != active_enemies.size():
+		push_error(
+			"Enemy visual rebuild mismatch. Data: "
+			+ str(active_enemies.size())
+			+ ", visuals: "
+			+ str(enemy_3d_nodes.size())
+		)
+		return false
+
+	return true
+	
 func roll_enemy_intents():
 	for enemy in active_enemies:
 		var rolled_hit := false
@@ -2991,13 +3102,22 @@ func win_combat():
 	die_fragments += last_die_fragments_gained
 	last_mulligems_gained = 0
 	last_unlocked_relics.clear()
+
+	# A combat may award only one relic.
+	# Guaranteed bounty relics take priority over random drops.
 	if expedition_is_boss_fight and current_bounty != null:
 		for relic in current_bounty.unlocked_relics:
-			if !owned_relics.has(relic):
-				owned_relics.append(relic)
-				last_unlocked_relics.append(relic)
+			if relic == null:
+				continue
 
-		# refresh_relic_panel()
+			if owned_relics.has(relic):
+				continue
+
+			owned_relics.append(relic)
+			last_unlocked_relics.append(relic)
+
+			# Stop after awarding one guaranteed relic.
+			break
 	for enemy_data in defeated_enemies:
 		total_gold_reward += enemy_data.gold_reward
 		if randf() <= enemy_data.volatile_core_drop_chance:
@@ -3048,19 +3168,32 @@ func win_combat():
 	update_gold_label()
 	apply_end_combat_relics()
 
-	if combat_relic_drop_pool.size() > 0:
-		if randf() <= combat_relic_drop_chance:
-			var valid_relics := []
+	# Only roll a random relic if this combat has not already
+	# awarded a guaranteed relic.
+	if (
+		last_unlocked_relics.is_empty()
+		and !combat_relic_drop_pool.is_empty()
+		and randf() <= combat_relic_drop_chance
+	):
+		var valid_relics: Array[RelicData] = []
 
-			for relic in combat_relic_drop_pool:
-				if !owned_relics.has(relic):
-					valid_relics.append(relic)
+		for relic in combat_relic_drop_pool:
+			if relic == null:
+				continue
 
-			if valid_relics.size() > 0:
-				var dropped_relic: RelicData = valid_relics.pick_random()
-				owned_relics.append(dropped_relic)
-				last_unlocked_relics.append(dropped_relic)
-				update_active_food_icons()
+			if owned_relics.has(relic):
+				continue
+
+			valid_relics.append(relic)
+
+		if !valid_relics.is_empty():
+			var dropped_relic: RelicData = (
+				valid_relics.pick_random()
+			)
+
+			owned_relics.append(dropped_relic)
+			last_unlocked_relics.append(dropped_relic)
+			update_active_food_icons()
 	run_encounters_completed += 1
 
 	# Only normal encounters advance expedition progress here.
@@ -6271,10 +6404,7 @@ func complete_current_bounty():
 	for face in current_bounty.unlocked_merchant_faces:
 		if !merchant_unlocked_faces.has(face):
 			merchant_unlocked_faces.append(face)
-	for relic in current_bounty.unlocked_relics:
-		if !owned_relics.has(relic):
-			owned_relics.append(relic)
-			last_unlocked_relics.append(relic)
+
 	if all_bounties_completed():
 		show_endless_choice()
 	# refresh_relic_panel()
@@ -7909,7 +8039,6 @@ func bind_world(world: Node3D):
 	spawn_player_3d_node()
 
 func set_combat_ui_enabled(enabled: bool):
-	is_in_town = !enabled
 	top_ui_background.visible = enabled
 	bottom_ui_background.visible = enabled
 	$DiceArea.visible = enabled
@@ -7919,8 +8048,11 @@ func set_combat_ui_enabled(enabled: bool):
 	combat_number_label.visible = enabled
 	end_round_button.visible = enabled
 	end_round_button.disabled = !enabled
+	mulligem_button.visible = enabled
 
-	begin_expedition_button.visible = !enabled
+	# This function only controls combat UI.
+	# It should not change whether the player is in town.
+	update_begin_expedition_button_visibility()
 
 func connect_ui_click_sounds(root: Node):
 	for child in root.get_children():
@@ -9043,7 +9175,6 @@ func beastmaster_phase_transition(enemy_index: int):
 	beastmaster_transition_running = true
 	begin_expedition_button.visible = false
 
-	# Lock combat immediately.
 	is_resolving_turn = true
 	end_round_button.disabled = true
 	mulligem_button.disabled = true
@@ -9099,7 +9230,10 @@ func beastmaster_phase_transition(enemy_index: int):
 
 	var sprite: AnimatedSprite3D = beastmaster_node.sprite
 
-	if sprite != null and sprite.sprite_frames.has_animation("cutscene"):
+	if (
+		sprite != null
+		and sprite.sprite_frames.has_animation("cutscene")
+	):
 		sprite.play("cutscene")
 
 		if beastmaster_pant_sound != null:
@@ -9156,7 +9290,6 @@ func beastmaster_phase_transition(enemy_index: int):
 		beastmaster_phase2_music
 	)
 
-	# Set the Beast Master's Phase Two HP before rebuilding the roster.
 	beastmaster_enemy["max_hp"] = (
 		beastmaster_enemy["data"].max_hp
 	)
@@ -9182,7 +9315,7 @@ func beastmaster_phase_transition(enemy_index: int):
 
 	if !pack_created:
 		push_error(
-			"Beast Master Phase Two pack could not be created."
+			"Beast Master Phase Two roster could not be built."
 		)
 
 		await cinematic_beastmaster_zoom_out()
@@ -9197,38 +9330,25 @@ func beastmaster_phase_transition(enemy_index: int):
 
 	await cinematic_beastmaster_zoom_out()
 
-	# Perform one authoritative visual rebuild using the complete
-	# Phase Two active_enemies array.
-	await clear_all_enemy_3d_nodes()
-	spawn_enemy_3d_nodes()
-
+	# Ensure all camera work is fully complete before rebuilding.
 	await get_tree().process_frame
 
-	refresh_enemy_buttons()
-	update_enemy_3d_nodes()
+	var rebuild_succeeded: bool = await rebuild_enemy_3d_nodes()
 
-	var phase_two_valid: bool = (
-		active_enemies.size() == 4
-		and enemy_3d_nodes.size() == 4
-	)
-
-	if !phase_two_valid:
+	if !rebuild_succeeded:
 		push_error(
-			"Beast Master Phase Two visual rebuild failed. "
-			+ "Enemies: "
-			+ str(active_enemies.size())
-			+ ", nodes: "
-			+ str(enemy_3d_nodes.size())
+			"Beast Master Phase Two enemy visuals failed to rebuild."
 		)
 
 		finish_failed_beastmaster_transition()
 		return
 
+	refresh_enemy_buttons()
+	update_enemy_3d_nodes()
+
 	regroup_dice()
 	update_group_visibility()
 	update_assigned_panel_visibility()
-	update_enemy_button_texts()
-	update_player_3d_node()
 
 	set_combat_ui_enabled(true)
 
@@ -9482,9 +9602,6 @@ func cinematic_beastmaster_zoom_out():
 func spawn_beastmaster_phase2_pack(
 	beastmaster_index: int
 ) -> bool:
-	print("========================")
-	print("BEAST MASTER PHASE TWO PACK BUILD")
-
 	if (
 		beastmaster_index < 0
 		or beastmaster_index >= active_enemies.size()
@@ -9493,52 +9610,22 @@ func spawn_beastmaster_phase2_pack(
 			"Invalid Beast Master index: "
 			+ str(beastmaster_index)
 		)
-
 		return false
 
 	if beastmaster_exvellus_enemy == null:
-		push_error(
-			"Beast Master Exvellus resource is not assigned."
-		)
-
+		push_error("Exvellus is not assigned.")
 		return false
 
 	if beastmaster_nigel_enemy == null:
-		push_error(
-			"Beast Master Nigel resource is not assigned."
-		)
-
+		push_error("Nigel is not assigned.")
 		return false
 
 	if beastmaster_noir_enemy == null:
-		push_error(
-			"Beast Master Noir resource is not assigned."
-		)
-
+		push_error("Noir is not assigned.")
 		return false
 
 	if beastmaster_phase2_support_die == null:
-		push_error(
-			"Beast Master Phase Two support die is not assigned."
-		)
-
-		return false
-
-	if enemy_positions == null:
-		push_error(
-			"EnemyPositions is null during Beast Master Phase Two."
-		)
-
-		return false
-
-	if enemy_positions.get_child_count() < 4:
-		push_error(
-			"Beast Master level requires four enemy positions, "
-			+ "but only has "
-			+ str(enemy_positions.get_child_count())
-			+ "."
-		)
-
+		push_error("Beast Master support die is not assigned.")
 		return false
 
 	var beastmaster_enemy: Dictionary = (
@@ -9558,71 +9645,51 @@ func spawn_beastmaster_phase2_pack(
 	beastmaster_enemy["rolled_faces"] = []
 	beastmaster_enemy["roll_text"] = "Recovering"
 
-	print("PHASE TWO: Creating Exvellus...")
-
 	var exvellus: Dictionary = create_enemy_instance(
 		beastmaster_exvellus_enemy
 	)
-
-	print(
-		"PHASE TWO: Exvellus created. Data: ",
-		exvellus.get("data", null)
-	)
-
-	print("PHASE TWO: Creating Nigel...")
 
 	var nigel: Dictionary = create_enemy_instance(
 		beastmaster_nigel_enemy
 	)
 
-	print(
-		"PHASE TWO: Nigel created. Data: ",
-		nigel.get("data", null)
-	)
-
-	print("PHASE TWO: Creating Noir...")
-
 	var noir: Dictionary = create_enemy_instance(
 		beastmaster_noir_enemy
 	)
 
-	print(
-		"PHASE TWO: Noir created. Data: ",
-		noir.get("data", null)
-	)
+	if exvellus.is_empty():
+		push_error(
+			"Failed to create the Phase Two Exvellus instance."
+		)
+		return false
 
-	print("PHASE TWO: All animal dictionaries created.")
+	if nigel.is_empty():
+		push_error(
+			"Failed to create the Phase Two Nigel instance."
+		)
+		return false
 
-	var phase_two_enemies: Array = [
-		exvellus,
-		nigel,
-		beastmaster_enemy,
-		noir
-	]
+	if noir.is_empty():
+		push_error(
+			"Failed to create the Phase Two Noir instance."
+		)
+		return false
 
 	active_enemies.clear()
 
-	for phase_two_enemy in phase_two_enemies:
-		active_enemies.append(phase_two_enemy)
+	active_enemies.append(exvellus)
+	active_enemies.append(nigel)
+	active_enemies.append(beastmaster_enemy)
+	active_enemies.append(noir)
 
-	print(
-		"PHASE TWO ENEMY COUNT: ",
-		active_enemies.size()
-	)
+	print("Phase-two roster built:")
 
 	for i in active_enemies.size():
-		var enemy_data: EnemyData = (
-			active_enemies[i]["data"]
-		)
-
 		print(
-			"PHASE TWO INDEX ",
 			i,
 			": ",
-			enemy_data.enemy_name
+			active_enemies[i]["data"].enemy_name
 		)
-
-	print("========================")
 
 	return active_enemies.size() == 4
 	
