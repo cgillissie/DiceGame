@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://camvpe4yg3a6e"]
+
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_yjq2w"]
+[ext_resource type="Texture2D" uid="uid://b6mg0psp27tv3" path="res://Assets/Sprites/FaceIcons/ManaBarrierIcon.png" id="1_yxwsb"]
+
+[resource]
+script = ExtResource("1_yjq2w")
+face_name = "Mana Shield"
+result_type = "mana_shield"
+icon = ExtResource("1_yxwsb")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

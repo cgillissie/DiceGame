@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://dbpdnkgu3fp7n"]
+
+[ext_resource type="Texture2D" uid="uid://dx4w56mjisckr" path="res://Assets/Sprites/FaceIcons/BlizzardIcon.png" id="1_2ke07"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_27d8e"]
+
+[resource]
+script = ExtResource("1_27d8e")
+face_name = "Blizzard"
+result_type = "blizzard"
+icon = ExtResource("1_2ke07")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

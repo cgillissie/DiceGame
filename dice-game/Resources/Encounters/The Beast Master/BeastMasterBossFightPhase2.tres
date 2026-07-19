@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterData" format=3 uid="uid://cchnfh87rjsge"]
+
+[ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="1_p6k7j"]
+[ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="2_cm8ch"]
+[ext_resource type="Resource" uid="uid://b6v15ssegjgtc" path="res://Resources/Enemies/Exvellus.tres" id="2_ogtia"]
+[ext_resource type="Resource" uid="uid://c5mlf1q8css68" path="res://Resources/Enemies/BeastMasterPhase02.tres" id="2_vnmfm"]
+[ext_resource type="Resource" uid="uid://bltcnld87vhte" path="res://Resources/Enemies/Nigel.tres" id="3_vnmfm"]
+[ext_resource type="Resource" uid="uid://b5t7lmuntohbm" path="res://Resources/Enemies/Noir.tres" id="4_tenp6"]
+[ext_resource type="PackedScene" uid="uid://24v0l8vjxnb4" path="res://Scenes/Levels/beastmaster_level_phase02.tscn" id="6_tenp6"]
+
+[resource]
+script = ExtResource("2_cm8ch")
+encounter_name = "The Beast Master Phase 2"
+enemies = Array[ExtResource("1_p6k7j")]([ExtResource("2_ogtia"), ExtResource("3_vnmfm"), ExtResource("2_vnmfm"), ExtResource("4_tenp6")])
+override_combat_scene = ExtResource("6_tenp6")
+metadata/_custom_type_script = "uid://ctfkbrmr3g7s4"

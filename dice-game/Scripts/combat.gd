@@ -27,16 +27,27 @@ var crit_by_enemy := {}
 var combat_log_entries: Array[String] = []
 var selected_dice_order: Array[DiceNode] = []
 
+var last_echoable_effect: Dictionary = {}
+var resolving_mind_echo: bool = false
+
 var dragged_die: DiceNode = null
 var dragged_die_original_parent: Node = null
 var dragged_die_original_index: int = -1
 
+var endless_choice_pending: bool = false
+
 var combat_camera: Camera3D
 var enemy_positions: Node3D
 var player_position: Node3D
-
+var combat_camera_home_transform: Transform3D
+var combat_camera_home_size: float
+var combat_camera_home_saved: bool = false
 @export var player_character_data: PlayerCharacterData
 
+var beastmaster_phase: int = 0
+@export var boss_phase_one_encounter: EncounterData
+@export var boss_phase_two_encounter: EncounterData
+signal beastmaster_phase_two_requested
 
 var camera_original_position: Vector3
 var shatter_camera_running: bool = false
@@ -613,7 +624,6 @@ func _ready():
 	connect_ui_click_sounds(self)
 	update_gold_label()
 	town_panel.visible = false
-	
 
 
 func _process(delta):
@@ -1487,16 +1497,21 @@ func is_offensive_die(die: DiceNode) -> bool:
 	if die.current_face == null:
 		return false
 
-	return die.current_face.result_type == "hit" \
-		or die.current_face.result_type == "crit" \
-		or die.current_face.result_type == "dodge" \
-		or die.current_face.result_type == "reversal" \
-		or die.current_face.result_type == "freeze" \
-		or die.current_face.result_type == "bleed" \
-		or die.current_face.result_type == "twist_knife" \
-		or die.current_face.result_type == "break_focus" \
-		or die.current_face.result_type == "shield_bash" \
-		or die.current_face.result_type == "fireball"
+	return die.current_face.result_type in [
+		"hit",
+		"crit",
+		"dodge",
+		"reversal",
+		"freeze",
+		"bleed",
+		"twist_knife",
+		"break_focus",
+		"shield_bash",
+		"fireball",
+		"mind_echo",
+		"blizzard",
+		"chain_lightning"
+	]
 	##############################################################################
 	
 func load_encounter(encounter_data: EncounterData):
@@ -1521,12 +1536,15 @@ func update_enemy_3d_nodes():
 		if i >= active_enemies.size():
 			continue
 
-		if is_instance_valid(enemy_3d_nodes[i]):
-			enemy_3d_nodes[i].setup(i, active_enemies[i])
-			enemy_3d_nodes[i].update_status_icons(
-	active_enemies[i]["data"],
-	active_enemies[i]
-)
+		var enemy_node: Enemy3D = enemy_3d_nodes[i]
+
+		if !is_instance_valid(enemy_node):
+			continue
+
+		enemy_node.setup(
+			i,
+			active_enemies[i]
+		)
 func get_selected_offensive_dice() -> Array[DiceNode]:
 	var selected_dice: Array[DiceNode] = []
 
@@ -1627,7 +1645,19 @@ func get_container_for_die(die: DiceNode) -> GridContainer:
 		"heal", "vitality":
 			return healing_container
 
-		"dodge", "reversal", "freeze", "bleed", "twist_knife", "break_focus", "pain", "shield_bash", "fireball":
+		"dodge", \
+		"reversal", \
+		"freeze", \
+		"bleed", \
+		"twist_knife", \
+		"break_focus", \
+		"pain", \
+		"shield_bash", \
+		"fireball", \
+		"mana_shield", \
+		"mind_echo", \
+		"blizzard", \
+		"chain_lightning":
 			return actions_container
 			
 		
@@ -2123,7 +2153,8 @@ func resolve_player_dice():
 	dice_nodes = dice_nodes.filter(func(die):
 		return is_instance_valid(die)
 	)
-
+	last_echoable_effect.clear()
+	resolving_mind_echo = false
 	var gold_gained_this_turn := 0
 	# player_block = 0
 	dodged_enemy_crits = false
@@ -2216,6 +2247,44 @@ func resolve_player_dice():
 					"Dodge prepared the player to avoid enemy Crit damage this turn."
 				)
 				
+			"mana_shield":
+				var block_gained: int = get_mana_shield_block(
+					die
+				)
+
+				if block_gained <= 0:
+					add_combat_log_entry(
+						"Mana Shield gained no Block because "
+						+ "the die had no Miss faces."
+					)
+
+					show_popup_text(
+						player_3d_node,
+						"No Misses",
+						1.2,
+						Color.GRAY
+					)
+				else:
+					player_block += block_gained
+
+					show_popup_text(
+						player_3d_node,
+						"+" + str(block_gained) + " Block",
+						1.4,
+						Color.DEEP_SKY_BLUE
+					)
+
+					add_combat_log_entry(
+						"Mana Shield gained "
+						+ str(block_gained)
+						+ " Block from "
+						+ str(block_gained)
+						+ " Miss faces."
+					)
+
+				update_player_block_label()
+				update_player_3d_node()
+					
 			"pain":
 				var pain_damage: int = die.current_face.value
 
@@ -2264,13 +2333,20 @@ func resolve_player_dice():
 			_:
 				pass
 
-		if die.current_face.result_type in ["block", "gold", "heal", "vitality", "dodge", "pain"]:
+		if die.current_face.result_type in [
+			"block",
+			"gold",
+			"heal",
+			"vitality",
+			"dodge",
+			"pain",
+			"mana_shield"
+		]:
 			die.reserved = false
 			die.used = true
 			die.selected = false
 			die.update_visual()
 
-	gold += gold_gained_this_turn
 	if gold_gained_this_turn > 0:
 		gold += gold_gained_this_turn
 
@@ -2358,6 +2434,260 @@ func reserve_selected_dice():
 		die.update_visual()
 		current_reserved += 1
 
+func resolve_targeted_blizzard(
+	primary_index: int,
+	freeze_amount: int,
+	effect_name: String = "Blizzard"
+):
+	if !is_valid_living_echo_target(primary_index):
+		return
+
+	if freeze_amount <= 0:
+		show_popup_text(
+			enemy_3d_nodes[primary_index],
+			"Not Enough Misses",
+			1.2,
+			Color.GRAY
+		)
+
+		add_combat_log_entry(
+			effect_name
+			+ " had no effect because the die had fewer "
+			+ "than 2 Miss faces."
+		)
+
+		return
+
+	var secondary_freeze: int = int(
+		floor(float(freeze_amount) / 2.0)
+	)
+
+	var affected_count: int = 0
+
+	AudioManager.play_one_shot(freeze_sound)
+
+	# Primary target receives the full amount.
+	if apply_blizzard_freeze_to_enemy(
+		primary_index,
+		freeze_amount
+	):
+		affected_count += 1
+
+	# Every other enemy receives half, rounded down.
+	if secondary_freeze > 0:
+		for enemy_index in active_enemies.size():
+			if enemy_index == primary_index:
+				continue
+
+			if apply_blizzard_freeze_to_enemy(
+				enemy_index,
+				secondary_freeze
+			):
+				affected_count += 1
+
+	add_combat_log_entry(
+		effect_name
+		+ " applied "
+		+ str(freeze_amount)
+		+ " Freeze to the primary target and "
+		+ str(secondary_freeze)
+		+ " Freeze to other valid enemies."
+	)
+
+	update_enemy_3d_nodes()
+
+	await get_tree().create_timer(0.35).timeout
+	
+func apply_blizzard_freeze_to_enemy(
+	enemy_index: int,
+	freeze_amount: int
+) -> bool:
+	if freeze_amount <= 0:
+		return false
+
+	if !is_valid_living_echo_target(enemy_index):
+		return false
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+
+	if enemy["data"].crowd_control_immune:
+		show_popup_text(
+			enemy_node,
+			"Immune",
+			1.2,
+			Color.ORANGE_RED
+		)
+
+		add_combat_log_entry(
+			enemy_name + " is immune to Blizzard."
+		)
+
+		return false
+
+	enemy["frozen"] = true
+	enemy["freeze_stacks"] += freeze_amount
+
+	show_popup_text(
+		enemy_node,
+		"Freeze +" + str(freeze_amount),
+		1.3,
+		Color.CYAN
+	)
+
+	return true
+	
+func resolve_targeted_chain_lightning(
+	primary_index: int,
+	raw_damage: int,
+	effect_name: String = "Chain Lightning"
+):
+	if !is_valid_living_echo_target(primary_index):
+		return
+
+	if raw_damage <= 0:
+		show_popup_text(
+			enemy_3d_nodes[primary_index],
+			"Not Enough Misses",
+			1.2,
+			Color.GRAY
+		)
+
+		add_combat_log_entry(
+			effect_name
+			+ " dealt no damage because the die had fewer "
+			+ "than 2 Miss faces."
+		)
+
+		return
+
+	var total_actual_damage: int = 0
+
+	# Primary target always receives full damage.
+	total_actual_damage += await apply_chain_damage_to_enemy(
+		primary_index,
+		raw_damage,
+		effect_name
+	)
+
+	# Build secondary target list. The primary target is excluded,
+	# so it can never be struck again by the same chain.
+	var secondary_targets: Array[int] = []
+
+	for enemy_index in active_enemies.size():
+		if enemy_index == primary_index:
+			continue
+
+		if !is_valid_living_echo_target(enemy_index):
+			continue
+
+		secondary_targets.append(enemy_index)
+
+	secondary_targets.shuffle()
+
+	var next_damage: int = int(
+		floor(float(raw_damage) / 2.0)
+	)
+
+	for enemy_index in secondary_targets:
+		if next_damage <= 0:
+			break
+
+		total_actual_damage += await apply_chain_damage_to_enemy(
+			enemy_index,
+			next_damage,
+			effect_name
+		)
+
+		# Each jump halves the previous jump's damage.
+		next_damage = int(
+			floor(float(next_damage) / 2.0)
+		)
+
+		await get_tree().create_timer(0.10).timeout
+
+	add_combat_log_entry(
+		effect_name
+		+ " dealt "
+		+ str(total_actual_damage)
+		+ " total damage."
+	)
+
+	update_enemy_3d_nodes()
+
+	await shake_combat_camera(
+		0.18,
+		0.07
+	)
+	
+func apply_chain_damage_to_enemy(
+	enemy_index: int,
+	raw_damage: int,
+	effect_name: String
+) -> int:
+	if raw_damage <= 0:
+		return 0
+
+	if !is_valid_living_echo_target(enemy_index):
+		return 0
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+
+	var blocked_amount: int = min(
+		raw_damage,
+		int(enemy["block"])
+	)
+
+	enemy["block"] -= blocked_amount
+
+	if enemy["block"] < 0:
+		enemy["block"] = 0
+
+	var hp_damage: int = raw_damage - blocked_amount
+
+	if blocked_amount > 0:
+		show_popup_text(
+			enemy_node,
+			"Blocked " + str(blocked_amount),
+			1.0,
+			Color.GRAY
+		)
+
+	var hp_before: int = enemy["hp"]
+
+	if hp_damage > 0:
+		enemy["hp"] -= hp_damage
+
+		if enemy["hp"] < 0:
+			enemy["hp"] = 0
+
+	var actual_damage: int = hp_before - enemy["hp"]
+
+	if actual_damage > 0:
+		last_player_damage += actual_damage
+
+		show_damage_popup(
+			enemy_node,
+			actual_damage
+		)
+
+		enemy_node.hit_flash()
+		enemy_node.hurt_bump()
+
+	add_combat_log_entry(
+		effect_name
+		+ " struck "
+		+ enemy_name
+		+ " for "
+		+ str(actual_damage)
+		+ " HP damage."
+	)
+
+	return actual_damage
+	
 func end_round():
 	if combat_over:
 		return
@@ -2524,7 +2854,17 @@ func end_round():
 				continue
 
 			await enemy_3d_nodes[enemy_index].play_attack_animation()
-			await launch_enemy_die_at_player(enemy_index, face)
+
+			var should_reflect_die: bool = (
+				face.result_type == "crit"
+				and reversal_targets.has(enemy_index)
+			)
+
+			await launch_enemy_die_at_player(
+				enemy_index,
+				face,
+				should_reflect_die
+			)
 
 			var damage: int = face.value
 
@@ -2745,6 +3085,9 @@ func end_round():
 	apply_player_regeneration()
 	await remove_defeated_enemies()
 
+	if beastmaster_transition_running or beastmaster_phase == 2:
+		return
+
 	if active_enemies.is_empty():
 		await get_tree().create_timer(0.5).timeout
 		win_combat()
@@ -2869,7 +3212,6 @@ func reset_dice_for_next_roll():
 		
 func remove_defeated_enemies():
 	var defeated_indices: Array[int] = []
-
 	for i in active_enemies.size():
 		if active_enemies[i]["hp"] <= 0:
 			defeated_indices.append(i)
@@ -2890,27 +3232,33 @@ func remove_defeated_enemies():
 
 		# First time Beastmaster hits 0 HP.
 		if data.is_beastmaster_boss and !enemy["phase_two_started"]:
+			enemy["hp"] = 1
+			enemy["attack"] = 0
+			enemy["crit"] = 0
+			enemy["block"] = 0
+			enemy["heal"] = 0
+			enemy["rolled_faces"] = []
+
+			clear_beastmaster_phase_one_statuses(enemy)
+			clear_assignments_for_enemy(index)
+
 			if beastmaster_has_living_phase1_allies(index):
 				enemy["downed"] = true
-				enemy["hp"] = 1
-				enemy["attack"] = 0
-				enemy["crit"] = 0
-				enemy["block"] = 0
-				enemy["heal"] = 0
-				enemy["rolled_faces"] = []
 				enemy["roll_text"] = "Downed"
 
-				clear_assignments_for_enemy(index)
-
-				if index < enemy_3d_nodes.size() and is_instance_valid(enemy_3d_nodes[index]):
+				if (
+					index < enemy_3d_nodes.size()
+					and is_instance_valid(enemy_3d_nodes[index])
+					and enemy_3d_nodes[index].sprite.sprite_frames.has_animation(
+						"downed"
+					)
+				):
 					enemy_3d_nodes[index].sprite.play("downed")
+			else:
+				enemy["downed"] = true
+				enemy["roll_text"] = "Downed"
 
-				update_enemy_3d_nodes()
-				continue
-
-			enemy["hp"] = 1
-			await beastmaster_phase_transition(index)
-			return
+			continue
 
 		apply_shatter_from_enemy(index)
 
@@ -2959,21 +3307,43 @@ func remove_defeated_enemies():
 			enemy_3d_nodes.remove_at(index)
 
 	# If Beastmaster is downed and all phase 1 allies are gone, start phase 2 now.
+	# All Phase 1 death cleanup is now complete.
+	refresh_enemy_buttons()
+	update_enemy_3d_nodes()
+	
+	await get_tree().process_frame
+
 	for i in active_enemies.size():
 		var enemy: Dictionary = active_enemies[i]
 		var data: EnemyData = enemy["data"]
 
-		if data.is_beastmaster_boss \
-			and !enemy["phase_two_started"] \
-			and enemy.has("downed") \
-			and enemy["downed"] \
-			and !beastmaster_has_living_phase1_allies(i):
-				enemy["hp"] = 1
-				await beastmaster_phase_transition(i)
-				return
+		if !data.is_beastmaster_boss:
+			continue
+
+		if enemy["phase_two_started"]:
+			continue
+
+		if !enemy.get("downed", false):
+			continue
+
+		if beastmaster_has_living_phase1_allies(i):
+			continue
+
+		enemy["hp"] = 1
+
+		await beastmaster_phase_transition(i)
+		return
 
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
+	
+func clear_beastmaster_phase_one_statuses(
+	enemy: Dictionary
+):
+	enemy["bleed"] = 0
+	enemy["exposed"] = false
+	enemy["frozen"] = false
+	enemy["freeze_stacks"] = 0
 	
 func beastmaster_has_living_phase1_allies(beastmaster_index: int) -> bool:
 	for i in active_enemies.size():
@@ -3120,8 +3490,6 @@ func win_combat():
 			break
 	for enemy_data in defeated_enemies:
 		total_gold_reward += enemy_data.gold_reward
-		if randf() <= enemy_data.volatile_core_drop_chance:
-			volatile_cores += 1
 		if enemy_data.face_drop_pool.size() > 0:
 			var face_drop: DiceFace = enemy_data.face_drop_pool.pick_random()
 			var face_copy := face_drop.duplicate(true)
@@ -3375,7 +3743,8 @@ func restart_run():
 		final_boss_bounty.completed = false
 	witch_seen_this_run = false
 	well_seen_this_run = false
-
+	endless_choice_pending = false
+	endless_choice_overlay.visible = false
 	if FileAccess.file_exists(RUN_SAVE_PATH):
 		DirAccess.remove_absolute(RUN_SAVE_PATH)
 	rebuild_bounty_board()
@@ -3427,7 +3796,8 @@ func apply_consumable_trait(item: ConsumableItem):
 	
 func start_new_combat():
 	expedition_is_boss_fight = is_current_encounter_boss()
-
+	last_echoable_effect.clear()
+	resolving_mind_echo = false
 	combat_over = false
 	is_resolving_turn = false
 	is_in_town = false
@@ -3708,10 +4078,21 @@ func buy_face():
 		return
 
 	gold -= face_cost
-	face_inventory.append(hit_2_face)
+	face_inventory.append(
+		hit_2_face.duplicate(true)
+	)
 	AudioManager.play_ui(ui_click_sound)
 	update_gold_label()
 	
+func make_inventory_faces_unique():
+	for i in face_inventory.size():
+		var face: DiceFace = face_inventory[i]
+
+		if face == null:
+			continue
+
+		face_inventory[i] = face.duplicate(true)
+		
 	# DIE GRAFTING ######################################################################
 
 func handle_inventory_face_click(index: int):
@@ -3832,7 +4213,13 @@ func rebuild_face_inventory_grid():
 		"freeze",
 		"bleed",
 		"twist_knife",
-		"break_focus"
+		"break_focus",
+		"shield_bash",
+		"fireball",
+		"mana_shield",
+		"mind_echo",
+		"blizzard",
+		"chain_lightning"
 	]
 
 	var grid := GridContainer.new()
@@ -3852,7 +4239,68 @@ func rebuild_face_inventory_grid():
 			grid.add_child(button)
 
 			button.setup(face, selected_inventory_face_indices.has(i))
-			
+	var displayed_faces: Array[DiceFace] = []
+
+	for result_type in face_order:
+		for i in face_inventory.size():
+			var face: DiceFace = face_inventory[i]
+
+			if face == null:
+				continue
+
+			if face.result_type != result_type:
+				continue
+
+			var button: InventoryFaceButton = (
+				inventory_face_button_scene.instantiate()
+			)
+
+			grid.add_child(button)
+			button.setup(
+				face,
+				selected_inventory_face_indices.has(i)
+			)
+
+			displayed_faces.append(face)
+
+	# Display unknown/new face types instead of silently hiding them.
+	for i in face_inventory.size():
+		var face: DiceFace = face_inventory[i]
+
+		if face == null:
+			continue
+
+		if displayed_faces.has(face):
+			continue
+
+		var button: InventoryFaceButton = (
+			inventory_face_button_scene.instantiate()
+		)
+
+		grid.add_child(button)
+		button.setup(
+			face,
+			selected_inventory_face_indices.has(i)
+		)
+		
+func add_inventory_face_button(
+	grid: GridContainer,
+	face: DiceFace,
+	inventory_index: int
+):
+	var button: InventoryFaceButton = (
+		inventory_face_button_scene.instantiate()
+	)
+
+	grid.add_child(button)
+
+	button.setup(
+		face,
+		selected_inventory_face_indices.has(
+			inventory_index
+		)
+	)
+	
 func rebuild_owned_dice_grid():
 	clear_container(owned_dice_container)
 
@@ -4068,7 +4516,11 @@ func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
 		"dodge",
 		"reversal",
 		"twist_knife",
-		"break_focus"
+		"break_focus",
+		"mana_shield",
+		"mind_echo",
+		"blizzard",
+		"chain_lightning"
 	]:
 		return 0
 
@@ -4129,7 +4581,11 @@ func can_fuse_faces(
 		"twist_knife",
 		"break_focus",
 		"shield_bash",
-		"fireball"
+		"fireball",
+		"mana_shield",
+		"mind_echo",
+		"blizzard",
+		"chain_lightning"
 	]
 
 	if type_a in non_fusible_types:
@@ -4252,8 +4708,14 @@ func craft_empty_die(sides: int):
 	refresh_edit_dice_panel()
 	
 func create_twist_knife_face() -> DiceFace:
-	return twist_knife_face_template.duplicate(true)
+	if twist_knife_face_template != null:
+		return twist_knife_face_template.duplicate(true)
+
 	var face := DiceFace.new()
+	face.face_name = "Twist Knife"
+	face.result_type = "twist_knife"
+	face.value = 0
+	return face
 	
 func create_break_focus_face() -> DiceFace:
 	var face := DiceFace.new()
@@ -4387,6 +4849,34 @@ func count_misses(die_data: DiceData) -> int:
 
 	return count
 
+func get_mana_shield_block(die: DiceNode) -> int:
+	if die == null or die.dice_data == null:
+		return 0
+
+	return count_misses(die.dice_data)
+
+
+func get_blizzard_freeze(die: DiceNode) -> int:
+	if die == null or die.dice_data == null:
+		return 0
+
+	return int(
+		floor(
+			float(count_misses(die.dice_data)) / 2.0
+		)
+	)
+
+
+func get_chain_lightning_damage(die: DiceNode) -> int:
+	if die == null or die.dice_data == null:
+		return 0
+
+	return int(
+		floor(
+			float(count_misses(die.dice_data)) / 2.0
+		)
+	)
+	
 func get_reserved_die_count() -> int:
 	
 	dice_nodes = dice_nodes.filter(func(die):
@@ -5341,6 +5831,36 @@ func resolve_single_die_impact(
 
 	match face.result_type:
 		# -----------------------------------------------------
+		# MIND ECHO
+		# -----------------------------------------------------
+		"mind_echo":
+			if last_echoable_effect.is_empty():
+				show_popup_text(
+					enemy_node,
+					"No Previous Effect",
+					1.2,
+					Color.GRAY
+				)
+
+				add_combat_log_entry(
+					"Mind Echo failed because no previous die "
+					+ "result had resolved."
+				)
+
+				return
+
+			var copied_effect: Dictionary = (
+				last_echoable_effect.duplicate(false)
+			)
+
+			await resolve_mind_echo_effect(
+				copied_effect,
+				die,
+				enemy_index
+			)
+
+			return
+		# -----------------------------------------------------
 		# DODGE
 		# -----------------------------------------------------
 		"dodge":
@@ -5406,6 +5926,7 @@ func resolve_single_die_impact(
 				)
 
 				update_enemy_3d_nodes()
+				
 				return
 
 			enemy["frozen"] = true
@@ -5426,7 +5947,12 @@ func resolve_single_die_impact(
 					+ str(face.value)
 					+ " Freeze."
 			)
-
+			record_echoable_effect(
+					"freeze",
+					face.value,
+					die,
+					enemy_index
+				)
 			update_enemy_3d_nodes()
 			return
 
@@ -5454,7 +5980,12 @@ func resolve_single_die_impact(
 					0.9,
 					1.1
 				)
-
+				record_echoable_effect(
+					"bleed",
+					face.value,
+					die,
+					enemy_index
+				)
 				update_enemy_3d_nodes()
 				return
 
@@ -5531,7 +6062,51 @@ func resolve_single_die_impact(
 
 			update_enemy_3d_nodes()
 			return
+		# -----------------------------------------------------
+		# BLIZZARD
+		# -----------------------------------------------------
+		"blizzard":
+			var freeze_amount: int = get_blizzard_freeze(
+				die
+			)
 
+			await resolve_targeted_blizzard(
+				enemy_index,
+				freeze_amount
+			)
+
+			if freeze_amount > 0:
+				record_echoable_effect(
+					"blizzard",
+					freeze_amount,
+					die,
+					enemy_index
+				)
+
+			return
+
+		# -----------------------------------------------------
+		# CHAIN LIGHTNING
+		# -----------------------------------------------------
+		"chain_lightning":
+			var raw_damage: int = (
+				get_chain_lightning_damage(die)
+			)
+
+			await resolve_targeted_chain_lightning(
+				enemy_index,
+				raw_damage
+			)
+
+			if raw_damage > 0:
+				record_echoable_effect(
+					"chain_lightning",
+					raw_damage,
+					die,
+					enemy_index
+				)
+
+			return
 		# -----------------------------------------------------
 		# CRIT
 		# -----------------------------------------------------
@@ -5557,7 +6132,12 @@ func resolve_single_die_impact(
 						+ str(damage)
 						+ "-damage Crit."
 				)
-
+				record_echoable_effect(
+					"crit",
+					face.value,
+					die,
+					enemy_index
+				)
 				update_enemy_3d_nodes()
 				return
 
@@ -5825,7 +6405,12 @@ func resolve_single_die_impact(
 						+ str(raw_damage)
 						+ " Fireball damage."
 				)
-
+			record_echoable_effect(
+				"fireball",
+				raw_damage,
+				die,
+				enemy_index
+			)
 			update_enemy_3d_nodes()
 			return
 		# -----------------------------------------------------
@@ -6004,7 +6589,12 @@ func resolve_single_die_impact(
 
 						lose_combat()
 						return
-
+			record_echoable_effect(
+				"hit",
+				face.value + active_combat_bonus_damage,
+				die,
+				enemy_index
+			)
 			update_enemy_3d_nodes()
 			return
 
@@ -6012,6 +6602,471 @@ func resolve_single_die_impact(
 			update_enemy_3d_nodes()
 			return
 			
+func resolve_mind_echo_effect(
+	effect: Dictionary,
+	echo_die: DiceNode,
+	echo_target_index: int
+):
+	if effect.is_empty():
+		return
+
+	var copied_type: String = String(
+		effect.get("type", "")
+	)
+
+	var copied_value: int = int(
+		effect.get("value", 0)
+	)
+
+	add_combat_log_entry(
+		"Mind Echo repeated "
+		+ copied_type.replace("_", " ").capitalize()
+		+ "."
+	)
+
+	match copied_type:
+		"hit":
+			await resolve_echo_hit(
+				echo_target_index,
+				copied_value
+			)
+
+		"crit":
+			await resolve_echo_crit(
+				echo_target_index,
+				copied_value
+			)
+
+		"freeze":
+			await resolve_echo_freeze(
+				echo_target_index,
+				copied_value
+			)
+
+		"bleed":
+			await resolve_echo_bleed(
+				echo_target_index,
+				copied_value
+			)
+
+		"fireball":
+			await resolve_echo_area_or_target_damage(
+				echo_target_index,
+				copied_value,
+				"Fireball"
+			)
+
+		"mana_shield":
+			player_block += copied_value
+			update_player_block_label()
+			update_player_3d_node()
+
+			show_popup_text(
+				player_3d_node,
+				"+" + str(copied_value) + " Block",
+				1.3,
+				Color.DEEP_SKY_BLUE
+			)
+
+		"blizzard":
+			await resolve_targeted_blizzard(
+				echo_target_index,
+				copied_value,
+				"Mind Echo Blizzard"
+			)
+
+		"chain_lightning":
+			await resolve_targeted_chain_lightning(
+				echo_target_index,
+				copied_value,
+				"Mind Echo Chain Lightning"
+			)
+
+		_:
+			show_popup_text(
+				player_3d_node,
+				"Cannot Echo",
+				1.2,
+				Color.GRAY
+			)
+
+			return
+
+	# Store the copied effect, not "mind_echo".
+	# Therefore another Mind Echo repeats the same result.
+	record_echoable_effect(
+		copied_type,
+		copied_value,
+		echo_die,
+		echo_target_index
+	)
+	
+func resolve_echo_hit(
+	enemy_index: int,
+	damage: int
+):
+	if !is_valid_living_echo_target(enemy_index):
+		return
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+
+	damage = apply_guardian_split(
+		enemy_index,
+		damage,
+		false
+	)
+
+	var blocked_amount: int = min(
+		damage,
+		int(enemy["block"])
+	)
+
+	enemy["block"] -= blocked_amount
+	damage -= blocked_amount
+
+	if enemy["block"] < 0:
+		enemy["block"] = 0
+
+	if blocked_amount > 0:
+		await show_enemy_hit_sequence(
+			enemy_index,
+			blocked_amount,
+			0
+		)
+
+		add_combat_log_entry(
+			enemy_name
+			+ " blocked "
+			+ str(blocked_amount)
+			+ " echoed Hit damage."
+		)
+
+	if damage > 0:
+		var hp_before: int = enemy["hp"]
+
+		enemy["hp"] -= damage
+
+		if enemy["hp"] < 0:
+			enemy["hp"] = 0
+
+		var actual_damage: int = hp_before - enemy["hp"]
+
+		last_player_damage += actual_damage
+
+		await show_enemy_hit_sequence(
+			enemy_index,
+			0,
+			actual_damage
+		)
+
+		add_combat_log_entry(
+			"Mind Echo dealt "
+			+ str(actual_damage)
+			+ " Hit damage to "
+			+ enemy_name
+			+ "."
+		)
+
+	update_enemy_3d_nodes()
+	
+func resolve_echo_crit(
+	enemy_index: int,
+	damage: int
+):
+	if !is_valid_living_echo_target(enemy_index):
+		return
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+
+	if (
+		get_enemy_trait_value(enemy, "agile") > 0
+		and !enemy["agile_used"]
+	):
+		enemy["agile_used"] = true
+
+		show_popup_text(
+			enemy_node,
+			"Dodged Crit!",
+			1.3,
+			Color.CORNFLOWER_BLUE
+		)
+
+		add_combat_log_entry(
+			enemy_name + " dodged the echoed Crit."
+		)
+
+		return
+
+	damage = apply_guardian_split(
+		enemy_index,
+		damage,
+		true
+	)
+
+	var hp_before: int = enemy["hp"]
+
+	enemy["hp"] -= damage
+	enemy["exposed"] = true
+
+	if enemy["hp"] < 0:
+		enemy["hp"] = 0
+
+	var actual_damage: int = hp_before - enemy["hp"]
+
+	last_player_damage += actual_damage
+
+	AudioManager.play_one_shot(
+		critical_hit_sound,
+		0.85,
+		1.15
+	)
+
+	show_damage_popup(
+		enemy_node,
+		actual_damage
+	)
+
+	show_popup_text(
+		enemy_node,
+		"EXPOSED",
+		2.2,
+		Color.YELLOW
+	)
+
+	enemy_node.hit_flash()
+	enemy_node.hurt_bump()
+
+	screen_shake(0.07, 0.1)
+	await hit_stop(0.03)
+
+	add_combat_log_entry(
+		"Mind Echo dealt "
+		+ str(actual_damage)
+		+ " Crit damage to "
+		+ enemy_name
+		+ " and applied Exposed."
+	)
+
+	update_enemy_3d_nodes()
+	
+func resolve_echo_freeze(
+	enemy_index: int,
+	freeze_amount: int
+):
+	if !is_valid_living_echo_target(enemy_index):
+		return
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+
+	if enemy["data"].crowd_control_immune:
+		show_popup_text(
+			enemy_node,
+			"Immune",
+			1.2,
+			Color.ORANGE_RED
+		)
+
+		add_combat_log_entry(
+			enemy_name + " is immune to echoed Freeze."
+		)
+
+		return
+
+	enemy["frozen"] = true
+	enemy["freeze_stacks"] += freeze_amount
+
+	AudioManager.play_one_shot(freeze_sound)
+
+	show_popup_text(
+		enemy_node,
+		"Freeze +" + str(freeze_amount),
+		1.2,
+		Color.CYAN
+	)
+
+	add_combat_log_entry(
+		"Mind Echo applied "
+		+ str(freeze_amount)
+		+ " Freeze to "
+		+ enemy_name
+		+ "."
+	)
+
+	update_enemy_3d_nodes()
+	
+func resolve_echo_bleed(
+	enemy_index: int,
+	bleed_amount: int
+):
+	if !is_valid_living_echo_target(enemy_index):
+		return
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+
+	if enemy["block"] > 0:
+		show_popup_text(
+			enemy_node,
+			"Blocked Bleed",
+			1.0,
+			Color.GRAY
+		)
+
+		AudioManager.play_one_shot(
+			hit_blocked_sound,
+			0.9,
+			1.1
+		)
+
+		add_combat_log_entry(
+			enemy_name
+			+ "'s Block prevented the echoed Bleed."
+		)
+
+		return
+
+	enemy["bleed"] += bleed_amount
+
+	AudioManager.play_one_shot(
+		hit_damage_sound,
+		0.9,
+		1.1
+	)
+
+	show_popup_text(
+		enemy_node,
+		"Bleed +" + str(bleed_amount),
+		1.2,
+		Color.RED
+	)
+
+	add_combat_log_entry(
+		"Mind Echo applied "
+		+ str(bleed_amount)
+		+ " Bleed to "
+		+ enemy_name
+		+ "."
+	)
+
+	update_enemy_3d_nodes()
+	
+func resolve_echo_area_or_target_damage(
+	enemy_index: int,
+	raw_damage: int,
+	effect_name: String
+):
+	if !is_valid_living_echo_target(enemy_index):
+		return
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+	var enemy_name: String = enemy["data"].enemy_name
+
+	var damage: int = apply_guardian_split(
+		enemy_index,
+		raw_damage,
+		false
+	)
+
+	var blocked_amount: int = min(
+		damage,
+		int(enemy["block"])
+	)
+
+	enemy["block"] -= blocked_amount
+	damage -= blocked_amount
+
+	if enemy["block"] < 0:
+		enemy["block"] = 0
+
+	if blocked_amount > 0:
+		await show_enemy_hit_sequence(
+			enemy_index,
+			blocked_amount,
+			0
+		)
+
+	if damage > 0:
+		var hp_before: int = enemy["hp"]
+
+		enemy["hp"] -= damage
+
+		if enemy["hp"] < 0:
+			enemy["hp"] = 0
+
+		var actual_damage: int = hp_before - enemy["hp"]
+
+		last_player_damage += actual_damage
+
+		show_damage_popup(
+			enemy_node,
+			actual_damage
+		)
+
+		enemy_node.hit_flash()
+		enemy_node.hurt_bump()
+
+		await shake_combat_camera(
+			0.16,
+			0.06
+		)
+
+		add_combat_log_entry(
+			"Mind Echo repeated "
+			+ effect_name
+			+ " for "
+			+ str(actual_damage)
+			+ " damage to "
+			+ enemy_name
+			+ "."
+		)
+	else:
+		add_combat_log_entry(
+			enemy_name
+			+ " blocked all echoed "
+			+ effect_name
+			+ " damage."
+		)
+
+	update_enemy_3d_nodes()
+	
+
+	
+
+func is_valid_living_echo_target(
+	enemy_index: int
+) -> bool:
+	if enemy_index < 0:
+		return false
+
+	if enemy_index >= active_enemies.size():
+		return false
+
+	if enemy_index >= enemy_3d_nodes.size():
+		return false
+
+	var enemy: Dictionary = active_enemies[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
+
+	if !is_instance_valid(enemy_node):
+		return false
+
+	if enemy["hp"] <= 0:
+		return false
+
+	if enemy.has("downed") and enemy["downed"]:
+		return false
+
+	return true
+	
+
 func apply_guardian_split(
 	target_index: int,
 	damage: int,
@@ -6155,6 +7210,8 @@ func apply_enemy_bleed():
 			continue
 
 		var enemy: Dictionary = active_enemies[i]
+		if enemy.get("downed", false):
+			continue
 		var enemy_name: String = enemy["data"].enemy_name
 		var bleed_value: int = enemy.get("bleed", 0)
 
@@ -6236,16 +7293,25 @@ func apply_enemy_bleed():
 
 		await get_tree().create_timer(0.35).timeout
 		
-func launch_enemy_die_at_player(enemy_index: int, face: DiceFace):
+func launch_enemy_die_at_player(
+	enemy_index: int,
+	face: DiceFace,
+	reflect_back: bool = false
+):
 	if enemy_index < 0 or enemy_index >= enemy_3d_nodes.size():
 		return
 
 	if player_3d_node == null or !is_instance_valid(player_3d_node):
 		return
 
-	var enemy_node = enemy_3d_nodes[enemy_index]
+	var enemy_node: Enemy3D = enemy_3d_nodes[enemy_index]
 
 	if !is_instance_valid(enemy_node):
+		return
+
+	var camera := get_viewport().get_camera_3d()
+
+	if camera == null:
 		return
 
 	var flying_die: DiceNode = dice_scene.instantiate()
@@ -6262,19 +7328,108 @@ func launch_enemy_die_at_player(enemy_index: int, face: DiceFace):
 	flying_die.set_compact_mode(false)
 	flying_die.update_visual()
 	flying_die.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flying_die.z_index = 1000
 
-	var camera := get_viewport().get_camera_3d()
-	var start_pos := camera.unproject_position(enemy_node.global_position + Vector3(0, 1.0, 0))
-	var target_pos := camera.unproject_position(player_3d_node.global_position + Vector3(0, 1.0, 0))
+	var enemy_screen_position := camera.unproject_position(
+		enemy_node.global_position + Vector3(0, 1.0, 0)
+	)
 
-	flying_die.global_position = start_pos
+	var player_screen_position := camera.unproject_position(
+		player_3d_node.global_position + Vector3(0, 1.0, 0)
+	)
 
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(flying_die, "global_position", target_pos, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(flying_die, "rotation", TAU * 1.25, 0.16)
+	# Center the die on its source and destination points.
+	var half_die_size: Vector2 = flying_die.size * 0.5
 
-	await tween.finished
+	var start_position: Vector2 = (
+		enemy_screen_position - half_die_size
+	)
+
+	var player_target_position: Vector2 = (
+		player_screen_position - half_die_size
+	)
+
+	flying_die.global_position = start_position
+	flying_die.pivot_offset = half_die_size
+
+	# Enemy die travels toward the player.
+	var attack_tween := create_tween()
+	attack_tween.set_parallel(true)
+
+	attack_tween.tween_property(
+		flying_die,
+		"global_position",
+		player_target_position,
+		0.16
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	attack_tween.tween_property(
+		flying_die,
+		"rotation",
+		TAU * 1.25,
+		0.16
+	)
+
+	await attack_tween.finished
+
+	if reflect_back:
+		# Brief pause at the player so the reversal reads clearly.
+		await get_tree().create_timer(0.06).timeout
+
+		# Recalculate the enemy's screen position in case the camera moved.
+		enemy_screen_position = camera.unproject_position(
+			enemy_node.global_position + Vector3(0, 1.0, 0)
+		)
+
+		var reflected_target_position: Vector2 = (
+			enemy_screen_position - half_die_size
+		)
+
+		var reversal_tween := create_tween()
+		reversal_tween.set_parallel(true)
+
+		reversal_tween.tween_property(
+			flying_die,
+			"global_position",
+			reflected_target_position,
+			0.22
+		).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+
+		reversal_tween.tween_property(
+			flying_die,
+			"rotation",
+			flying_die.rotation + TAU * 1.5,
+			0.22
+		)
+
+		reversal_tween.tween_property(
+			flying_die,
+			"scale",
+			Vector2(1.15, 1.15),
+			0.16
+		)
+
+		await reversal_tween.finished
+
+		var impact_tween := create_tween()
+		impact_tween.set_parallel(true)
+
+		impact_tween.tween_property(
+			flying_die,
+			"scale",
+			Vector2(1.4, 1.4),
+			0.07
+		)
+
+		impact_tween.tween_property(
+			flying_die,
+			"modulate:a",
+			0.0,
+			0.07
+		)
+
+		await impact_tween.finished
+
 	flying_die.queue_free()
 
 func open_edit_dice_panel_from_town():
@@ -6406,7 +7561,7 @@ func complete_current_bounty():
 			merchant_unlocked_faces.append(face)
 
 	if all_bounties_completed():
-		show_endless_choice()
+		endless_choice_pending = true
 	# refresh_relic_panel()
 	current_bounty = null
 	expedition_is_boss_fight = false
@@ -6435,6 +7590,13 @@ func complete_current_bounty():
 
 	save_run()
 	return_to_town_requested.emit()
+	
+func show_pending_endless_choice():
+	if !endless_choice_pending:
+		return
+
+	endless_choice_pending = false
+	show_endless_choice()
 	
 func apply_bounty_reward(bounty: BountyData):
 	if bounty.reward_food_tier_unlock > unlocked_food_tier:
@@ -7285,26 +8447,54 @@ func clear_fusion_undo_state():
 	fusion_undo_available = false
 	update_fusion_undo_button()
 	
-func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
+func try_fuse_inventory_faces(
+	face_a: DiceFace,
+	face_b: DiceFace
+):
 	if dice_panel_read_only:
 		return
 
-	var index_a := face_inventory.find(face_a)
-	var index_b := face_inventory.find(face_b)
+	if face_a == null or face_b == null:
+		show_edit_message("One of those faces is invalid.")
+		return
+
+	var index_a: int = face_inventory.find(face_a)
+	var index_b: int = face_inventory.find(face_b)
+
+	# Two inventory slots can occasionally reference the same resource.
+	# In that case, locate the second occurrence manually.
+	if index_a != -1 and index_b == index_a:
+		index_b = -1
+
+		for i in range(index_a + 1, face_inventory.size()):
+			if face_inventory[i] == face_b:
+				index_b = i
+				break
 
 	if index_a == -1 or index_b == -1:
-		show_edit_message("Could not find both faces.")
+		show_edit_message(
+			"Could not find two separate inventory faces."
+		)
 		return
 
 	if index_a == index_b:
+		show_edit_message(
+			"A face cannot be fused with itself."
+		)
 		return
 
-	if !can_fuse_faces(face_a, face_b):
+	var actual_face_a: DiceFace = face_inventory[index_a]
+	var actual_face_b: DiceFace = face_inventory[index_b]
+
+	if !can_fuse_faces(actual_face_a, actual_face_b):
 		show_edit_message("Those faces cannot be fused.")
 		AudioManager.play_ui(ui_fail_sound)
 		return
 
-	var fused_face: DiceFace = create_fused_face(face_a, face_b)
+	var fused_face: DiceFace = create_fused_face(
+		actual_face_a,
+		actual_face_b
+	)
 
 	if fused_face == null:
 		return
@@ -7318,7 +8508,11 @@ func try_fuse_inventory_faces(face_a: DiceFace, face_b: DiceFace):
 	face_inventory.remove_at(low_index)
 	face_inventory.append(fused_face)
 
-	AudioManager.play_one_shot(graft_face_sound)
+	AudioManager.play_one_shot(
+		graft_face_sound
+	)
+
+	selected_inventory_face_indices.clear()
 
 	refresh_edit_dice_panel()
 	save_run()
@@ -7363,8 +8557,11 @@ func handle_inventory_face_drop(
 
 	# Inventory -> Inventory fusion does not require a selected die.
 	if source_type == "inventory":
-		if dragged_face == target_inventory_face:
-			return
+		try_fuse_inventory_faces(
+			dragged_face,
+			target_inventory_face
+		)
+		return
 
 		var dragged_index: int = face_inventory.find(dragged_face)
 		var target_index: int = face_inventory.find(target_inventory_face)
@@ -7883,7 +9080,6 @@ func craft_selected_food():
 	consumable_inventory.append(recipe.result_item.duplicate(true))
 
 	selected_food_craft_names.clear()
-	selected_food_craft_names.clear()
 	AudioManager.play_one_shot(cooking_sound, randf_range(0.96, 1.04), 1.0)
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
@@ -8017,25 +9213,72 @@ func open_food_crafting_from_town():
 	update_craft_result_label()
 
 func bind_world(world: Node3D):
-	combat_camera = world.find_child("Camera3D", true, false)
-	enemy_positions = world.find_child("EnemyPositions", true, false)
-	player_position = world.find_child("PlayerPosition", true, false)
+	combat_camera = world.find_child(
+		"Camera3D",
+		true,
+		false
+	)
+
+	enemy_positions = world.find_child(
+		"EnemyPositions",
+		true,
+		false
+	)
+
+	player_position = world.find_child(
+		"PlayerPosition",
+		true,
+		false
+	)
+
 	print("World: ", world.name)
 	print("EnemyPositions: ", enemy_positions)
+
 	if combat_camera == null:
-		push_error("Combat world is missing Camera3D.")
+		push_error(
+			"Combat world is missing Camera3D."
+		)
 		return
 
 	if enemy_positions == null:
-		push_error("Combat world is missing EnemyPositions.")
+		push_error(
+			"Combat world is missing EnemyPositions."
+		)
 		return
 
 	if player_position == null:
-		push_error("Combat world is missing PlayerPosition.")
+		push_error(
+			"Combat world is missing PlayerPosition."
+		)
 		return
 
 	combat_camera.current = true
 	camera_original_position = combat_camera.position
+
+	# Every loaded combat world has its own camera home.
+	# Never reuse camera information from a previous encounter or run.
+	combat_camera_home_saved = false
+
+	combat_camera_home_transform = (
+		combat_camera.global_transform
+	)
+
+	combat_camera_home_size = combat_camera.size
+	combat_camera_home_saved = true
+
+	# Clear cinematic state inherited from the previous world.
+	shatter_camera_running = false
+	beastmaster_transition_running = false
+
+	print(
+		"Captured camera home for ",
+		world.name,
+		": ",
+		combat_camera_home_transform.origin,
+		" size=",
+		combat_camera_home_size
+	)
+
 	spawn_player_3d_node()
 
 func set_combat_ui_enabled(enabled: bool):
@@ -8594,8 +9837,6 @@ func load_run():
 
 	expedition_encounter_plan.clear()
 
-	expedition_encounter_plan.clear()
-
 	var saved_plan: Array = config.get_value("expedition", "encounter_plan", [])
 
 	for saved_node in saved_plan:
@@ -8617,6 +9858,12 @@ func load_run():
 		elif node_type == PLAN_WITCH:
 			expedition_encounter_plan.append({
 				"type": PLAN_WITCH,
+				"encounter": null
+			})
+
+		elif node_type == PLAN_WELL:
+			expedition_encounter_plan.append({
+				"type": PLAN_WELL,
 				"encounter": null
 			})
 
@@ -8653,6 +9900,7 @@ func load_run():
 	for face_data in config.get_value("inventory", "face_inventory", []):
 		if face_data is Dictionary:
 			face_inventory.append(deserialize_face(face_data))
+			make_inventory_faces_unique()
 
 	consumable_inventory.clear()
 	for item_data in config.get_value("inventory", "consumables", []):
@@ -9286,83 +10534,52 @@ func beastmaster_phase_transition(enemy_index: int):
 
 	await get_tree().create_timer(0.25).timeout
 
-	request_music_change.emit(
-		beastmaster_phase2_music
-	)
+	# Phase 1 is finished. Main.gd will load the separate
+	# Phase 2 world and encounter.
+	beastmaster_phase = 2
+	beastmaster_phase_two_requested.emit()
 
-	beastmaster_enemy["max_hp"] = (
-		beastmaster_enemy["data"].max_hp
-	)
+func start_beastmaster_phase_two():
+	beastmaster_phase = 2
+	combat_over = false
+	is_resolving_turn = false
+	beastmaster_transition_running = false
 
-	beastmaster_enemy["hp"] = max(
-		1,
-		int(
-			beastmaster_enemy["max_hp"]
-			* beastmaster_enemy["data"].phase_two_hp_percent
-		)
-	)
+	active_enemies.clear()
+	defeated_enemies.clear()
+	enemy_3d_nodes.clear()
 
-	beastmaster_enemy["attack"] = 0
-	beastmaster_enemy["crit"] = 0
-	beastmaster_enemy["block"] = 0
-	beastmaster_enemy["heal"] = 0
-	beastmaster_enemy["rolled_faces"] = []
-	beastmaster_enemy["roll_text"] = "Recovering"
+	selected_enemy_index = -1
+	selected_dice_order.clear()
+	assigned_enemy_containers.clear()
 
-	var pack_created: bool = await spawn_beastmaster_phase2_pack(
-		enemy_index
-	)
+	player_block = 0
+	dodge_targets.clear()
+	reversal_targets.clear()
+	break_focus_targets.clear()
+	mulligem_used_this_turn = false
 
-	if !pack_created:
-		push_error(
-			"Beast Master Phase Two roster could not be built."
-		)
+	for enemy_data in current_encounter.enemies:
+		if enemy_data == null:
+			continue
 
-		await cinematic_beastmaster_zoom_out()
-		finish_failed_beastmaster_transition()
-		return
-
-	await shatter_camera_shake(
-		combat_camera,
-		0.35,
-		0.28
-	)
-
-	await cinematic_beastmaster_zoom_out()
-
-	# Ensure all camera work is fully complete before rebuilding.
-	await get_tree().process_frame
-
-	var rebuild_succeeded: bool = await rebuild_enemy_3d_nodes()
-
-	if !rebuild_succeeded:
-		push_error(
-			"Beast Master Phase Two enemy visuals failed to rebuild."
+		active_enemies.append(
+			create_enemy_instance(enemy_data)
 		)
 
-		finish_failed_beastmaster_transition()
-		return
-
+	spawn_enemy_3d_nodes()
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
 
-	regroup_dice()
-	update_group_visibility()
-	update_assigned_panel_visibility()
+	await clear_all_combat_dice_state()
 
-	set_combat_ui_enabled(true)
+	# Keep combat controls hidden until the new world fades in.
+	set_combat_ui_enabled(false)
 
-	is_resolving_turn = false
-	end_round_button.disabled = false
-	beastmaster_transition_running = false
+	update_player_hp_label()
+	update_player_block_label()
+	update_player_status_icons()
 
-	update_mulligem_button()
-	update_begin_expedition_button_visibility()
-
-	add_combat_log_entry(
-		"Beast Master Phase Two began."
-	)
-	
 func finish_failed_beastmaster_transition():
 	is_resolving_turn = false
 	end_round_button.disabled = false
@@ -9372,6 +10589,31 @@ func finish_failed_beastmaster_transition():
 
 	update_mulligem_button()
 	update_begin_expedition_button_visibility()
+	
+func begin_beastmaster_phase_two_combat():
+	spawn_dice()
+
+	# Show the combat interface before the roll animation begins.
+	set_combat_ui_enabled(true)
+
+	await get_tree().process_frame
+
+	await roll_all_dice()
+
+	roll_enemy_intents()
+
+	end_round_button.disabled = false
+	is_resolving_turn = false
+	beastmaster_transition_running = false
+
+	update_mulligem_button()
+	update_player_hp_label()
+	update_player_block_label()
+	update_player_status_icons()
+
+	add_combat_log_entry(
+		"Beast Master Phase Two began."
+	)
 	
 func clear_all_enemy_3d_nodes():
 	for enemy_node in enemy_3d_nodes:
@@ -9408,11 +10650,19 @@ func cinematic_beastmaster_focus(
 
 		return false
 
+	if !combat_camera_home_saved:
+		capture_combat_camera_home()
+
+	if !combat_camera_home_saved:
+		return false
+
 	beastmaster_camera_original_transform = (
-		camera.global_transform
+		combat_camera_home_transform
 	)
 
-	beastmaster_camera_original_size = camera.size
+	beastmaster_camera_original_size = (
+		combat_camera_home_size
+	)
 
 	camera.current = true
 
@@ -9458,6 +10708,27 @@ func cinematic_beastmaster_focus(
 	await tween.finished
 
 	return true
+	
+func capture_combat_camera_home():
+	var camera: Camera3D = combat_camera
+
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera == null:
+		push_error("Could not capture combat camera.")
+		return
+
+	combat_camera = camera
+
+	combat_camera_home_transform = camera.global_transform
+	combat_camera_home_size = camera.size
+	combat_camera_home_saved = true
+
+	print(
+		"Captured combat camera home: ",
+		combat_camera_home_transform.origin
+	)
 	
 func restore_beastmaster_camera():
 	var camera: Camera3D = combat_camera
@@ -10286,3 +11557,17 @@ func get_player_berserker_bonus() -> int:
 		return 0
 
 	return value
+
+func record_echoable_effect(
+	result_type: String,
+	value: int,
+	source_die: DiceNode,
+	target_index: int = -1
+):
+	last_echoable_effect = {
+		"type": result_type,
+		"value": value,
+		"source_die": source_die,
+		"target_index": target_index
+	}
+	

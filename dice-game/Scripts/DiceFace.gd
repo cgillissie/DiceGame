@@ -57,6 +57,18 @@ func get_display_name() -> String:
 
 		"fireball":
 			return "Fireball"
+		
+		"mana_shield":
+			return "Mana Shield"
+
+		"mind_echo":
+			return "Mind Echo"
+
+		"blizzard":
+			return "Blizzard"
+
+		"chain_lightning":
+			return "Chain Lightning"
 
 		_:
 			if !face_name.is_empty():
@@ -193,8 +205,75 @@ func get_tooltip(die_data: DiceData = null) -> String:
 						+ str(miss_count)
 						+ "."
 				)
+		"mana_shield":
+			var misses := get_miss_count(die_data)
 
+			return (
+				"Mana Shield\n"
+				+ "Gain 1 Block for each Miss face on this die."
+				+ (
+					"\nCurrent Block: " + str(misses)
+					if die_data != null
+					else ""
+				)
+			)
+
+		"mind_echo":
+			return (
+				"Mind Echo\n"
+				+ "Repeat the previously resolved die result. "
+				+ "Can repeat another Mind Echo."
+			)
+
+		"blizzard":
+			var misses := get_miss_count(die_data)
+			var freeze_amount := int(floor(float(misses) / 2.0))
+
+			return (
+				"Blizzard\n"
+				+ "Apply Freeze to every enemy equal to half "
+				+ "this die's Miss faces, rounded down."
+				+ (
+					"\nCurrent Freeze: "
+					+ str(freeze_amount)
+					+ " to all enemies."
+					if die_data != null
+					else ""
+				)
+			)
+
+		"chain_lightning":
+			var misses := get_miss_count(die_data)
+			var damage := int(floor(float(misses) / 2.0))
+
+			return (
+				"Chain Lightning\n"
+				+ "Deal damage to every enemy equal to half "
+				+ "this die's Miss faces, rounded down."
+				+ (
+					"\nCurrent Damage: "
+					+ str(damage)
+					+ " to all enemies."
+					if die_data != null
+					else ""
+				)
+			)
 		_:
 			pass
 
 	return text
+
+func get_miss_count(die_data: DiceData) -> int:
+	if die_data == null:
+		return 0
+
+	var count: int = 0
+
+	for die_face in die_data.faces:
+		if (
+			die_face != null
+			and die_face.result_type == "miss"
+		):
+			count += 1
+
+	return count

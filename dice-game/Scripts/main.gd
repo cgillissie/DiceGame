@@ -9,6 +9,9 @@ var town_camera_rig_default_transform: Transform3D
 var camera_tween: Tween
 var hovered_building: TownBuilding = null
 
+var combat_camera_home_transform: Transform3D
+var combat_camera_home_size: float
+var combat_camera_home_saved: bool = false
 
 var town_camera_default_size: float
 var selected_building: TownBuilding = null
@@ -63,7 +66,9 @@ func _ready():
 	combat.town_menu_closed.connect(reset_town_interaction)
 	combat.expedition_started.connect(start_expedition_world)
 	combat.return_to_town_requested.connect(return_to_town)
-
+	combat.beastmaster_phase_two_requested.connect(
+	start_beastmaster_phase_two_world
+)
 	await get_tree().process_frame
 
 	if FileAccess.file_exists(combat.RUN_SAVE_PATH):
@@ -107,13 +112,15 @@ func load_saved_expedition():
 	load_world(scene_to_load)
 
 	combat.bind_world(active_world)
+	combat.capture_combat_camera_home()
 	combat.set_combat_ui_enabled(false)
 	combat.show_expedition_camp()
-
+	
 	await play_music_fade(expedition_music.pick_random())
 	await fade_from_black()
 	
 func load_world(scene: PackedScene):
+	
 	if scene == null:
 		push_error("load_world() got null scene.")
 		return
@@ -129,6 +136,8 @@ func load_world(scene: PackedScene):
 
 	current_world_3d.add_child(active_world)
 	
+
+	
 func get_combat_scene_for_current_encounter() -> PackedScene:
 	if combat.current_encounter != null and combat.current_encounter.override_combat_scene != null:
 		return combat.current_encounter.override_combat_scene
@@ -137,6 +146,53 @@ func get_combat_scene_for_current_encounter() -> PackedScene:
 		return combat_scenes.pick_random()
 
 	return null
+
+func start_beastmaster_phase_two_world():
+	await fade_to_black()
+
+	if combat.boss_phase_two_encounter == null:
+		push_error(
+			"Beast Master Phase 2 encounter is not assigned."
+		)
+
+		await fade_from_black()
+		return
+
+	combat.current_encounter = (
+		combat.boss_phase_two_encounter
+	)
+
+	var phase_two_world: PackedScene = (
+		get_combat_scene_for_current_encounter()
+	)
+
+	if phase_two_world == null:
+		push_error(
+			"No world was found for the Beast Master "
+			+ "Phase 2 encounter."
+		)
+
+		await fade_from_black()
+		return
+
+	load_world(phase_two_world)
+
+	await get_tree().process_frame
+
+	combat.bind_world(active_world)
+
+	# Build the world and enemies while the screen is black.
+	await combat.start_beastmaster_phase_two()
+
+	await play_music_fade(
+		combat.beastmaster_phase2_music
+	)
+
+	# Reveal the completed Phase 2 scene.
+	await fade_from_black()
+
+	# Roll only after the player can see the new world.
+	await combat.begin_beastmaster_phase_two_combat()
 
 func play_music(track: AudioStream):
 	if track == null:
@@ -336,17 +392,27 @@ func town_menu_is_open() -> bool:
 
 func start_expedition_world(event_type: String = "combat"):
 	if event_type == "witch":
+		combat.witch_seen_this_run = true
+		combat.save_run()
+
 		await start_witch_encounter_world()
 		return
 
 	if event_type == "well":
+		combat.well_seen_this_run = true
+		combat.save_run()
+
 		await start_water_well_world()
 		return
 
 	await fade_to_black()
-	await play_music_fade(expedition_music.pick_random())
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
 
-	var scene_to_load := get_combat_scene_for_current_encounter()
+	var scene_to_load := (
+		get_combat_scene_for_current_encounter()
+	)
 
 	if scene_to_load == null:
 		push_error("No combat scene found.")
@@ -355,6 +421,7 @@ func start_expedition_world(event_type: String = "combat"):
 
 	load_world(scene_to_load)
 	combat.bind_world(active_world)
+	combat.capture_combat_camera_home()
 	combat.set_combat_ui_enabled(true)
 	combat.start_expedition()
 
@@ -362,9 +429,15 @@ func start_expedition_world(event_type: String = "combat"):
 	
 func return_to_town():
 	await fade_to_black()
+
 	load_town()
 	combat.set_combat_ui_enabled(false)
+
 	await fade_from_black()
+
+	# The final-bounty screen should appear only after the
+	# normal boss loot flow and return-to-town transition.
+	combat.show_pending_endless_choice()
 
 func fade_to_black():
 	fade_rect.visible = true
@@ -542,6 +615,7 @@ func _on_witch_choice_made(accepted: bool):
 
 	load_world(scene_to_load)
 	combat.bind_world(active_world)
+	combat.capture_combat_camera_home()
 	combat.set_combat_ui_enabled(false)
 	combat.show_expedition_camp()
 	combat.expedition_progress += 1
@@ -663,6 +737,7 @@ func finish_water_well_event():
 
 	load_world(scene_to_load)
 	combat.bind_world(active_world)
+	combat.capture_combat_camera_home()
 	combat.set_combat_ui_enabled(false)
 	combat.show_expedition_camp()
 

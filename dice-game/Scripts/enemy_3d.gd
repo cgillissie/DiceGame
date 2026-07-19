@@ -46,25 +46,104 @@ func _ready():
 	area.input_event.connect(_on_area_input_event)
 	home_position = position
 	
-func setup(index: int, enemy: Dictionary):
+func setup(
+	index: int,
+	enemy: Dictionary
+):
 	enemy_index = index
 	current_enemy = enemy
-	var data: EnemyData = enemy["data"]
+
+	var data: EnemyData = enemy.get("data", null)
+
+	if data == null:
+		push_error(
+			"Enemy3D.setup received enemy data with no EnemyData."
+		)
+		return
+
 	enemy_data = data
-	if data.sprite_frames != null:
+
+	# Always restore the complete visual state. A reused or previously
+	# animated enemy node must never remain hidden, transparent, or scaled
+	# to zero.
+	visible = true
+	scale = Vector3.ONE
+
+
+	sprite.visible = true
+	sprite.modulate = Color.WHITE
+
+	if data.sprite_frames == null:
+		push_error(
+			data.enemy_name
+			+ " has no SpriteFrames resource assigned."
+		)
+	else:
+		sprite.sprite_frames = data.sprite_frames
 		sprite.scale = data.sprite_scale
 		sprite.position = data.sprite_offset
-		sprite.sprite_frames = data.sprite_frames
-		if data.sprite_frames != null:
-			sprite.scale = data.sprite_scale
-			sprite.position = data.sprite_offset
-			sprite.sprite_frames = data.sprite_frames
 
-			if enemy.has("downed") and enemy["downed"]:
-				if sprite.sprite_frames.has_animation("downed"):
-					sprite.play("downed")
-			else:
-				sprite.play(data.idle_animation_name)
+		var animation_to_play: String = ""
+
+		if (
+			enemy.get("downed", false)
+			and sprite.sprite_frames.has_animation("downed")
+		):
+			animation_to_play = "downed"
+		else:
+			animation_to_play = data.idle_animation_name
+
+			# Protect against an unset or invalid idle-animation field.
+			if (
+				animation_to_play.is_empty()
+				or !sprite.sprite_frames.has_animation(
+					animation_to_play
+				)
+			):
+				if sprite.sprite_frames.has_animation("idle"):
+					animation_to_play = "idle"
+				else:
+					var available_animations: PackedStringArray = (
+						sprite.sprite_frames.get_animation_names()
+					)
+
+					if !available_animations.is_empty():
+						animation_to_play = (
+							available_animations[0]
+						)
+
+				push_warning(
+					data.enemy_name
+					+ " has invalid idle animation '"
+					+ data.idle_animation_name
+					+ "'. Falling back to '"
+					+ animation_to_play
+					+ "'."
+				)
+
+		if !animation_to_play.is_empty():
+			sprite.play(animation_to_play)
+
+	print(
+		"ENEMY VISUAL SETUP | index=",
+		index,
+		" | name=",
+		data.enemy_name,
+		" | animation=",
+		sprite.animation,
+		" | sprite_frames=",
+		sprite.sprite_frames != null,
+		" | node_visible=",
+		visible,
+		" | sprite_visible=",
+		sprite.visible,
+		" | node_scale=",
+		scale,
+		" | sprite_scale=",
+		sprite.scale,
+		" | sprite_offset=",
+		sprite.position
+	)
 		
 	
 	name_label.text = data.enemy_name

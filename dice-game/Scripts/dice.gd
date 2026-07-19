@@ -97,7 +97,10 @@ func can_drag_to_enemy() -> bool:
 		"twist_knife",
 		"break_focus",
 		"shield_bash",
-		"fireball"
+		"fireball",
+		"mind_echo",
+		"blizzard",
+		"chain_lightning"
 	]
 	
 func _gui_input(event):
@@ -247,7 +250,24 @@ func update_visual():
 	face_index_label.text = str(current_face_index + 1) + "/" + str(dice_data.faces.size())
 	reserve_lock_icon.visible = came_from_reserve
 
-	if face_should_show_value(face):
+	var dynamic_value: int = -1
+
+	match face.result_type:
+		"mana_shield":
+			dynamic_value = count_die_misses()
+
+		"blizzard", "chain_lightning":
+			dynamic_value = int(
+				floor(
+					float(count_die_misses()) / 2.0
+				)
+			)
+
+	if dynamic_value >= 0:
+		result_label.text = str(dynamic_value)
+		result_label.visible = true
+
+	elif face_should_show_value(face):
 		var value_to_show: int = face.value
 
 		if face.result_type == "hit":
@@ -255,6 +275,7 @@ func update_visual():
 
 		result_label.text = str(value_to_show)
 		result_label.visible = true
+
 	else:
 		result_label.text = ""
 		result_label.visible = false
@@ -282,6 +303,21 @@ func update_visual():
 	
 	update_tooltip()
 	update_buff_glow()
+	
+func count_die_misses() -> int:
+	if dice_data == null:
+		return 0
+
+	var count: int = 0
+
+	for die_face in dice_data.faces:
+		if (
+			die_face != null
+			and die_face.result_type == "miss"
+		):
+			count += 1
+
+	return count
 	
 func face_should_show_value(face: DiceFace) -> bool:
 	if face == null:

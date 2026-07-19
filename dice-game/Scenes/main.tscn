@@ -49,8 +49,10 @@
 [ext_resource type="Script" uid="uid://2s2qkfsmu0bc" path="res://Scripts/DiceData.gd" id="27_e5peh"]
 [ext_resource type="Resource" uid="uid://c3qjt52sxpug5" path="res://Resources/Consumables/FoodMushroom.tres" id="27_r33sp"]
 [ext_resource type="Resource" uid="uid://kxjc8nvytsp4" path="res://Resources/Faces/shield_bash.tres" id="29_fg68e"]
+[ext_resource type="Resource" uid="uid://b40i1xmoyv82t" path="res://Resources/Encounters/The Beast Master/BeastMasterBossFight.tres" id="33_55idt"]
 [ext_resource type="Resource" uid="uid://buwoxi0n03h4q" path="res://Resources/Bounties/The Beast Master.tres" id="33_lx3vj"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="33_v1mrv"]
+[ext_resource type="Resource" uid="uid://cchnfh87rjsge" path="res://Resources/Encounters/The Beast Master/BeastMasterBossFightPhase2.tres" id="34_87bhu"]
 [ext_resource type="Resource" uid="uid://dgh00weyr8smo" path="res://Resources/Enemies/bandit.tres" id="34_fd3ed"]
 [ext_resource type="AudioStream" uid="uid://ca7jmgf7hf50h" path="res://Assets/Music/YouMustDieBeastMasterTheme.wav" id="34_lx3vj"]
 [ext_resource type="AudioStream" uid="uid://ihx4cw7m2oft" path="res://Assets/Music/YouMustDieTownTheme.wav" id="34_neg2b"]
@@ -141,6 +143,8 @@ twist_knife_face_template = ExtResource("19_ptfg5")
 pain_face_template = ExtResource("21_1semv")
 shield_bash_face_template = ExtResource("29_fg68e")
 player_character_data = SubResource("Resource_hptm8")
+boss_phase_one_encounter = ExtResource("33_55idt")
+boss_phase_two_encounter = ExtResource("34_87bhu")
 reserve_unlocked_texture = ExtResource("34_vxl7x")
 reserve_locked_texture = ExtResource("35_ihvwq")
 encounter_pool = Array[ExtResource("7_fdnlq")]([SubResource("Resource_v3f3w"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])

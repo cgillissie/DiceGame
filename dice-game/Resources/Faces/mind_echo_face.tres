@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://co1m0p5l67ot8"]
+
+[ext_resource type="Texture2D" uid="uid://3kvkjdu2vivt" path="res://Assets/Sprites/FaceIcons/MindEchoIcon.png" id="1_dynke"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="1_hri1t"]
+
+[resource]
+script = ExtResource("1_hri1t")
+face_name = "Mind Echo"
+result_type = "mind_echo"
+icon = ExtResource("1_dynke")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"
