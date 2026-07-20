@@ -4,19 +4,40 @@ class_name InventoryFaceButton
 @onready var face_icon: TextureRect = $FaceIcon
 @onready var value_label: Label = $ValueLabel
 
-var face_data: DiceFace
+signal face_dropped(
+	data: Dictionary,
+	target_face: DiceFace,
+	target_source_type: String,
+	target_slot_index: int,
+	target_inventory_index: int
+)
+var inventory_index: int = -1
+var face_data: DiceFace = null
 
-func setup(face: DiceFace, is_selected: bool = false):
+func setup(
+	face: DiceFace,
+	index: int,
+	selected: bool
+):
 	face_data = face
+	inventory_index = index
+
 	tooltip_text = get_face_tooltip(face)
 	custom_minimum_size = Vector2(56, 56)
 	text = ""
 
 	face_icon.texture = face.icon
-	value_label.text = str(face.value) if face.value > 0 else ""
+	value_label.text = (
+		str(face.value)
+		if face.value > 0
+		else ""
+	)
 
-	modulate = Color.YELLOW if is_selected else Color.WHITE
-	
+	modulate = (
+		Color.YELLOW
+		if selected
+		else Color.WHITE
+	)
 func get_face_tooltip(face: DiceFace) -> String:
 	if face == null:
 		return ""
@@ -53,18 +74,25 @@ func _get_drag_data(_position):
 
 	return {
 		"source_type": "inventory",
-		"source_button": self,
-		"face": face_data
+		"face": face_data,
+		"inventory_index": inventory_index
 	}
 	
 func _can_drop_data(_position, data):
 	return data is Dictionary and data.has("face") and data.has("source_type")
 
 
-func _drop_data(_position, data):
-	var combat = get_tree().current_scene.get_node_or_null("CombatUI")
-
-	if combat == null:
+func _drop_data(
+	_at_position: Vector2,
+	data: Variant
+):
+	if !_can_drop_data(_at_position, data):
 		return
 
-	combat.handle_face_drop(data, face_data, "inventory")
+	face_dropped.emit(
+		data,
+		face_data,
+		"inventory",
+		-1,
+		inventory_index
+	)

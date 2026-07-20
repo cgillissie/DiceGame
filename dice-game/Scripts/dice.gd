@@ -21,7 +21,6 @@ var reserve_slots: int = 2
 @onready var temporary_icon: TextureRect = $BorderPanel/Panel/TemporaryIcon
 @onready var buff_glow: TextureRect = $BorderPanel/Panel/BuffGlow
 
-
 var current_face_index: int = -1
 
 signal reserve_requested(dice_node)
@@ -50,7 +49,8 @@ var drag_threshold: float = 10.0
 func _ready():
 	reserve_lock_icon.visible = false
 
-
+	
+	
 func setup(data: DiceData):
 	dice_data = data
 	
@@ -293,13 +293,18 @@ func update_visual():
 		border_panel.modulate = Color.RED
 	else:
 		border_panel.modulate = Color.WHITE
-
+		
 	exploding_icon.visible = false
-	temporary_icon.visible = temporary
 
-	if dice_data != null and dice_data.can_explode:
-		if current_face_index == dice_data.faces.size() - 1:
-			exploding_icon.visible = true
+	if (
+		dice_data != null
+		and dice_data.can_explode
+		and !temporary
+		and current_face_index == dice_data.faces.size() - 1
+	):
+		exploding_icon.visible = true
+
+	temporary_icon.visible = temporary
 	
 	update_tooltip()
 	update_buff_glow()
@@ -415,7 +420,7 @@ func set_compact_mode(enabled: bool):
 
 		exploding_icon.custom_minimum_size = Vector2(18, 18)
 		temporary_icon.custom_minimum_size = Vector2(18, 18)
-
+	
 func roll_animated(roll_area: Control, roll_index: int = 0, total_rolls: int = 1, final_container: Control = null):
 	if dice_data == null:
 		return

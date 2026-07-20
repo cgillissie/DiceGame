@@ -740,7 +740,7 @@ horizontal_alignment = 1
 
 [node name="LootPanel" type="Panel" parent="." unique_id=759087292]
 visible = false
-custom_minimum_size = Vector2(300, 220)
+custom_minimum_size = Vector2(300, 500)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -1639,7 +1639,7 @@ text = "Close"
 
 [node name="FoodCraftPanel" type="Panel" parent="." unique_id=1489697673]
 visible = false
-custom_minimum_size = Vector2(300, 300)
+custom_minimum_size = Vector2(600, 300)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -1898,6 +1898,16 @@ text = " Fullscreen"
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 
+[node name="WishlistButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=1452675070]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Wishlist on Steam!"
+
+[node name="DiscordButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=467929431]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Join our Discord!"
+
 [node name="RestartRunButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=176290461]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
@@ -1907,11 +1917,6 @@ text = "Restart Run"
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = "Quit"
-
-[node name="DiscordButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=467929431]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("9_twsak")
-text = "Join our Discord"
 
 [node name="CloseOptionsButton" type="Button" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=1086447467]
 layout_mode = 2
@@ -1998,6 +2003,14 @@ size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
 theme_override_font_sizes/font_size = 20
 text = "Start New Run"
+
+[node name="WishlistButton" type="Button" parent="EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer" unique_id=639410345]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("9_twsak")
+theme_override_font_sizes/font_size = 20
+text = "Wishlist the Full Game"
 
 [node name="EndDemoButton" type="Button" parent="EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer" unique_id=1109284669]
 custom_minimum_size = Vector2(200, 80)

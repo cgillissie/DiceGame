@@ -20,7 +20,7 @@ var town_shake_speed := 1.5
 var town_shake_time := 0.0
 
 var town_camera_is_tweening := false
-
+var town_camera_tween_version: int = 0
 
 @export var town_scene: PackedScene
 @export var combat_scenes: Array[PackedScene]
@@ -471,28 +471,48 @@ func play_music_fade(track: AudioStream):
 	fade.tween_property(music_player, "volume_db", 0.0, 0.5)
 	await fade.finished
 	
-func focus_camera_anchor(anchor_name: String):
+func focus_camera_anchor(
+	anchor_name: String
+):
 	if town_camera == null:
 		return
 
 	if town_camera_rig == null:
 		return
 
-	if town_camera_is_tweening:
-		return
-
-	var anchor: Node3D = active_world.find_child(anchor_name, true, false)
+	var anchor: Node3D = active_world.find_child(
+		anchor_name,
+		true,
+		false
+	)
 
 	if anchor == null:
+		push_warning(
+			"Could not find town camera anchor: "
+			+ anchor_name
+		)
 		return
 
-	if camera_tween != null and camera_tween.is_valid():
-		camera_tween.kill()
+	# This becomes the newest camera request.
+	town_camera_tween_version += 1
+	var request_version: int = town_camera_tween_version
+
+	# Interrupt any zoom-in or zoom-out currently running.
+	if camera_tween != null:
+		if camera_tween.is_valid():
+			camera_tween.kill()
 
 	town_camera_is_tweening = true
-	AudioManager.play_one_shot(camera_zoom_sound)
+
+	if camera_zoom_sound != null:
+		AudioManager.play_one_shot(
+			camera_zoom_sound
+		)
 
 	camera_tween = create_tween()
+	camera_tween.set_parallel(true)
+	camera_tween.set_trans(Tween.TRANS_QUAD)
+	camera_tween.set_ease(Tween.EASE_IN_OUT)
 
 	camera_tween.tween_property(
 		town_camera_rig,
@@ -501,7 +521,7 @@ func focus_camera_anchor(anchor_name: String):
 		0.5
 	)
 
-	camera_tween.parallel().tween_property(
+	camera_tween.tween_property(
 		town_camera,
 		"size",
 		2.0,
@@ -510,20 +530,39 @@ func focus_camera_anchor(anchor_name: String):
 
 	await camera_tween.finished
 
+	# An older interrupted request must not change the state
+	# belonging to a newer camera tween.
+	if request_version != town_camera_tween_version:
+		return
+
 	town_camera_is_tweening = false
+	camera_tween = null
 	
 func reset_town_camera():
 	if town_camera == null:
 		return
 
-	if camera_tween != null and camera_tween.is_valid():
-		camera_tween.kill()
+	if town_camera_rig == null:
+		return
+
+	town_camera_tween_version += 1
+	var request_version: int = town_camera_tween_version
+
+	if camera_tween != null:
+		if camera_tween.is_valid():
+			camera_tween.kill()
 
 	town_camera_is_tweening = true
 
-	AudioManager.play_one_shot(camera_zoom_sound)
+	if camera_zoom_sound != null:
+		AudioManager.play_one_shot(
+			camera_zoom_sound
+		)
 
 	camera_tween = create_tween()
+	camera_tween.set_parallel(true)
+	camera_tween.set_trans(Tween.TRANS_QUAD)
+	camera_tween.set_ease(Tween.EASE_IN_OUT)
 
 	camera_tween.tween_property(
 		town_camera_rig,
@@ -532,7 +571,7 @@ func reset_town_camera():
 		0.5
 	)
 
-	camera_tween.parallel().tween_property(
+	camera_tween.tween_property(
 		town_camera,
 		"size",
 		town_camera_default_size,
@@ -541,7 +580,18 @@ func reset_town_camera():
 
 	await camera_tween.finished
 
+	if request_version != town_camera_tween_version:
+		return
+
+	# Force exact final values to avoid accumulated drift.
+	town_camera_rig.global_transform = (
+		town_camera_rig_default_transform
+	)
+
+	town_camera.size = town_camera_default_size
+
 	town_camera_is_tweening = false
+	camera_tween = null
 
 func reset_town_interaction():
 	if selected_building != null:

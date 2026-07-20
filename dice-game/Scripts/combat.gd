@@ -3,6 +3,9 @@ extends Control
 const SAVE_DIRECTORY := "user://SaveData/"
 const SETTINGS_SAVE_PATH := SAVE_DIRECTORY + "settings.cfg"
 const RUN_SAVE_PATH := SAVE_DIRECTORY + "run_save.cfg"
+const STEAM_STORE_URL := (
+	"https://store.steampowered.com/app/4832350/"
+)
 
 @export var dice_scene: PackedScene
 @export var starting_dice: Array[DiceData]
@@ -385,6 +388,9 @@ var sell_face_value: int = 2
 @onready var fullscreen_check_box = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/FullscreenCheckBox
 @onready var resolution_option: OptionButton = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/ResolutionOptionButton
 @onready var discord_button: Button = $OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/DiscordButton
+@onready var options_wishlist_button: Button = (
+	$OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer/WishlistButton
+)
 
 # Death Overlay ###################################
 @onready var death_overlay: ColorRect = $DeathOverlay
@@ -393,6 +399,9 @@ var sell_face_value: int = 2
 @onready var endless_choice_overlay: ColorRect = $EndlessChoiceOverlay
 @onready var end_demo_button: Button = $EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer/EndDemoButton
 @onready var continue_endless_button: Button = $EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer/ContinueEndlessButton
+@onready var endless_wishlist_button: Button = (
+	$EndlessChoiceOverlay/Panel/MarginContainer/VBoxContainer/WishlistButton
+)
 
 # Combat Stuff ################################
 @export var freeze_sound: AudioStream
@@ -578,6 +587,15 @@ func _ready():
 	sfx_volume_slider.min_value = 0.0
 	sfx_volume_slider.max_value = 1.0
 	sfx_volume_slider.step = 0.01
+	
+	options_wishlist_button.pressed.connect(
+		open_steam_store_page
+	)
+
+	endless_wishlist_button.pressed.connect(
+		open_steam_store_page
+	)
+
 	load_settings()
 	if dice_bag_button.pressed.is_connected(open_dice_bag_read_only):
 		dice_bag_button.pressed.disconnect(open_dice_bag_read_only)
@@ -631,6 +649,7 @@ func _process(delta):
 	update_enemy_hover_preview()
 	update_player_health_bar_position()
 	
+
 func spawn_player_3d_node():
 	if player_3d_node != null and is_instance_valid(player_3d_node):
 		player_3d_node.queue_free()
@@ -981,6 +1000,7 @@ func update_enemy_hover_preview():
 func apply_volatile_core():
 	if dice_panel_read_only:
 		return
+
 	if volatile_cores <= 0:
 		return
 
@@ -996,8 +1016,13 @@ func apply_volatile_core():
 	selected_edit_die.can_explode = true
 	volatile_cores -= 1
 
+	AudioManager.play_one_shot(
+		dice_smith_crafting_sound
+	)
+
 	update_volatile_core_button()
 	refresh_edit_dice_panel()
+	save_run()
 	
 	# ENCOUNTER CHOICE FUNCTIONS ##################################################
 func generate_encounter_choices():
@@ -1029,10 +1054,12 @@ func create_enemy_instance(
 	var bonus_traits: Array[EnemyTrait] = []
 
 	if (
-		run_encounters_completed
+		!expedition_is_boss_fight
+		and run_encounters_completed
 		>= random_trait_scaling_threshold
 		and randf() <= random_trait_chance
 	):
+
 		var valid_traits: Array[EnemyTrait] = []
 
 		for possible_trait in random_enemy_trait_pool:
@@ -2099,15 +2126,35 @@ func roll_all_dice():
 		await die.roll_animated(roll_animation_area, 0, 1)
 		if die.current_face != null and die.current_face.result_type == "crit":
 			AudioManager.play_one_shot(critical_roll_sound)
-		var final_container := get_container_for_die(die)
+		var final_container: GridContainer = (
+			get_container_for_die(die)
+		)
+
+		if final_container == null:
+			continue
+
+		# The group was hidden when all dice were moved into the
+		# rolling area. Reveal it before returning the die.
+		final_container.get_parent().visible = true
+
+		await get_tree().process_frame
 		await die.fly_to_container(final_container)
+
+		die.visible = true
 
 		die.set_compact_mode(false)
 		die.set_base_visual_scale(
 			Vector2.ONE * get_combat_die_scale()
 		)
+
+		# Refresh now, before awaiting the explosion chain.
+		update_group_visibility()
+
 		if die.dice_data.can_explode:
-			if die.current_face_index == die.dice_data.faces.size() - 1:
+			if (
+				die.current_face_index
+				== die.dice_data.faces.size() - 1
+			):
 				if !die.has_exploded:
 					die.has_exploded = true
 					await spawn_exploded_die(die)
@@ -3085,7 +3132,9 @@ func end_round():
 	apply_player_regeneration()
 	await remove_defeated_enemies()
 
-	if beastmaster_transition_running or beastmaster_phase == 2:
+	# Only stop the old Phase 1 coroutine while the world transition
+	# is actively taking place. Phase 2 itself must resolve normally.
+	if beastmaster_transition_running:
 		return
 
 	if active_enemies.is_empty():
@@ -3100,7 +3149,9 @@ func end_round():
 	reversal_targets.clear()
 	break_focus_targets.clear()
 
-	combat_max_player_hp = max_player_hp + next_combat_bonus_max_hp
+	combat_max_player_hp = (
+		max_player_hp + next_combat_bonus_max_hp
+	)
 
 	update_player_hp_label()
 	update_player_block_label()
@@ -3110,6 +3161,7 @@ func end_round():
 	if combat_over:
 		is_resolving_turn = false
 		return
+
 	apply_enemy_end_round_traits()
 	update_enemy_3d_nodes()
 	apply_end_round_relics()
@@ -3128,12 +3180,15 @@ func end_round():
 	update_player_3d_node()
 
 	mulligem_used_this_turn = false
-	update_mulligem_button()
-	
-	add_combat_log_entry("────────── New Round ──────────")
+
+
+	add_combat_log_entry(
+		"────────── New Round ──────────"
+	)
 
 	is_resolving_turn = false
 	end_round_button.disabled = false
+	update_mulligem_button()
 	
 func apply_player_bleed():
 	var bleed_value: int = player_statuses.get("bleed", 0)
@@ -4189,12 +4244,23 @@ func refresh_edit_dice_panel():
 		die_faces_container.columns = 1
 
 	for i in selected_edit_die.faces.size():
-		var face := selected_edit_die.faces[i]
-		
-		var face_button = equipped_face_button_scene.instantiate()
+		var face: DiceFace = selected_edit_die.faces[i]
+
+		var face_button: EquippedFaceButton = (
+			equipped_face_button_scene.instantiate()
+		)
+
 		die_faces_container.add_child(face_button)
 
-		face_button.setup(face, i, i == selected_die_face_index)
+		face_button.setup(
+			face,
+			i,
+			i == selected_die_face_index
+		)
+
+		face_button.face_dropped.connect(
+			handle_face_drop
+		)
 		
 	
 func rebuild_face_inventory_grid():
@@ -4224,23 +4290,20 @@ func rebuild_face_inventory_grid():
 
 	var grid := GridContainer.new()
 	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
+	grid.add_theme_constant_override(
+		"h_separation",
+		8
+	)
+	grid.add_theme_constant_override(
+		"v_separation",
+		8
+	)
+
 	inventory_faces_container.add_child(grid)
 
-	for result_type in face_order:
-		for i in face_inventory.size():
-			var face := face_inventory[i]
+	var displayed_indices: Array[int] = []
 
-			if face.result_type != result_type:
-				continue
-
-			var button: InventoryFaceButton = inventory_face_button_scene.instantiate()
-			grid.add_child(button)
-
-			button.setup(face, selected_inventory_face_indices.has(i))
-	var displayed_faces: Array[DiceFace] = []
-
+	# Display all recognized face types in the chosen order.
 	for result_type in face_order:
 		for i in face_inventory.size():
 			var face: DiceFace = face_inventory[i]
@@ -4251,36 +4314,33 @@ func rebuild_face_inventory_grid():
 			if face.result_type != result_type:
 				continue
 
-			var button: InventoryFaceButton = (
-				inventory_face_button_scene.instantiate()
-			)
-
-			grid.add_child(button)
-			button.setup(
+			add_inventory_face_button(
+				grid,
 				face,
-				selected_inventory_face_indices.has(i)
+				i
 			)
 
-			displayed_faces.append(face)
+			displayed_indices.append(i)
 
-	# Display unknown/new face types instead of silently hiding them.
+	# Display any new or unrecognized result types afterward.
 	for i in face_inventory.size():
+		if displayed_indices.has(i):
+			continue
+
 		var face: DiceFace = face_inventory[i]
 
 		if face == null:
 			continue
 
-		if displayed_faces.has(face):
-			continue
-
-		var button: InventoryFaceButton = (
-			inventory_face_button_scene.instantiate()
+		push_warning(
+			"Inventory face type is missing from face_order: "
+			+ face.result_type
 		)
 
-		grid.add_child(button)
-		button.setup(
+		add_inventory_face_button(
+			grid,
 			face,
-			selected_inventory_face_indices.has(i)
+			i
 		)
 		
 func add_inventory_face_button(
@@ -4296,11 +4356,16 @@ func add_inventory_face_button(
 
 	button.setup(
 		face,
+		inventory_index,
 		selected_inventory_face_indices.has(
 			inventory_index
 		)
 	)
-	
+
+	button.face_dropped.connect(
+		handle_face_drop
+	)
+
 func rebuild_owned_dice_grid():
 	clear_container(owned_dice_container)
 
@@ -4486,28 +4551,100 @@ func select_edit_die(die: DiceData):
 		edit_warning_label.text = ""
 	
 func update_volatile_core_button():
-	var base_text := "Apply Volatile Core (" + str(volatile_cores) + ")"
-	apply_volatile_core_button.text = base_text
+	var core_count_text: String = (
+		" (" + str(volatile_cores) + ")"
+	)
+
+	var explanation: String = (
+		"Volatile Core\n"
+		+ "Permanently makes the selected die Exploding.\n\n"
+		+ "When an Exploding die lands on its final face, "
+		+ "it creates and rolls a temporary copy of itself.\n"
+		+ "Temporary copies can continue exploding.\n\n"
+	)
+
+	apply_volatile_core_button.text = (
+		"Apply Volatile Core"
+		+ core_count_text
+	)
+
+	apply_volatile_core_button.tooltip_text = explanation
+	apply_volatile_core_button.disabled = true
+
+	# Neutral disabled appearance.
+	apply_volatile_core_button.modulate = Color.WHITE
 
 	if selected_edit_die == null:
-		apply_volatile_core_button.disabled = true
+		apply_volatile_core_button.text = (
+			"Select a Die"
+			+ core_count_text
+		)
+
+		apply_volatile_core_button.tooltip_text = (
+			explanation
+			+ "\n\nSelect a die first."
+		)
 		return
 
 	if selected_edit_die.sides <= 4:
-		apply_volatile_core_button.disabled = true
-		apply_volatile_core_button.text = "D4 Cannot Explode (" + str(volatile_cores) + ")"
+		apply_volatile_core_button.text = (
+			"D4 Cannot Explode"
+			+ core_count_text
+		)
+
+		apply_volatile_core_button.tooltip_text = (
+			explanation
+			+ "\n\nThe selected D4 cannot accept a Volatile Core."
+		)
+
+		apply_volatile_core_button.modulate = Color(
+			0.55,
+			0.55,
+			0.55,
+			1.0
+		)
 		return
 
 	if selected_edit_die.can_explode:
-		apply_volatile_core_button.disabled = true
-		apply_volatile_core_button.text = "Already Exploding (" + str(volatile_cores) + ")"
+		apply_volatile_core_button.text = (
+			"Already Exploding"
+			+ core_count_text
+		)
+
+		apply_volatile_core_button.tooltip_text = (
+			explanation
+			+ "\n\nThe selected die is already Exploding."
+		)
+
+		# Orange instead of the ordinary unavailable gray.
+		apply_volatile_core_button.modulate = Color(
+			1.0,
+			0.62,
+			0.28,
+			1.0
+		)
 		return
 
 	if volatile_cores <= 0:
-		apply_volatile_core_button.disabled = true
+		apply_volatile_core_button.text = (
+			"No Volatile Cores"
+		)
+
+		apply_volatile_core_button.tooltip_text = (
+			explanation
+			+ "\n\nYou do not currently own a Volatile Core."
+		)
+
+		apply_volatile_core_button.modulate = Color(
+			0.45,
+			0.45,
+			0.45,
+			1.0
+		)
 		return
 
 	apply_volatile_core_button.disabled = false
+	apply_volatile_core_button.modulate = Color.WHITE
 	
 func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
 	if face.result_type in [
@@ -5145,8 +5282,20 @@ func spawn_exploded_die(source_die: DiceNode):
 	dice_roll_sfx.play()
 	await die_node.roll_animated(roll_animation_area, 0, 1)
 
-	var final_container := get_container_for_die(die_node)
+	var final_container: GridContainer = (
+		get_container_for_die(die_node)
+	)
+
+	if final_container == null:
+		return
+
+	final_container.get_parent().visible = true
+
+	await get_tree().process_frame
 	await die_node.fly_to_container(final_container)
+
+	die_node.visible = true
+	update_group_visibility()
 
 	die_node.set_compact_mode(false)
 	die_node.set_base_visual_scale(
@@ -5177,7 +5326,11 @@ func _unhandled_input(event):
 	if camera == null:
 		print("No current Camera3D found.")
 		return
+	if !event.is_action_pressed("ui_cancel"):
+		return
 
+	if close_topmost_popup():
+		get_viewport().set_input_as_handled()
 	var mouse_pos := get_viewport().get_mouse_position()
 	var from := camera.project_ray_origin(mouse_pos)
 	var to := from + camera.project_ray_normal(mouse_pos) * 1000.0
@@ -5235,6 +5388,92 @@ func _input(event):
 	if enemy_node is Enemy3D:
 		select_enemy_target(enemy_node.enemy_index)
 		
+func close_topmost_popup() -> bool:
+	# These overlays should not be dismissible with Escape because
+	# they require the player to make or acknowledge a choice.
+	if beastmaster_transition_running:
+		return false
+
+	if is_resolving_turn:
+		return false
+		
+	if death_overlay.visible:
+		return false
+
+	if endless_choice_overlay.visible:
+		return false
+
+	if relic_reward_overlay.visible:
+		return false
+
+	# Options should always close first because it may be opened
+	# over another menu.
+	if options_overlay.visible:
+		close_options_menu()
+		return true
+
+	# Dice Bag currently uses the Edit Dice panel in read-only mode.
+	if (
+		edit_dice_panel.visible
+		and edit_dice_return_context == "dice_bag"
+	):
+		close_edit_dice_panel()
+		return true
+
+	if edit_dice_panel.visible:
+		close_edit_dice_panel()
+		return true
+
+	if food_craft_panel.visible:
+		close_food_crafting()
+		return true
+
+	if merchant_panel.visible:
+		close_merchant()
+		return true
+
+	if bounty_board_panel.visible:
+		close_bounty_board()
+		return true
+
+	if prepare_expedition_panel.visible:
+		close_prepare_expedition_with_escape()
+		return true
+
+	if trophy_panel.visible:
+		close_trophies()
+		return true
+
+	if loot_panel.visible:
+		# Loot represents a required progression step.
+		# Do not let Escape skip it.
+		return false
+
+	if expedition_camp_panel.visible:
+		# Camp is a full screen rather than a popup.
+		return false
+
+	return false
+	
+func close_prepare_expedition_with_escape():
+	prepare_expedition_panel.visible = false
+
+	match prepare_return_context:
+		"camp":
+			expedition_camp_panel.visible = true
+
+		"town":
+			town_menu_closed.emit()
+
+		_:
+			if expedition_active:
+				expedition_camp_panel.visible = true
+			else:
+				town_menu_closed.emit()
+
+	prepare_return_context = ""
+	update_begin_expedition_button_visibility()
+	
 func remove_enemy_3d_node(enemy_index: int):
 	if enemy_index < 0 or enemy_index >= enemy_3d_nodes.size():
 		return
@@ -7210,51 +7449,25 @@ func apply_enemy_bleed():
 			continue
 
 		var enemy: Dictionary = active_enemies[i]
+
 		if enemy.get("downed", false):
 			continue
-		var enemy_name: String = enemy["data"].enemy_name
-		var bleed_value: int = enemy.get("bleed", 0)
+
+		var enemy_name: String = (
+			enemy["data"].enemy_name
+		)
+
+		var bleed_value: int = enemy.get(
+			"bleed",
+			0
+		)
 
 		if bleed_value <= 0:
 			continue
 
-		# Any amount of Block prevents the Bleed damage entirely,
-		# but the Bleed stack still decays by 1.
-		if enemy["block"] > 0:
-			AudioManager.play_one_shot(
-				hit_blocked_sound,
-				0.95,
-				1.05
-			)
-
-			if (
-				i < enemy_3d_nodes.size()
-				and is_instance_valid(enemy_3d_nodes[i])
-			):
-				show_popup_text(
-					enemy_3d_nodes[i],
-					"Blocked Bleed",
-					1.0,
-					Color.CORNFLOWER_BLUE
-				)
-
-			add_combat_log_entry(
-				enemy_name
-					+ "'s Block prevented "
-					+ str(bleed_value)
-					+ " Bleed damage."
-			)
-
-			enemy["bleed"] = max(bleed_value - 1, 0)
-
-			update_enemy_3d_nodes()
-			await get_tree().create_timer(0.35).timeout
-			continue
-
-		var bleed_damage: int = bleed_value
-
 		var hp_before_bleed: int = enemy["hp"]
 
+		# Existing Bleed bypasses Block.
 		enemy["hp"] -= bleed_value
 
 		if enemy["hp"] < 0:
@@ -7283,15 +7496,22 @@ func apply_enemy_bleed():
 
 		add_combat_log_entry(
 			"Bleed dealt "
-				+ str(actual_bleed_damage)
-				+ " damage to "
-				+ enemy_name
-				+ "."
+			+ str(actual_bleed_damage)
+			+ " damage to "
+			+ enemy_name
+			+ "."
 		)
 
-		enemy["bleed"] = max(bleed_value - 1, 0)
+		enemy["bleed"] = max(
+			bleed_value - 1,
+			0
+		)
 
-		await get_tree().create_timer(0.35).timeout
+		update_enemy_3d_nodes()
+
+		await get_tree().create_timer(
+			0.35
+		).timeout
 		
 func launch_enemy_die_at_player(
 	enemy_index: int,
@@ -8055,7 +8275,6 @@ func rebuild_prepare_consumables():
 
 	var item_counts: Dictionary = {}
 	var item_lookup: Dictionary = {}
-	var item_order: Array[String] = []
 
 	for item in consumable_inventory:
 		if item == null:
@@ -8064,11 +8283,14 @@ func rebuild_prepare_consumables():
 		if !item_counts.has(item.item_name):
 			item_counts[item.item_name] = 0
 			item_lookup[item.item_name] = item
-			item_order.append(item.item_name)
 
 		item_counts[item.item_name] += 1
 
-	for item_name in item_order:
+	var sorted_names: Array[String] = (
+		get_sorted_consumable_names(item_lookup)
+	)
+
+	for item_name in sorted_names:
 		var item: ConsumableItem = item_lookup[item_name]
 		var count: int = item_counts[item_name]
 
@@ -8091,6 +8313,62 @@ func rebuild_prepare_consumables():
 			use_consumable_item.bind(item)
 		)
 		
+func handle_food_crafting_drop(
+	dragged_item_name: String,
+	target_item_name: String
+):
+	if dragged_item_name.is_empty():
+		return
+
+	if target_item_name.is_empty():
+		return
+
+	if dragged_item_name == target_item_name:
+		if (
+			get_consumable_count_by_name(
+				dragged_item_name
+			) < 2
+		):
+			show_food_crafting_message(
+				"You need 2 "
+				+ dragged_item_name
+				+ " to use both as ingredients."
+			)
+			return
+
+	selected_food_craft_names.clear()
+	selected_food_craft_names.append(
+		dragged_item_name
+	)
+
+	selected_food_craft_names.append(
+		target_item_name
+	)
+
+	AudioManager.play_ui(ui_click_sound)
+
+	rebuild_food_crafting_grid()
+	update_craft_result_label()
+	
+func get_consumable_count_by_name(
+	item_name: String
+) -> int:
+	var count: int = 0
+
+	for item in consumable_inventory:
+		if item == null:
+			continue
+
+		if item.item_name == item_name:
+			count += 1
+
+	return count
+	
+func show_food_crafting_message(
+	message: String
+):
+	craft_result_label.text = message
+	
 func use_consumable(index: int):
 	if index < 0 or index >= consumable_inventory.size():
 		return
@@ -8182,7 +8460,8 @@ func handle_face_drop(
 	data: Dictionary,
 	target_face: DiceFace,
 	target_source_type: String,
-	target_slot_index: int = -1
+	target_slot_index: int = -1,
+	target_inventory_index: int = -1
 ):
 	if dice_panel_read_only:
 		return
@@ -8191,16 +8470,30 @@ func handle_face_drop(
 		return
 
 	var dragged_face: DiceFace = data["face"]
-	var source_type: String = data.get("source_type", "")
+	var source_type: String = String(
+		data.get("source_type", "")
+	)
+
+	var source_inventory_index: int = int(
+		data.get("inventory_index", -1)
+	)
 
 	if dragged_face == null:
 		return
 
 	clear_drag_fusion_preview()
 
-	# Inventory -> Inventory fusion does not require a selected die.
-	if source_type == "inventory" and target_source_type == "inventory":
-		try_fuse_inventory_faces(dragged_face, target_face)
+	# ---------------------------------------------------------
+	# INVENTORY -> INVENTORY
+	# ---------------------------------------------------------
+	if (
+		source_type == "inventory"
+		and target_source_type == "inventory"
+	):
+		try_fuse_inventory_faces_by_index(
+			source_inventory_index,
+			target_inventory_index
+		)
 		return
 
 	# Anything involving an equipped face requires a selected die.
@@ -8212,27 +8505,56 @@ func handle_face_drop(
 		show_edit_message("Cursed dice cannot be edited.")
 		return
 
-	if target_slot_index < 0 or target_slot_index >= selected_edit_die.faces.size():
+	if (
+		target_slot_index < 0
+		or target_slot_index >= selected_edit_die.faces.size()
+	):
 		return
 
 	if target_face == null:
 		target_face = create_basic_miss_face()
 
 	match source_type:
+		# -----------------------------------------------------
+		# INVENTORY -> EQUIPPED
+		# -----------------------------------------------------
 		"inventory":
-			if !face_inventory.has(dragged_face):
+			if (
+				source_inventory_index < 0
+				or source_inventory_index >= face_inventory.size()
+			):
+				return
+
+			if (
+				face_inventory[source_inventory_index]
+				!= dragged_face
+			):
+				push_warning(
+					"Dragged inventory face no longer matches "
+					+ "its stored index."
+				)
 				return
 
 			# Prevent replacing the final required Miss.
-			if is_last_miss_slot(selected_edit_die, target_slot_index):
+			if is_last_miss_slot(
+				selected_edit_die,
+				target_slot_index
+			):
 				if dragged_face.result_type != "miss":
-					show_edit_message("Every die must keep at least 1 Miss.")
+					show_edit_message(
+						"Every die must keep at least 1 Miss."
+					)
 					return
 
-			if !face_fits_die(selected_edit_die, dragged_face):
-				var max_value := get_max_face_value_for_die(
-					selected_edit_die,
-					dragged_face
+			if !face_fits_die(
+				selected_edit_die,
+				dragged_face
+			):
+				var max_value: int = (
+					get_max_face_value_for_die(
+						selected_edit_die,
+						dragged_face
+					)
 				)
 
 				show_edit_message(
@@ -8248,19 +8570,29 @@ func handle_face_drop(
 				return
 
 			# Valid fusion.
-			if can_fuse_faces(dragged_face, target_face):
-				var fused_face: DiceFace = create_fused_face(
-					dragged_face,
-					target_face
+			if can_fuse_faces(
+				dragged_face,
+				target_face
+			):
+				var fused_face: DiceFace = (
+					create_fused_face(
+						dragged_face,
+						target_face
+					)
 				)
 
 				if fused_face == null:
 					return
 
-				if !face_fits_die(selected_edit_die, fused_face):
-					var max_value := get_max_face_value_for_die(
-						selected_edit_die,
-						fused_face
+				if !face_fits_die(
+					selected_edit_die,
+					fused_face
+				):
+					var max_value: int = (
+						get_max_face_value_for_die(
+							selected_edit_die,
+							fused_face
+						)
 					)
 
 					show_edit_message(
@@ -8279,55 +8611,92 @@ func handle_face_drop(
 					selected_edit_die,
 					target_slot_index
 				):
-					show_edit_message("Every die must keep at least 1 Miss.")
+					show_edit_message(
+						"Every die must keep at least 1 Miss."
+					)
 					return
 
 				capture_fusion_undo_state()
 
-				selected_edit_die.faces[target_slot_index] = fused_face
-				face_inventory.erase(dragged_face)
+				selected_edit_die.faces[
+					target_slot_index
+				] = fused_face
 
-				AudioManager.play_one_shot(graft_face_sound)
+				face_inventory.remove_at(
+					source_inventory_index
+				)
 
-			# Invalid fusion means swap, not upgrade or deletion.
+				AudioManager.play_one_shot(
+					graft_face_sound
+				)
+
+			# Invalid fusion means swap.
 			else:
-				selected_edit_die.faces[target_slot_index] = dragged_face
-				face_inventory.erase(dragged_face)
-				face_inventory.append(target_face)
+				selected_edit_die.faces[
+					target_slot_index
+				] = dragged_face
 
-				AudioManager.play_one_shot(graft_face_sound)
+				# Replace the exact inventory entry instead of
+				# removing and appending it.
+				face_inventory[
+					source_inventory_index
+				] = target_face
 
+				AudioManager.play_one_shot(
+					graft_face_sound
+				)
+
+		# -----------------------------------------------------
+		# EQUIPPED -> EQUIPPED
+		# -----------------------------------------------------
 		"equipped":
 			if !data.has("slot"):
 				return
 
-			var source_slot: int = data["slot"]
+			var source_slot: int = int(
+				data["slot"]
+			)
 
-			if source_slot < 0 or source_slot >= selected_edit_die.faces.size():
+			if (
+				source_slot < 0
+				or source_slot >= selected_edit_die.faces.size()
+			):
 				return
 
 			if source_slot == target_slot_index:
 				return
 
-			var source_face: DiceFace = selected_edit_die.faces[source_slot]
+			var source_face: DiceFace = (
+				selected_edit_die.faces[source_slot]
+			)
 
 			if source_face == null:
 				source_face = create_basic_miss_face()
 
 			# Valid equipped-to-equipped fusion.
-			if can_fuse_faces(source_face, target_face):
-				var fused_face: DiceFace = create_fused_face(
-					source_face,
-					target_face
+			if can_fuse_faces(
+				source_face,
+				target_face
+			):
+				var fused_face: DiceFace = (
+					create_fused_face(
+						source_face,
+						target_face
+					)
 				)
 
 				if fused_face == null:
 					return
 
-				if !face_fits_die(selected_edit_die, fused_face):
-					var max_value := get_max_face_value_for_die(
-						selected_edit_die,
-						fused_face
+				if !face_fits_die(
+					selected_edit_die,
+					fused_face
+				):
+					var max_value: int = (
+						get_max_face_value_for_die(
+							selected_edit_die,
+							fused_face
+						)
 					)
 
 					show_edit_message(
@@ -8346,20 +8715,103 @@ func handle_face_drop(
 					selected_edit_die,
 					target_slot_index
 				):
-					show_edit_message("Every die must keep at least 1 Miss.")
+					show_edit_message(
+						"Every die must keep at least 1 Miss."
+					)
 					return
 
 				capture_fusion_undo_state()
 
-				selected_edit_die.faces[target_slot_index] = fused_face
-				selected_edit_die.faces[source_slot] = create_basic_miss_face()
+				selected_edit_die.faces[
+					target_slot_index
+				] = fused_face
 
-				AudioManager.play_one_shot(graft_face_sound)
+				selected_edit_die.faces[
+					source_slot
+				] = create_basic_miss_face()
+
+				AudioManager.play_one_shot(
+					graft_face_sound
+				)
 
 			# Invalid fusion means swap the equipped slots.
 			else:
-				selected_edit_die.faces[source_slot] = target_face
-				selected_edit_die.faces[target_slot_index] = source_face
+				selected_edit_die.faces[
+					source_slot
+				] = target_face
+
+				selected_edit_die.faces[
+					target_slot_index
+				] = source_face
+
+		_:
+			return
+
+	selected_inventory_face_indices.clear()
+	refresh_edit_dice_panel()
+	save_run()
+	
+func try_fuse_inventory_faces_by_index(
+	index_a: int,
+	index_b: int
+):
+	if dice_panel_read_only:
+		return
+
+	if index_a < 0 or index_a >= face_inventory.size():
+		return
+
+	if index_b < 0 or index_b >= face_inventory.size():
+		return
+
+	if index_a == index_b:
+		show_edit_message(
+			"A face cannot be fused with itself."
+		)
+		return
+
+	var face_a: DiceFace = face_inventory[index_a]
+	var face_b: DiceFace = face_inventory[index_b]
+
+	if face_a == null or face_b == null:
+		return
+
+	if !can_fuse_faces(face_a, face_b):
+		show_edit_message(
+			"Those faces cannot be fused."
+		)
+		AudioManager.play_ui(ui_fail_sound)
+		return
+
+	var fused_face: DiceFace = create_fused_face(
+		face_a,
+		face_b
+	)
+
+	if fused_face == null:
+		return
+
+	capture_fusion_undo_state()
+
+	var high_index: int = max(
+		index_a,
+		index_b
+	)
+
+	var low_index: int = min(
+		index_a,
+		index_b
+	)
+
+	face_inventory.remove_at(high_index)
+	face_inventory.remove_at(low_index)
+	face_inventory.append(fused_face)
+
+	selected_inventory_face_indices.clear()
+
+	AudioManager.play_one_shot(
+		graft_face_sound
+	)
 
 	refresh_edit_dice_panel()
 	save_run()
@@ -8975,30 +9427,58 @@ func close_food_crafting():
 func rebuild_food_crafting_grid():
 	clear_container(food_craft_items_container)
 
-	var item_counts := {}
-	var item_lookup := {}
+	var item_counts: Dictionary = {}
+	var item_lookup: Dictionary = {}
 
 	for item in consumable_inventory:
+		if item == null:
+			continue
+
 		if !item_counts.has(item.item_name):
 			item_counts[item.item_name] = 0
 			item_lookup[item.item_name] = item
 
 		item_counts[item.item_name] += 1
 
-	for item_name in item_counts.keys():
+	var sorted_names: Array[String] = (
+		get_sorted_consumable_names(item_lookup)
+	)
+
+	for item_name in sorted_names:
 		var item: ConsumableItem = item_lookup[item_name]
+		var count: int = item_counts[item_name]
 
 		var button = item_button_scene.instantiate()
 		food_craft_items_container.add_child(button)
 
-		button.setup(item.icon, "x" + str(item_counts[item_name]), "")
-		button.tooltip_text = item.item_name + "\n" + item.description
+		button.setup(
+			item.icon,
+			"x" + str(count),
+			""
+		)
+		button.enable_food_crafting_drag(
+			item_name
+		)
+
+		button.food_dropped.connect(
+			handle_food_crafting_drop
+		)
+		button.tooltip_text = (
+			item.item_name
+			+ "\n"
+			+ item.description
+		)
+
 		if selected_food_craft_names.has(item_name):
 			button.modulate = Color.YELLOW
 		else:
 			button.modulate = Color.WHITE
 
-		button.pressed.connect(select_food_name_for_crafting.bind(item_name))
+		button.pressed.connect(
+			select_food_name_for_crafting.bind(
+				item_name
+			)
+		)
 
 func select_food_for_crafting(index: int):
 	if selected_food_craft_names.has(index):
@@ -9012,6 +9492,31 @@ func select_food_for_crafting(index: int):
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
 
+func get_sorted_consumable_names(
+	item_lookup: Dictionary
+) -> Array[String]:
+	var names: Array[String] = []
+
+	for key in item_lookup.keys():
+		names.append(String(key))
+
+	names.sort_custom(
+		func(name_a: String, name_b: String) -> bool:
+			var item_a: ConsumableItem = item_lookup[name_a]
+			var item_b: ConsumableItem = item_lookup[name_b]
+
+			if item_a.food_tier != item_b.food_tier:
+				return item_a.food_tier < item_b.food_tier
+
+			return (
+				item_a.item_name.naturalnocasecmp_to(
+					item_b.item_name
+				) < 0
+			)
+	)
+
+	return names
+	
 func update_craft_result_label():
 	if selected_food_craft_names.size() != 2:
 		craft_result_label.text = "Select 2 food items."
@@ -10013,13 +10518,32 @@ func delete_run_save():
 func update_expedition_progress_labels():
 	camp_progress_title_label.text = "Bounty Progress"
 
+	var total_encounters: int = (
+		expedition_required_encounters + 1
+	)
+
+	var current_encounter_number: int = (
+		expedition_progress + 1
+	)
+
 	if expedition_is_boss_fight:
-		camp_progress_value_label.text = "Boss Encounter"
-	else:
-		camp_progress_value_label.text = "Encounter %d/%d" % [
-			expedition_progress + 1,
-			expedition_required_encounters
-		]
+		current_encounter_number = total_encounters
+
+	current_encounter_number = clamp(
+		current_encounter_number,
+		1,
+		total_encounters
+	)
+
+	camp_progress_value_label.text = (
+		"Encounter "
+		+ str(current_encounter_number)
+		+ "/"
+		+ str(total_encounters)
+	)
+
+	if expedition_is_boss_fight:
+		camp_progress_value_label.text += " — Boss"
 		
 func find_relic_by_name(relic_name: String) -> RelicData:
 	if relic_name.is_empty():
@@ -10124,11 +10648,15 @@ func build_expedition_plan():
 		return
 
 	if current_bounty.expedition_encounter_pool.is_empty():
-		push_error("Current bounty has no normal encounters.")
+		push_error(
+			"Current bounty has no normal encounters."
+		)
 		return
 
 	if expedition_required_encounters <= 0:
-		push_error("Expedition required encounter count is invalid.")
+		push_error(
+			"Expedition required encounter count is invalid."
+		)
 		return
 
 	var available_events: Array[String] = []
@@ -10139,38 +10667,40 @@ func build_expedition_plan():
 	if !witch_seen_this_run:
 		available_events.append(PLAN_WITCH)
 
+	var previous_node_was_event: bool = false
+
 	# Build every pre-boss node.
 	for node_index in expedition_required_encounters:
 		# The first node must always be combat because expedition
 		# startup expects an EncounterData resource.
 		if node_index == 0:
-			expedition_encounter_plan.append({
-				"type": PLAN_COMBAT,
-				"encounter":
-					current_bounty.expedition_encounter_pool.pick_random()
-			})
-
+			append_random_combat_to_expedition_plan()
+			previous_node_was_event = false
 			continue
 
+		# An event can only be placed after a combat.
 		var should_use_event: bool = (
-			!available_events.is_empty()
+			!previous_node_was_event
+			and !available_events.is_empty()
 			and randf() < 0.5
 		)
 
 		if should_use_event:
-			var event_type: String = available_events.pick_random()
+			var event_type: String = (
+				available_events.pick_random()
+			)
+
 			available_events.erase(event_type)
 
 			expedition_encounter_plan.append({
 				"type": event_type,
 				"encounter": null
 			})
+
+			previous_node_was_event = true
 		else:
-			expedition_encounter_plan.append({
-				"type": PLAN_COMBAT,
-				"encounter":
-					current_bounty.expedition_encounter_pool.pick_random()
-			})
+			append_random_combat_to_expedition_plan()
+			previous_node_was_event = false
 
 	# The boss always follows all required pre-boss nodes.
 	expedition_encounter_plan.append({
@@ -10178,11 +10708,51 @@ func build_expedition_plan():
 		"encounter": current_bounty.boss_encounter
 	})
 
-	print(
-		"Built expedition plan with ",
-		expedition_required_encounters,
-		" pre-boss nodes and 1 boss node."
-	)
+	print_expedition_plan()
+
+func append_random_combat_to_expedition_plan():
+	expedition_encounter_plan.append({
+		"type": PLAN_COMBAT,
+		"encounter":
+			current_bounty.expedition_encounter_pool.pick_random()
+	})
+	
+func print_expedition_plan():
+	print("===== EXPEDITION PLAN =====")
+
+	for i in expedition_encounter_plan.size():
+		var node: Dictionary = expedition_encounter_plan[i]
+		var node_type: String = node.get(
+			"type",
+			PLAN_COMBAT
+		)
+
+		if node_type == PLAN_COMBAT:
+			var encounter: EncounterData = node.get(
+				"encounter",
+				null
+			)
+
+			var encounter_name: String = (
+				encounter.encounter_name
+				if encounter != null
+				else "Missing Combat"
+			)
+
+			print(
+				i + 1,
+				": COMBAT — ",
+				encounter_name
+			)
+		else:
+			print(
+				i + 1,
+				": EVENT — ",
+				node_type
+			)
+
+	print("===========================")
+	
 func get_current_plan_node() -> Dictionary:
 	if expedition_encounter_plan.is_empty():
 		return {}
@@ -10591,25 +11161,26 @@ func finish_failed_beastmaster_transition():
 	update_begin_expedition_button_visibility()
 	
 func begin_beastmaster_phase_two_combat():
-	spawn_dice()
+	# start_new_combat() already spawned and rolled the player's dice.
+	# This function only finishes Phase 2-specific initialization.
 
-	# Show the combat interface before the roll animation begins.
 	set_combat_ui_enabled(true)
 
-	await get_tree().process_frame
-
-	await roll_all_dice()
-
 	roll_enemy_intents()
+	refresh_enemy_buttons()
+	update_enemy_3d_nodes()
+	update_player_3d_node()
 
-	end_round_button.disabled = false
+	mulligem_used_this_turn = false
 	is_resolving_turn = false
 	beastmaster_transition_running = false
+	end_round_button.disabled = false
 
 	update_mulligem_button()
 	update_player_hp_label()
 	update_player_block_label()
 	update_player_status_icons()
+	update_begin_expedition_button_visibility()
 
 	add_combat_log_entry(
 		"Beast Master Phase Two began."
@@ -11132,7 +11703,17 @@ func reset_edit_panel_to_normal_mode():
 	
 func _on_discord_button_pressed():
 	OS.shell_open("https://discord.gg/vrhvAe5GPa")
+	
+func open_steam_store_page():
+	var error: Error = OS.shell_open(
+		STEAM_STORE_URL
+	)
 
+	if error != OK:
+		push_warning(
+			"Could not open the Steam store page. Error: "
+			+ str(error)
+		)
 func show_relic_acquisition(relic: RelicData):
 	if relic == null:
 		return

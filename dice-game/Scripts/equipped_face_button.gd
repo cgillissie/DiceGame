@@ -8,6 +8,14 @@ class_name EquippedFaceButton
 var face_data: DiceFace
 var slot_index: int = -1
 
+signal face_dropped(
+	data: Dictionary,
+	target_face: DiceFace,
+	target_source_type: String,
+	target_slot_index: int,
+	target_inventory_index: int
+)
+
 func setup(face: DiceFace, new_slot_index: int, is_selected: bool = false):
 	face_data = face
 	slot_index = new_slot_index
@@ -32,13 +40,20 @@ func _can_drop_data(_position, data):
 	return data is Dictionary and data.has("face") and data.has("source_type")
 
 
-func _drop_data(_position, data):
-	var combat = get_tree().current_scene.get_node_or_null("CombatUI")
-
-	if combat == null:
+func _drop_data(
+	_at_position: Vector2,
+	data: Variant
+):
+	if !_can_drop_data(_at_position, data):
 		return
 
-	combat.handle_face_drop(data, face_data, "equipped", slot_index)
+	face_dropped.emit(
+		data,
+		face_data,
+		"equipped",
+		slot_index,
+		-1
+	)
 
 func _get_drag_data(_position):
 	if face_data == null:
