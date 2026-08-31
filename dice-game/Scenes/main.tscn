@@ -20,6 +20,7 @@
 [ext_resource type="AudioStream" uid="uid://dr8h7a71m3sxt" path="res://Assets/Sounds/Consumables/FoodEat.wav" id="7_kwxat"]
 [ext_resource type="AudioStream" uid="uid://cl55mrxix8ta3" path="res://Assets/Sounds/Crafting/DiceSmithItemCrafting.wav" id="8_aa8k8"]
 [ext_resource type="Resource" uid="uid://dy3ws0w57a5eq" path="res://Resources/Faces/reversal_face.tres" id="8_hpc6h"]
+[ext_resource type="PackedScene" uid="uid://e3r520hbkcd" path="res://Scenes/forest_merchant_encounter.tscn" id="9_e6rcu"]
 [ext_resource type="AudioStream" uid="uid://bgmo0w5xr83h3" path="res://Assets/Sounds/Crafting/ClothTear.wav" id="9_kqrg6"]
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/The Chieftain/goblin_encounter.tres" id="9_wsu2k"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/The Congregation/knight_priest_encounter.tres" id="10_k12tt"]
@@ -59,6 +60,7 @@
 [ext_resource type="Texture2D" uid="uid://bpmad7nj5mr5y" path="res://Assets/Sprites/UI/Menus/ReservedDieOpenIcon.png" id="34_vxl7x"]
 [ext_resource type="Texture2D" uid="uid://d1ck73cvwcthh" path="res://Assets/Sprites/UI/Menus/ReservedDieIcon.png" id="35_ihvwq"]
 [ext_resource type="Resource" uid="uid://5gpwcvp6nbm4" path="res://Resources/Enemies/acolyte.tres" id="35_qnggo"]
+[ext_resource type="PackedScene" uid="uid://cc7ddpoy2v2ns" path="res://Scenes/forest_bounty_map.tscn" id="37_e6rcu"]
 [ext_resource type="Script" uid="uid://dkturafp4qles" path="res://Scripts/RelicData.gd" id="39_s8vy0"]
 [ext_resource type="Resource" uid="uid://cmx1h34g2m86g" path="res://Resources/Relics/IronCharm.tres" id="40_jut3y"]
 [ext_resource type="Resource" uid="uid://h6v128lalype" path="res://Resources/Relics/Bloodstone.tres" id="41_v2nl5"]
@@ -73,6 +75,7 @@
 [ext_resource type="Resource" uid="uid://skl127pice4j" path="res://Resources/Traits/berserker_2.tres" id="49_2daye"]
 [ext_resource type="Resource" uid="uid://c0ojcob53cive" path="res://Resources/Traits/regenerating_1.tres" id="50_1semv"]
 [ext_resource type="AudioStream" uid="uid://ctc28gscpvyh6" path="res://Assets/Sounds/AttackSFX/Fireball.wav" id="51_55idt"]
+[ext_resource type="AudioStream" uid="uid://cjbssud1w44sx" path="res://Assets/Sounds/Crafting/DiceSmithSalvage.wav" id="51_87bhu"]
 [ext_resource type="Resource" uid="uid://bfo0d3b00358m" path="res://Resources/Traits/regenerating_2.tres" id="51_2060n"]
 [ext_resource type="Resource" uid="uid://ce4jsrai1w2sf" path="res://Resources/Traits/spiked_1.tres" id="52_6ml46"]
 [ext_resource type="Resource" uid="uid://d2sd5swvjv0m5" path="res://Resources/Traits/venomous_1.tres" id="53_qax2n"]
@@ -109,6 +112,8 @@ combat_scenes = Array[PackedScene]([ExtResource("3_r7bbj"), ExtResource("3_jwpg7
 beastmaster_combat_scene = ExtResource("5_e5peh")
 witch_encounter_scene = ExtResource("4_2daye")
 water_well_scene = ExtResource("7_fd3ed")
+forest_bounty_map_scene = ExtResource("37_e6rcu")
+forest_merchant_scene = ExtResource("9_e6rcu")
 camera_zoom_sound = ExtResource("4_r33sp")
 critical_hit_sound = ExtResource("5_8cuat")
 critical_roll_sound = ExtResource("6_o1aky")
@@ -152,6 +157,7 @@ heal_icon_texture = ExtResource("41_wl4bb")
 bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf"), ExtResource("33_lx3vj")])
 beastmaster_phase2_music = ExtResource("34_lx3vj")
 fireball_sound = ExtResource("51_55idt")
+salvage_face_sound = ExtResource("51_87bhu")
 combat_relic_drop_pool = Array[ExtResource("39_s8vy0")]([ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("40_jut3y"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
 combat_relic_drop_chance = 0.03
 food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResource("20_ueoa1"), ExtResource("21_6vcvc")])

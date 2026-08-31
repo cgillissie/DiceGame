@@ -72,6 +72,8 @@
 [ext_resource type="Texture2D" uid="uid://bm1rc6i7tiflb" path="res://Assets/Sprites/UI/Menus/UIFrameTop.png" id="54_fu7uk"]
 [ext_resource type="Texture2D" uid="uid://dsenmc6jkig6i" path="res://Assets/Sprites/UI/Menus/UIFrameBottom.png" id="55_fu7uk"]
 [ext_resource type="Script" uid="uid://cf04t4ovmanqi" path="res://Scripts/sell_face_drop_area.gd" id="55_h6x2e"]
+[ext_resource type="Script" uid="uid://leecl5t62307" path="res://Scripts/face_inventory_drop_area.gd" id="63_cda1e"]
+[ext_resource type="Script" uid="uid://bnrejfli1akip" path="res://Scripts/food_craft_slot.gd" id="70_v78a8"]
 [ext_resource type="Texture2D" uid="uid://cuvepjvja36bq" path="res://Assets/Sprites/UI/Menus/DiceBagIcon.png" id="74_avtp3"]
 [ext_resource type="Texture2D" uid="uid://csbp7231l7d8l" path="res://Assets/Sprites/UI/Relics/BackgroundIconGlow.png" id="76_cda1e"]
 
@@ -464,17 +466,22 @@ size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("9_twsak")
 text = "Face Inventory"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=1493564940]
+[node name="FaceInventoryDropArea" type="PanelContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox" unique_id=554741125]
+visible = false
+custom_minimum_size = Vector2(220, 250)
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("63_cda1e")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/FaceInventoryDropArea" unique_id=1493564940]
 custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
 focus_mode = 2
-mouse_filter = 0
 horizontal_scroll_mode = 0
 
-[node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer" unique_id=1050298506]
+[node name="InventoryFacesContainer" type="VBoxContainer" parent="EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/FaceInventoryDropArea/ScrollContainer" unique_id=1050298506]
 layout_mode = 2
 size_flags_horizontal = 4
-mouse_filter = 2
 
 [node name="SellFacePanel" type="Panel" parent="EditDicePanel/MarginContainer/MainVBox" unique_id=1511789237]
 custom_minimum_size = Vector2(300, 60)
@@ -497,7 +504,7 @@ grow_vertical = 2
 theme_override_fonts/font = ExtResource("9_twsak")
 
 [node name="SellDropArea" type="Panel" parent="EditDicePanel/MarginContainer/MainVBox/SellFacePanel" unique_id=1396988652]
-custom_minimum_size = Vector2(320, 60)
+custom_minimum_size = Vector2(400, 60)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -1639,7 +1646,7 @@ text = "Close"
 
 [node name="FoodCraftPanel" type="Panel" parent="." unique_id=1489697673]
 visible = false
-custom_minimum_size = Vector2(600, 300)
+custom_minimum_size = Vector2(600, 600)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -1686,10 +1693,75 @@ layout_mode = 2
 size_flags_horizontal = 4
 columns = 4
 
+[node name="IngredientSlotsHBox" type="HBoxContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=1397741466]
+layout_mode = 2
+alignment = 1
+
+[node name="IngredientSlot1" type="PanelContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox" unique_id=1285351663]
+custom_minimum_size = Vector2(140, 140)
+layout_mode = 2
+script = ExtResource("70_v78a8")
+
+[node name="MarginContainer" type="MarginContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot1" unique_id=1622271649]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot1/MarginContainer" unique_id=2069953041]
+layout_mode = 2
+
+[node name="SlotTitleLabel" type="Label" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot1/MarginContainer/VBoxContainer" unique_id=1551567744]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Ingredient 1"
+
+[node name="IngredientIcon" type="TextureRect" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot1/MarginContainer/VBoxContainer" unique_id=1396213950]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IngredientNameLabel" type="Label" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot1/MarginContainer/VBoxContainer" unique_id=1233594889]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Drop ingredient here"
+horizontal_alignment = 1
+
+[node name="IngredientSlot2" type="PanelContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox" unique_id=590942490]
+custom_minimum_size = Vector2(140, 140)
+layout_mode = 2
+script = ExtResource("70_v78a8")
+slot_index = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot2" unique_id=865552880]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot2/MarginContainer" unique_id=1269019419]
+layout_mode = 2
+
+[node name="SlotTitleLabel" type="Label" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot2/MarginContainer/VBoxContainer" unique_id=525334923]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Ingredient 2"
+
+[node name="IngredientIcon" type="TextureRect" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot2/MarginContainer/VBoxContainer" unique_id=1515242366]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IngredientNameLabel" type="Label" parent="FoodCraftPanel/MarginContainer/VBoxContainer/IngredientSlotsHBox/IngredientSlot2/MarginContainer/VBoxContainer" unique_id=702909632]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Drop ingredient here"
+horizontal_alignment = 1
+
 [node name="CraftResultLabel" type="Label" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=1358053740]
+custom_minimum_size = Vector2(280, 44)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
+horizontal_alignment = 1
 
 [node name="CraftButton" type="Button" parent="FoodCraftPanel/MarginContainer/VBoxContainer" unique_id=1923619456]
 custom_minimum_size = Vector2(220, 40)
@@ -1893,6 +1965,12 @@ step = 0.1
 layout_mode = 2
 theme_override_fonts/font = ExtResource("8_d53gg")
 text = " Fullscreen"
+
+[node name="TutorialHintsCheckBox" type="CheckBox" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=155867072]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+button_pressed = true
+text = "Tutorial Hints"
 
 [node name="ResolutionOptionButton" type="OptionButton" parent="OptionsOverlay/OptionsPanel/MarginContainer/VBoxContainer" unique_id=826986515]
 layout_mode = 2
@@ -2222,3 +2300,39 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="TutorialHintPanel" type="PanelContainer" parent="." unique_id=1605645936]
+visible = false
+z_index = 2000
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -260.0
+offset_top = 40.0
+offset_right = 260.0
+offset_bottom = 220.0
+
+[node name="MarginContainer" type="MarginContainer" parent="TutorialHintPanel" unique_id=1519485071]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TutorialHintPanel/MarginContainer" unique_id=1443015277]
+layout_mode = 2
+
+[node name="TutorialTitleLabel" type="Label" parent="TutorialHintPanel/MarginContainer/VBoxContainer" unique_id=1455680802]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("9_twsak")
+text = "Tutorial"
+horizontal_alignment = 1
+
+[node name="TutorialBodyLabel" type="Label" parent="TutorialHintPanel/MarginContainer/VBoxContainer" unique_id=399976156]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="TutorialContinueButton" type="Button" parent="TutorialHintPanel/MarginContainer/VBoxContainer" unique_id=414771881]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "Got It"

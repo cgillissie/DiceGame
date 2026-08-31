@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://cc7ddpoy2v2ns"]
+
+[ext_resource type="Script" uid="uid://djepipp2tiae2" path="res://Scenes/bounty_map_screen.gd" id="1_eovwj"]
+[ext_resource type="PackedScene" uid="uid://crwwxuy30qd00" path="res://Scenes/bounty_map_node_button.tscn" id="2_dr58u"]
+[ext_resource type="FontFile" uid="uid://ikng2ikqxt7i" path="res://Assets/Fonts/PixelOperator8-Bold.ttf" id="2_re2aw"]
+[ext_resource type="Texture2D" uid="uid://b5ee8exgwe82a" path="res://Assets/Sprites/UI/Menus/OpenScroll.png" id="3_k2td3"]
+[ext_resource type="Script" uid="uid://cwqk6s6wqnhhi" path="res://Scripts/bounty_map_connection_layer.gd" id="5_k2td3"]
+
+[node name="ForestBountyMap" type="Control" unique_id=338370257]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_eovwj")
+node_button_scene = ExtResource("2_dr58u")
+
+[node name="Background" type="TextureRect" parent="." unique_id=597957672]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_k2td3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DarkOverlay" type="ColorRect" parent="." unique_id=212685944]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.025363795, 0.025363805, 0.02536378, 0.24705882)
+
+[node name="TitleLabel" type="Label" parent="." unique_id=666520549]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 30.0
+offset_bottom = 53.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("2_re2aw")
+text = "Bounty Map"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ConnectionLayer" type="Control" parent="." unique_id=611920278]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_k2td3")
+
+[node name="NodeLayer" type="Control" parent="." unique_id=1835615455]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="CampButton" type="Button" parent="." unique_id=1068169797]
+custom_minimum_size = Vector2(300, 150)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -174.0
+offset_right = 324.0
+offset_bottom = -24.0
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("2_re2aw")
+theme_override_font_sizes/font_size = 32
+text = "Camp"

@@ -7,6 +7,8 @@ const STEAM_STORE_URL := (
 	"https://store.steampowered.com/app/4832350/"
 )
 
+signal bounty_map_camp_closed
+
 @export var dice_scene: PackedScene
 @export var starting_dice: Array[DiceData]
 @export var enemy_3d_scene: PackedScene
@@ -117,7 +119,11 @@ var break_focus_targets: Array[int] = []
 
 @export var basic_d6: DiceData
 
-# Encounter
+# Encounter & Bounty Map
+var current_bounty_map: BountyMapData = null
+var awaiting_bounty_map_selection: bool = false
+var active_bounty_map_node_id: int = -1
+
 @export var encounter_pool: Array[EncounterData]
 var current_encounter: EncounterData
 var active_enemies: Array = []
@@ -158,7 +164,7 @@ var mulligem_drop_chance: float = 0.05
 @onready var owned_dice_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/OwnedDiceVbox/ScrollContainer/OwnedDiceContainer
 @export var owned_die_button_scene: PackedScene
 @export var equipped_face_button_scene: PackedScene
-@onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/ScrollContainer/InventoryFacesContainer
+@onready var inventory_faces_container: VBoxContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/FaceInventoryDropArea/ScrollContainer/InventoryFacesContainer
 @onready var die_crafting_panel: Panel = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel
 @onready var fragment_label: Label = $EditDicePanel/MarginContainer/MainVBox/DieCraftingPanel/VBoxContainer/FragmentLabel
 @onready var sell_face_panel: Control = $EditDicePanel/MarginContainer/MainVBox/SellFacePanel
@@ -179,8 +185,11 @@ var last_die_fragments_gained: int = 0
 @export var status_icon_scene: PackedScene
 @export var heal_icon_texture: Texture2D
 
+@onready var face_inventory_drop_area: PanelContainer = $EditDicePanel/MarginContainer/MainVBox/ColumnsHBox/InventoryFacesVBox/FaceInventoryDropArea
+
 @onready var edit_warning_label: Label = $EditDicePanel/MarginContainer/EditWarningLabel
 @export var ui_fail_sound: AudioStream
+var edit_warning_tween: Tween = null
 
 var selected_inventory_face_indices: Array[int] = []
 var fusion_mode: bool = false
@@ -191,7 +200,8 @@ var selected_die_face_index: int = -1
 var selected_die_face_index_2: int = -1
 var selected_edit_die: DiceData = null
 var edit_dice_return_context: String = ""
-
+var fusion_undo_face_inventory: Array[DiceFace] = []
+var fusion_undo_owned_dice_faces: Array = []
 # Loot panel
 @onready var loot_panel: Panel = $LootPanel
 @onready var loot_continue_button: Button = $LootPanel/MarginContainer/LootVBox/LootContinueButton
@@ -237,7 +247,7 @@ var is_in_town: bool = true
 @onready var camp_hp_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampHPLabel
 @onready var camp_progress_title_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampProgressTitleLabel
 @onready var camp_progress_value_label: Label = $ExpeditionCampPanel/MarginContainer/VBoxContainer/CampProgressValueLabel
-
+var camp_opened_from_bounty_map: bool = false
 # Bounty Tracking #############################
 
 @export var bounty_pool: Array[BountyData]
@@ -276,13 +286,13 @@ var final_boss_unlocked: bool = false
 @export var beastmaster_horn_sound: AudioStream
 @export var beastmaster_phase2_music: AudioStream
 @export var fireball_sound: AudioStream
+@export var salvage_face_sound: AudioStream
 
 signal request_music_fade_out
 
 # Encounter choice panel
 
 @onready var encounter_panel: Panel = $EncounterPanel
-
 @onready var choice_button_1: Button = $EncounterPanel/VBoxContainer/ChoiceButton1
 @onready var choice_button_2: Button = $EncounterPanel/VBoxContainer/ChoiceButton2
 @onready var choice_button_3: Button = $EncounterPanel/VBoxContainer/ChoiceButton3
@@ -368,7 +378,15 @@ var sell_face_value: int = 2
 @onready var craft_result_label: Label = $FoodCraftPanel/MarginContainer/VBoxContainer/CraftResultLabel
 @onready var craft_button: Button = $FoodCraftPanel/MarginContainer/VBoxContainer/CraftButton
 @onready var close_craft_button: Button = $FoodCraftPanel/MarginContainer/VBoxContainer/CloseCraftButton
+@onready var food_craft_slot_1: FoodCraftSlot = (
+	$FoodCraftPanel/MarginContainer/VBoxContainer
+	/IngredientSlotsHBox/IngredientSlot1
+)
 
+@onready var food_craft_slot_2: FoodCraftSlot = (
+	$FoodCraftPanel/MarginContainer/VBoxContainer
+	/IngredientSlotsHBox/IngredientSlot2
+)
 # TRAITS ########################################
 @export var regenerating_icon_texture: Texture2D
 @export var random_enemy_trait_pool: Array[EnemyTrait] = []
@@ -418,6 +436,52 @@ var sell_face_value: int = 2
 @export var beastmaster_phase2_support_die: DiceData
 var beastmaster_transition_running: bool = false
 
+# Tutorial #########################################
+
+@onready var tutorial_hint_panel: PanelContainer = (
+	$TutorialHintPanel
+)
+
+@onready var tutorial_title_label: Label = (
+	$TutorialHintPanel/MarginContainer/VBoxContainer/
+	TutorialTitleLabel
+)
+
+@onready var tutorial_body_label: Label = (
+	$TutorialHintPanel/MarginContainer/VBoxContainer/
+	TutorialBodyLabel
+)
+
+@onready var tutorial_continue_button: Button = (
+	$TutorialHintPanel/MarginContainer/VBoxContainer/
+	TutorialContinueButton
+)
+
+@onready var tutorial_hints_check_box: CheckBox = (
+	$OptionsOverlay/OptionsPanel/MarginContainer
+	/VBoxContainer/TutorialHintsCheckBox
+)
+var tutorial_hints_enabled: bool = true
+
+var tutorial_flags: Dictionary = {
+	"welcome": false,
+	"bounty_board": false,
+	"first_combat": false,
+	"assign_attack": false,
+	"end_turn": false,
+	"camp_faces": false,
+	"dice_editor": false,
+	"dice_crafting": false,
+	"no_faces_yet": false,
+	"fusion": false,
+	"merchant": false,
+	"food": false,
+	"relic": false
+}
+
+var active_tutorial_flag: String = ""
+var tutorial_continue_callback: Callable = Callable()
+
 const AVAILABLE_RESOLUTIONS := [
 	Vector2i(1280, 720),
 	Vector2i(1600, 900),
@@ -425,10 +489,15 @@ const AVAILABLE_RESOLUTIONS := [
 	Vector2i(2560, 1440)
 ]
 
+signal forest_merchant_requested
 signal expedition_started(event_type: String)
 signal return_to_town_requested
 signal town_menu_closed
 signal request_music_change(track: AudioStream)
+signal bounty_map_requested(
+	map_data: BountyMapData,
+	bounty_name: String
+)
 
 const PLAN_COMBAT := "combat"
 const PLAN_WITCH := "witch"
@@ -441,7 +510,12 @@ var expedition_encounter_plan: Array = []
 var loaded_pending_encounter: bool = false
 var expedition_active: bool = false
 
-var selected_food_craft_names: Array[String] = []
+var forest_merchant_active := false
+
+var food_craft_slot_names: Array[String] = [
+	"",
+	""
+]
 
 var hovered_enemy_index: int = -1
 
@@ -543,6 +617,24 @@ func _ready():
 	camp_craft_food_button.pressed.connect(open_food_crafting)
 	craft_button.pressed.connect(craft_selected_food)
 	close_craft_button.pressed.connect(close_food_crafting)
+	food_craft_slot_1.ingredient_dropped.connect(
+		handle_food_slot_drop
+	)
+
+	food_craft_slot_2.ingredient_dropped.connect(
+		handle_food_slot_drop
+	)
+
+	food_craft_slot_1.ingredient_removed.connect(
+		clear_food_craft_slot
+	)
+
+	food_craft_slot_2.ingredient_removed.connect(
+		clear_food_craft_slot
+	)
+	face_inventory_drop_area.equipped_face_dropped.connect(
+		handle_equipped_face_to_inventory
+	)
 	begin_expedition_button.pressed.connect(open_prepare_expedition)
 	actions_button.pressed.connect(select_group.bind(actions_container))
 	endless_choice_overlay.visible = false
@@ -556,7 +648,13 @@ func _ready():
 	d10_button.pressed.connect(craft_empty_die.bind(10))
 	d12_button.pressed.connect(craft_empty_die.bind(12))
 	d20_button.pressed.connect(craft_empty_die.bind(20))
-	
+	setup_tutorial_panel_style()
+	setup_tutorial_text_style()
+	tutorial_hint_panel.visible = false
+
+	tutorial_continue_button.pressed.connect(
+		complete_active_tutorial_hint
+	)
 	assigned_dice_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	enemy_roll_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	options_panel.visible = false
@@ -595,7 +693,9 @@ func _ready():
 	endless_wishlist_button.pressed.connect(
 		open_steam_store_page
 	)
-
+	tutorial_hints_check_box.toggled.connect(
+		_on_tutorial_hints_toggled
+	)
 	load_settings()
 	if dice_bag_button.pressed.is_connected(open_dice_bag_read_only):
 		dice_bag_button.pressed.disconnect(open_dice_bag_read_only)
@@ -2007,6 +2107,7 @@ func assign_single_die_to_enemy(
 	calculate_auto_block()
 	update_enemy_button_texts()
 	update_assigned_panel_visibility()
+	try_show_assignment_tutorial()
 	
 func clear_dragged_die_state():
 	dragged_die = null
@@ -2172,6 +2273,12 @@ func roll_all_dice():
 			print(die, " parent: ", die.get_parent().name)
 
 	is_rolling_dice = false
+
+	if !combat_over and !is_resolving_turn:
+		end_round_button.disabled = false
+
+	update_mulligem_button()
+	try_show_first_combat_tutorial()
 	
 func add_combat_log_entry(message: String):
 	if message.strip_edges().is_empty():
@@ -3623,7 +3730,12 @@ func win_combat():
 	# Boss completion happens after the player closes the loot panel.
 	if !expedition_is_boss_fight:
 		expedition_progress += 1
-
+	if (
+		current_bounty_map != null
+		and active_bounty_map_node_id >= 0
+		and !expedition_is_boss_fight
+	):
+		complete_active_bounty_map_node()
 	save_run()
 	show_loot_panel()
 	update_volatile_core_button()
@@ -3728,13 +3840,19 @@ func open_shop_after_loot():
 		expedition_is_boss_fight
 		or is_current_encounter_boss()
 	)
+	if (
+		current_bounty_map != null
+		and active_bounty_map_node_id >= 0
+	):
+		complete_active_bounty_map_node()
 
+		current_bounty_map.completed = true
 	if defeated_boss:
 		expedition_is_boss_fight = true
 		complete_current_bounty()
 		return
 
-	show_expedition_camp()
+	show_bounty_map()
 	
 func add_d6_reward():
 	owned_dice.append(basic_d6)
@@ -3804,6 +3922,11 @@ func restart_run():
 		DirAccess.remove_absolute(RUN_SAVE_PATH)
 	rebuild_bounty_board()
 	run_encounters_completed = 0
+
+
+	current_bounty_map = null
+	active_bounty_map_node_id = -1
+	awaiting_bounty_map_selection = false
 	# refresh_relic_panel()
 	
 func clear_food_buffs():
@@ -3849,7 +3972,38 @@ func apply_consumable_trait(item: ConsumableItem):
 
 	update_player_status_icons()
 	
-func start_new_combat():
+func prepare_new_combat():
+	# Everything required to build the combat scene,
+	# but do not roll the player's dice yet.
+
+	await start_new_combat(
+		false
+	)
+
+func begin_new_combat():
+	if is_rolling_dice:
+		return
+
+	await roll_all_dice()
+
+	mulligem_used_this_turn = false
+	update_mulligem_button()
+	apply_damage_bonus_to_dice_visuals()
+	calculate_auto_block()
+	regroup_dice()
+	update_group_visibility()
+	update_player_status_icons()
+	update_reserve_slots_display()
+	refresh_enemy_buttons()
+	update_enemy_3d_nodes()
+	update_player_3d_node()
+
+	is_resolving_turn = false
+	end_round_button.disabled = false
+	
+func start_new_combat(
+	roll_player_dice: bool = true
+):
 	expedition_is_boss_fight = is_current_encounter_boss()
 	last_echoable_effect.clear()
 	resolving_mind_echo = false
@@ -3937,7 +4091,8 @@ func start_new_combat():
 	for die in dice_nodes:
 		if is_instance_valid(die):
 			die.visible = true
-	await roll_all_dice()
+	if roll_player_dice:
+		await roll_all_dice()
 	
 	mulligem_used_this_turn = false
 	update_mulligem_button()
@@ -3985,10 +4140,56 @@ func update_combat_number_label():
 		combat_number_label.visible = false
 		return
 
-	var total_encounters: int = expedition_required_encounters + 1
-	var current_encounter_number: int = expedition_progress + 1
+	# New bounty-map system.
+	if current_bounty_map != null:
+		var completed_encounters := 0
 
-	if expedition_is_boss_fight or is_current_encounter_boss():
+		for node in current_bounty_map.nodes:
+			if (
+				node.node_type
+				== BountyMapNodeData.NodeType.START
+			):
+				continue
+
+			if (
+				node.state
+				== BountyMapNodeData.NodeState.COMPLETED
+			):
+				completed_encounters += 1
+
+		var current_encounter_number := (
+			completed_encounters + 1
+		)
+
+		if (
+			expedition_is_boss_fight
+			or is_current_encounter_boss()
+		):
+			combat_number_label.text = (
+				"Boss Encounter"
+			)
+		else:
+			combat_number_label.text = (
+				"Encounter "
+				+ str(current_encounter_number)
+			)
+
+		combat_number_label.visible = true
+		return
+
+	# Old sequential expedition system fallback.
+	var total_encounters: int = (
+		expedition_required_encounters + 1
+	)
+
+	var current_encounter_number: int = (
+		expedition_progress + 1
+	)
+
+	if (
+		expedition_is_boss_fight
+		or is_current_encounter_boss()
+	):
 		current_encounter_number = total_encounters
 
 	current_encounter_number = clamp(
@@ -4004,7 +4205,10 @@ func update_combat_number_label():
 		+ str(total_encounters)
 	)
 
-	if expedition_is_boss_fight or is_current_encounter_boss():
+	if (
+		expedition_is_boss_fight
+		or is_current_encounter_boss()
+	):
 		combat_number_label.text += " — Boss"
 
 	combat_number_label.visible = true
@@ -4303,6 +4507,51 @@ func rebuild_face_inventory_grid():
 
 	var displayed_indices: Array[int] = []
 
+	if face_inventory.is_empty():
+		var empty_label := Label.new()
+
+		empty_label.text = (
+			"No spare faces.\n\n"
+			+ "Defeat enemies\n"
+			+ "to collect new faces."
+		)
+
+		empty_label.horizontal_alignment = (
+			HORIZONTAL_ALIGNMENT_CENTER
+		)
+
+		empty_label.vertical_alignment = (
+			VERTICAL_ALIGNMENT_CENTER
+		)
+
+		empty_label.autowrap_mode = (
+			TextServer.AUTOWRAP_WORD_SMART
+		)
+
+		empty_label.custom_minimum_size = Vector2(
+			200,
+			130
+		)
+
+		empty_label.size_flags_horizontal = (
+			Control.SIZE_EXPAND_FILL
+		)
+
+		empty_label.size_flags_vertical = (
+			Control.SIZE_SHRINK_BEGIN
+		)
+
+		# Allow drops to pass through the label to
+		# FaceInventoryDropArea behind it.
+		empty_label.mouse_filter = (
+			Control.MOUSE_FILTER_IGNORE
+		)
+
+		inventory_faces_container.add_child(
+			empty_label
+		)
+
+		return
 	# Display all recognized face types in the chosen order.
 	for result_type in face_order:
 		for i in face_inventory.size():
@@ -4783,6 +5032,7 @@ func create_fused_face(
 	new_face.value = face_a.value + 1
 	new_face.face_name = get_face_display_name(new_face)
 
+	try_show_fusion_tutorial()
 	return new_face
 
 
@@ -4840,7 +5090,9 @@ func craft_empty_die(sides: int):
 		new_die.faces.append(miss_face_template.duplicate(true))
 
 	owned_dice.append(new_die)
-
+	AudioManager.play_one_shot(
+		dice_smith_crafting_sound
+	)
 	refresh_die_crafting_panel()
 	refresh_edit_dice_panel()
 	
@@ -5582,6 +5834,11 @@ func update_enemy_roll_preview_position(enemy_index: int):
 
 func _on_end_turn_pressed():
 	AudioManager.play_ui(ui_click_sound)
+	if (
+		tutorial_hints_enabled
+		and !tutorial_flags.get("end_turn", false)
+	):
+		complete_tutorial_flag("end_turn")
 	end_round()
 
 func show_damage_popup(target_node: Node3D, amount: int):
@@ -7655,14 +7912,21 @@ func launch_enemy_die_at_player(
 func open_edit_dice_panel_from_town():
 	clear_fusion_undo_state()
 	reset_edit_panel_to_normal_mode()
+
 	edit_dice_return_context = "town"
+
 	town_panel.visible = false
 	edit_dice_panel.visible = true
 	sell_face_panel.visible = true
 	die_crafting_panel.visible = true
+
 	refresh_die_crafting_panel()
 	update_begin_expedition_button_visibility()
 	refresh_edit_dice_panel()
+
+	call_deferred(
+		"try_show_town_dice_editor_tutorial"
+	)
 
 
 func rest_at_town():
@@ -7705,6 +7969,23 @@ func open_bounty_board():
 	bounty_board_panel.visible = true
 	rebuild_bounty_board()
 	update_begin_expedition_button_visibility()
+
+	if (
+		tutorial_hints_enabled
+		and !tutorial_flags.get("bounty_board", false)
+	):
+		show_tutorial_hint(
+			"bounty_board",
+			"Choose a Bounty",
+			(
+				"Each bounty contains several encounters "
+				+ "followed by a boss.\n\n"
+				+ "The Congregation is recommended for "
+				+ "new players, but you may choose any "
+				+ "available bounty."
+			),
+			"Choose a Bounty"
+		)
 	
 func close_bounty_board():
 	bounty_board_panel.visible = false
@@ -7726,6 +8007,20 @@ func rebuild_bounty_board():
 
 		button.setup(bounty)
 		button.pressed.connect(select_bounty.bind(bounty))
+		if (
+			tutorial_hints_enabled
+			and !tutorial_flags.get("bounty_board", false)
+			and bounty.bounty_name == "The Congregation"
+		):
+			button.modulate = Color(
+				1.0,
+				0.9,
+				0.45
+			)
+
+			button.tooltip_text += (
+				"\n\nRecommended first bounty."
+			)
 		if final_boss_unlocked:
 			final_boss_button.text = "Final Boss"
 			final_boss_button.disabled = false
@@ -7746,6 +8041,8 @@ func select_final_boss_bounty():
 	
 func select_bounty(bounty: BountyData):
 	current_bounty = bounty
+	
+	finish_bounty_board_tutorial()
 
 	selected_bounty_label.text = "(" + bounty.bounty_name + ")"
 	prepare_selected_bounty_label.text = "Bounty: " + bounty.bounty_name
@@ -7757,6 +8054,7 @@ func select_bounty(bounty: BountyData):
 	update_begin_expedition_button_visibility()
 	
 func complete_current_bounty():
+
 	if current_bounty != null and !completed_bounties.has(current_bounty):
 		completed_bounties.append(current_bounty)
 	if completed_bounties.size() >= required_bounties_for_final_boss:
@@ -7786,7 +8084,9 @@ func complete_current_bounty():
 	current_bounty = null
 	expedition_is_boss_fight = false
 	expedition_progress = 0
-
+	current_bounty_map = null
+	active_bounty_map_node_id = -1
+	awaiting_bounty_map_selection = false
 	player_hp = max_player_hp
 	update_player_hp_label()
 	combat_log_button.visible = false
@@ -7810,6 +8110,14 @@ func complete_current_bounty():
 
 	save_run()
 	return_to_town_requested.emit()
+	
+func finish_bounty_board_tutorial():
+	if active_tutorial_flag == "bounty_board":
+		active_tutorial_flag = ""
+		tutorial_continue_callback = Callable()
+		tutorial_hint_panel.visible = false
+
+	complete_tutorial_flag("bounty_board")
 	
 func show_pending_endless_choice():
 	if !endless_choice_pending:
@@ -7876,6 +8184,25 @@ func show_expedition_camp():
 	update_camp_hp_label()
 	update_mulligem_button()
 	await get_tree().current_scene.fade_from_black()
+	try_show_camp_faces_tutorial()
+	
+func open_expedition_camp_from_map():
+	camp_opened_from_bounty_map = true
+
+	is_in_town = false
+	is_resolving_turn = false
+	is_rolling_dice = false
+
+	hide_all_major_panels()
+	set_combat_ui_enabled(false)
+
+	expedition_camp_panel.visible = true
+
+	camp_continue_button.text = "Return to Map"
+
+	update_expedition_progress_labels()
+	update_camp_hp_label()
+	update_mulligem_button()
 	
 func hide_combat_dice():
 	for die in dice_nodes:
@@ -7893,38 +8220,41 @@ func open_edit_dice_panel_from_camp():
 	die_crafting_panel.visible = false
 	sell_face_panel.visible = false
 	refresh_edit_dice_panel()
-	
+	call_deferred(
+		"try_show_dice_editor_tutorial"
+	)
 func continue_expedition():
+	if camp_opened_from_bounty_map:
+		close_expedition_camp_to_map()
+		return
 	if current_bounty == null:
-		show_edit_message("No bounty loaded. Returning to town.")
+		show_edit_message(
+			"No bounty loaded. Returning to town."
+		)
+
 		return_to_town_requested.emit()
 		return
 
 	expedition_camp_panel.visible = false
-	if expedition_progress >= expedition_required_encounters:
-		current_encounter = current_bounty.boss_encounter
-		expedition_is_boss_fight = true
 
-		save_run()
-		start_new_combat()
-		return
-	var node := get_current_plan_node()
-
-	if node.is_empty():
-		show_edit_message("No expedition event found.")
+	if current_bounty_map != null:
+		show_bounty_map()
 		return
 
-	match node.get("type", PLAN_COMBAT):
-		PLAN_COMBAT:
-			current_encounter = node["encounter"]
-			expedition_is_boss_fight = expedition_progress >= expedition_required_encounters
-			start_new_combat()
-
-		PLAN_WITCH:
-			expedition_started.emit("witch")
-		PLAN_WELL:
-			expedition_started.emit("well")
+	show_edit_message(
+		"No bounty map is currently loaded."
+	)
 			
+func close_expedition_camp_to_map():
+	camp_opened_from_bounty_map = false
+
+	expedition_camp_panel.visible = false
+	camp_continue_button.text = "Continue"
+
+	visible = false
+
+	bounty_map_camp_closed.emit()
+	
 func is_current_encounter_boss() -> bool:
 	if current_bounty == null:
 		return false
@@ -8031,8 +8361,12 @@ func confirm_start_expedition():
 		return
 
 	if current_bounty == null:
-		print("Cannot start expedition. current_bounty is null.")
+		push_error(
+			"Cannot start expedition: current_bounty is null."
+		)
 		return
+
+	print("STEP 1: Creating bounty map.")
 
 	combat_number = 0
 	expedition_progress = 0
@@ -8041,29 +8375,32 @@ func confirm_start_expedition():
 	is_in_town = false
 	loaded_pending_encounter = false
 
-	var extra_encounters := get_scaled_bounty_extra_encounters()
+	# The old sequential-plan system is not used by map bounties.
+	expedition_encounter_plan.clear()
+	expedition_required_encounters = 0
 
-	expedition_required_encounters = randi_range(
-		current_bounty.min_encounters_before_boss + extra_encounters,
-		current_bounty.max_encounters_before_boss + extra_encounters
+	current_bounty_map = generate_test_bounty_map()
+
+	if current_bounty_map == null:
+		push_error(
+			"generate_test_bounty_map() returned null."
+		)
+		is_in_town = true
+		return
+
+	active_bounty_map_node_id = -1
+	awaiting_bounty_map_selection = true
+
+	print(
+		"STEP 2: Map created with ",
+		current_bounty_map.nodes.size(),
+		" nodes."
 	)
 
-	build_expedition_plan()
-	var first_node := get_current_plan_node()
-
-	if first_node.get("type", PLAN_COMBAT) == PLAN_COMBAT:
-		current_encounter = first_node["encounter"]
-	else:
-		current_encounter = null
-
-	print("Starting bounty: ", current_bounty.bounty_name)
-	print("Required encounters: ", expedition_required_encounters)
-	print("First encounter: ", current_encounter.encounter_name if current_encounter != null else "NULL")
-
 	save_run()
-
 	prepare_return_context = "town"
-	expedition_started.emit()
+
+	show_bounty_map()
 	
 func roll_merchant_stock():
 	merchant_food_stock.clear()
@@ -8084,15 +8421,44 @@ func roll_merchant_stock():
 		merchant_food_stock.append(available_foods[i])
 
 func open_merchant():
+	forest_merchant_active = false
+	close_merchant_button.text = "Close"
+
 	town_panel.visible = false
 	merchant_panel.visible = true
 	merchant_gold_label.text = "Gold: " + str(gold)
+
 	update_begin_expedition_button_visibility()
 	rebuild_merchant()
-
+	if (
+		tutorial_hints_enabled
+		and !tutorial_flags.get("merchant", false)
+	):
+		show_tutorial_hint(
+			"merchant",
+			"The Merchant",
+			(
+				"Spend Gold to purchase food, relics, "
+				+ "and other useful supplies.\n\n"
+				+ "The Merchant's stock changes as your "
+				+ "adventure progresses."
+			),
+			"Continue"
+		)
+		
 func close_merchant():
 	merchant_panel.visible = false
 	update_begin_expedition_button_visibility()
+
+	if forest_merchant_active:
+		forest_merchant_active = false
+		close_merchant_button.text = "Close"
+
+		complete_active_bounty_map_node()
+		show_bounty_map()
+		return
+
+	close_merchant_button.text = "Close"
 	town_menu_closed.emit()
 
 func rebuild_merchant():
@@ -8225,20 +8591,29 @@ func get_face_sell_value(face: DiceFace) -> int:
 		"miss":
 			return 1
 		"hit", "block", "heal", "gold":
-			return max(2, face.value)
+			return max(1, face.value)
 		"crit", "bleed", "freeze":
-			return max(3, face.value)
+			return max(1, face.value)
 		"dodge", "reversal", "twist_knife", "break_focus":
-			return 8
+			return 1
 		_:
-			return 2
+			return 1
 			
 func update_sell_face_preview(face: DiceFace):
 	if face == null:
 		return
 
-	var value := get_face_sell_value(face)
-	sell_value_label.text = "Sell " + get_face_text(face) + "\n+" + str(value) + " Gold"
+	if face.result_type == "miss":
+		sell_value_label.text = (
+			"Miss faces cannot be salvaged."
+		)
+		return
+
+	sell_value_label.text = (
+		"Salvage "
+		+ get_face_display_name(face)
+		+ "\n+1 Die Fragment"
+	)
 
 func clear_drag_fusion_preview():
 	for child in die_faces_container.get_children():
@@ -8246,7 +8621,7 @@ func clear_drag_fusion_preview():
 			child.set_drop_state("normal")
 
 	if sell_value_label != null:
-		sell_value_label.text = "Drop a face here to sell"
+		sell_value_label.text = "Drop a face here to salvage"
 		
 func get_consumable_count(item: ConsumableItem) -> int:
 	var count := 0
@@ -8312,43 +8687,6 @@ func rebuild_prepare_consumables():
 		button.pressed.connect(
 			use_consumable_item.bind(item)
 		)
-		
-func handle_food_crafting_drop(
-	dragged_item_name: String,
-	target_item_name: String
-):
-	if dragged_item_name.is_empty():
-		return
-
-	if target_item_name.is_empty():
-		return
-
-	if dragged_item_name == target_item_name:
-		if (
-			get_consumable_count_by_name(
-				dragged_item_name
-			) < 2
-		):
-			show_food_crafting_message(
-				"You need 2 "
-				+ dragged_item_name
-				+ " to use both as ingredients."
-			)
-			return
-
-	selected_food_craft_names.clear()
-	selected_food_craft_names.append(
-		dragged_item_name
-	)
-
-	selected_food_craft_names.append(
-		target_item_name
-	)
-
-	AudioManager.play_ui(ui_click_sound)
-
-	rebuild_food_crafting_grid()
-	update_craft_result_label()
 	
 func get_consumable_count_by_name(
 	item_name: String
@@ -8632,15 +8970,26 @@ func handle_face_drop(
 
 			# Invalid fusion means swap.
 			else:
+				var removed_face: DiceFace = target_face
+
 				selected_edit_die.faces[
 					target_slot_index
 				] = dragged_face
 
-				# Replace the exact inventory entry instead of
-				# removing and appending it.
-				face_inventory[
+				# The dragged face leaves inventory.
+				face_inventory.remove_at(
 					source_inventory_index
-				] = target_face
+				)
+
+				# A removed Miss disappears instead of entering inventory.
+				# Any other removed face is returned to inventory.
+				if (
+					removed_face != null
+					and removed_face.result_type != "miss"
+				):
+					face_inventory.append(
+						removed_face
+					)
 
 				AudioManager.play_one_shot(
 					graft_face_sound
@@ -8817,61 +9166,72 @@ func try_fuse_inventory_faces_by_index(
 	save_run()
 	
 func capture_fusion_undo_state():
-	fusion_undo_inventory.clear()
+	fusion_undo_face_inventory.clear()
+	fusion_undo_owned_dice_faces.clear()
 
 	for face in face_inventory:
-		fusion_undo_inventory.append(face)
+		if face == null:
+			fusion_undo_face_inventory.append(null)
+		else:
+			fusion_undo_face_inventory.append(
+				face.duplicate(true)
+			)
 
-	fusion_undo_die_faces.clear()
+	for die in owned_dice:
+		var copied_faces: Array[DiceFace] = []
 
-	for die_data in owned_dice:
-		if die_data == null:
-			continue
+		for face in die.faces:
+			if face == null:
+				copied_faces.append(null)
+			else:
+				copied_faces.append(
+					face.duplicate(true)
+				)
 
-		var saved_faces: Array[DiceFace] = []
+		fusion_undo_owned_dice_faces.append(
+			copied_faces
+		)
 
-		for face in die_data.faces:
-			saved_faces.append(face)
-
-		fusion_undo_die_faces[die_data] = saved_faces
-
-	fusion_undo_available = true
-	update_fusion_undo_button()
+	undo_fusion_button.disabled = false
 
 
 func undo_last_fusion():
-	if !fusion_undo_available:
+	if fusion_undo_owned_dice_faces.is_empty():
 		return
 
 	face_inventory.clear()
 
-	for face in fusion_undo_inventory:
-		face_inventory.append(face)
+	for face in fusion_undo_face_inventory:
+		if face == null:
+			face_inventory.append(null)
+		else:
+			face_inventory.append(
+				face.duplicate(true)
+			)
 
-	for die_data in fusion_undo_die_faces.keys():
-		if die_data == null:
-			continue
+	for i in owned_dice.size():
+		if i >= fusion_undo_owned_dice_faces.size():
+			break
 
-		var saved_faces: Array = fusion_undo_die_faces[die_data]
+		owned_dice[i].faces.clear()
 
-		die_data.faces.clear()
+		var saved_faces: Array = (
+			fusion_undo_owned_dice_faces[i]
+		)
 
 		for face in saved_faces:
-			die_data.faces.append(face)
+			if face == null:
+				owned_dice[i].faces.append(null)
+			else:
+				owned_dice[i].faces.append(
+					face.duplicate(true)
+				)
 
-	fusion_undo_inventory.clear()
-	fusion_undo_die_faces.clear()
-	fusion_undo_available = false
+	clear_fusion_undo_state()
+	selected_edit_die = null
 
-	selected_die_face_index = -1
-	selected_die_face_index_2 = -1
-	selected_inventory_face_indices.clear()
-
-	update_fusion_undo_button()
 	refresh_edit_dice_panel()
 	save_run()
-
-	show_edit_message("Last fusion undone.")
 
 
 func update_fusion_undo_button():
@@ -9186,34 +9546,101 @@ func handle_sell_face_drop(data: Dictionary):
 	if edit_dice_return_context != "town":
 		return
 
+	if dice_panel_read_only:
+		return
+
 	if !data.has("face"):
 		return
 
 	var face: DiceFace = data["face"]
-	var source_type: String = data.get("source_type", "")
+	var source_type: String = String(
+		data.get("source_type", "")
+	)
 
 	if face == null:
 		return
 
-	if source_type != "inventory":
-		show_edit_message("Only inventory faces can be sold.")
+	# Miss faces are structural and cannot be salvaged.
+	if face.result_type == "miss":
+		show_edit_message(
+			"Miss faces cannot be salvaged."
+		)
 		return
 
-	if !face_inventory.has(face):
-		return
+	match source_type:
+		"inventory":
+			var inventory_index: int = int(
+				data.get("inventory_index", -1)
+			)
 
-	face_inventory.erase(face)
+			if (
+				inventory_index < 0
+				or inventory_index >= face_inventory.size()
+			):
+				return
 
-	var value := get_face_sell_value(face)
-	gold += value
+			if face_inventory[inventory_index] != face:
+				return
 
-	AudioManager.play_one_shot(coin_purchase_sound)
+			face_inventory.remove_at(
+				inventory_index
+			)
 
-	update_gold_label()
+		"equipped":
+			if selected_edit_die == null:
+				show_edit_message(
+					"Select a die first."
+				)
+				return
+
+			if !selected_edit_die.editable:
+				show_edit_message(
+					"Cursed dice cannot be edited."
+				)
+				return
+
+			var source_slot: int = int(
+				data.get("slot", -1)
+			)
+
+			if (
+				source_slot < 0
+				or source_slot
+				>= selected_edit_die.faces.size()
+			):
+				return
+
+			# Make sure the dragged face still matches
+			# the equipped slot.
+			if (
+				selected_edit_die.faces[source_slot]
+				!= face
+			):
+				return
+
+			capture_fusion_undo_state()
+
+			# Salvaging an equipped face leaves a Miss
+			# in its place.
+			selected_edit_die.faces[source_slot] = (
+				create_basic_miss_face()
+			)
+
+		_:
+			return
+
+	die_fragments += 1
+	last_die_fragments_gained = 1
+
+	selected_inventory_face_indices.clear()
+
+	AudioManager.play_one_shot(
+		salvage_face_sound
+	)
+
+	refresh_die_crafting_panel()
 	refresh_edit_dice_panel()
 	save_run()
-	
-var edit_warning_tween: Tween = null
 
 func show_edit_message(text: String):
 	if edit_warning_label == null:
@@ -9399,20 +9826,25 @@ func open_food_crafting():
 	food_crafting_return_context = "camp"
 	expedition_camp_panel.visible = false
 	food_craft_panel.visible = true
-	selected_food_craft_names.clear()
+	reset_food_craft_slots()
 	camp_hp_label.visible = true
 	update_camp_hp_label()
 	update_begin_expedition_button_visibility()
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
-	
+	call_deferred(
+		"try_show_food_tutorial"
+	)
 func close_food_crafting():
 	food_craft_panel.visible = false
-	selected_food_craft_names.clear()
+	reset_food_craft_slots()
 
 	match food_crafting_return_context:
 		"camp":
 			expedition_camp_panel.visible = true
+
+		"prepare":
+			prepare_expedition_panel.visible = true
 
 		"town":
 			town_menu_closed.emit()
@@ -9421,6 +9853,7 @@ func close_food_crafting():
 			town_menu_closed.emit()
 
 	food_crafting_return_context = ""
+
 	update_camp_hp_label()
 	update_begin_expedition_button_visibility()
 	
@@ -9460,37 +9893,13 @@ func rebuild_food_crafting_grid():
 			item_name
 		)
 
-		button.food_dropped.connect(
-			handle_food_crafting_drop
-		)
 		button.tooltip_text = (
 			item.item_name
 			+ "\n"
 			+ item.description
 		)
 
-		if selected_food_craft_names.has(item_name):
-			button.modulate = Color.YELLOW
-		else:
-			button.modulate = Color.WHITE
-
-		button.pressed.connect(
-			select_food_name_for_crafting.bind(
-				item_name
-			)
-		)
-
-func select_food_for_crafting(index: int):
-	if selected_food_craft_names.has(index):
-		selected_food_craft_names.erase(index)
-	else:
-		if selected_food_craft_names.size() >= 2:
-			selected_food_craft_names.clear()
-
-		selected_food_craft_names.append(index)
-
-	rebuild_food_crafting_grid()
-	update_craft_result_label()
+		button.modulate = Color.WHITE
 
 func get_sorted_consumable_names(
 	item_lookup: Dictionary
@@ -9518,101 +9927,144 @@ func get_sorted_consumable_names(
 	return names
 	
 func update_craft_result_label():
-	if selected_food_craft_names.size() != 2:
-		craft_result_label.text = "Select 2 food items."
+	if (
+		food_craft_slot_names[0].is_empty()
+		or food_craft_slot_names[1].is_empty()
+	):
+		craft_result_label.text = (
+			"Drag an ingredient into each slot."
+		)
+
 		craft_button.disabled = true
 		return
 
-	var recipe = get_matching_food_recipe()
+	var recipe: FoodRecipe = (
+		get_matching_food_recipe()
+	)
 
 	if recipe == null:
-		craft_result_label.text = "No matching recipe."
+		craft_result_label.text = (
+			"No matching recipe."
+		)
+
 		craft_button.disabled = true
 		return
 
-	craft_result_label.text = "Creates: " + recipe.result_item.item_name
+	craft_result_label.text = (
+		"Creates: "
+		+ recipe.result_item.item_name
+	)
 
-	if recipe.result_item.description != "":
-		craft_result_label.text += "\n" + recipe.result_item.description
+	if !recipe.result_item.description.is_empty():
+		craft_result_label.text += (
+			"\n"
+			+ recipe.result_item.description
+		)
 
 	craft_button.disabled = false
 	
-func get_matching_food_recipe():
-	if selected_food_craft_names.size() != 2:
-		return null
+func get_matching_food_recipe() -> FoodRecipe:
+	var name_a: String = food_craft_slot_names[0]
+	var name_b: String = food_craft_slot_names[1]
 
-	var name_a := selected_food_craft_names[0]
-	var name_b := selected_food_craft_names[1]
+	if name_a.is_empty() or name_b.is_empty():
+		return null
 
 	for recipe in food_recipes:
 		if recipe == null:
 			continue
 
-		if recipe.ingredient_a == null or recipe.ingredient_b == null or recipe.result_item == null:
+		if (
+			recipe.ingredient_a == null
+			or recipe.ingredient_b == null
+			or recipe.result_item == null
+		):
 			continue
 
-		var recipe_a := recipe.ingredient_a.item_name
-		var recipe_b := recipe.ingredient_b.item_name
+		var recipe_a: String = (
+			recipe.ingredient_a.item_name
+		)
 
-		var match_forward := recipe_a == name_a and recipe_b == name_b
-		var match_reverse := recipe_a == name_b and recipe_b == name_a
+		var recipe_b: String = (
+			recipe.ingredient_b.item_name
+		)
+
+		var match_forward: bool = (
+			recipe_a == name_a
+			and recipe_b == name_b
+		)
+
+		var match_reverse: bool = (
+			recipe_a == name_b
+			and recipe_b == name_a
+		)
 
 		if match_forward or match_reverse:
 			return recipe
-	print("Selected:", name_a, " + ", name_b)
 
-	for recipe in food_recipes:
-		if recipe == null:
-			continue
-
-		print(
-			"Recipe:",
-			recipe.ingredient_a.item_name,
-			"+",
-			recipe.ingredient_b.item_name
-		)
 	return null
 	
 func craft_selected_food():
-	var recipe = get_matching_food_recipe()
+	var recipe: FoodRecipe = (
+		get_matching_food_recipe()
+	)
 
 	if recipe == null:
 		return
 
-	remove_consumable_by_name(selected_food_craft_names[0])
-	remove_consumable_by_name(selected_food_craft_names[1])
+	var ingredient_a: String = (
+		food_craft_slot_names[0]
+	)
 
-	consumable_inventory.append(recipe.result_item.duplicate(true))
+	var ingredient_b: String = (
+		food_craft_slot_names[1]
+	)
 
-	selected_food_craft_names.clear()
-	AudioManager.play_one_shot(cooking_sound, randf_range(0.96, 1.04), 1.0)
+	if ingredient_a == ingredient_b:
+		if (
+			get_consumable_count_by_name(
+				ingredient_a
+			) < 2
+		):
+			show_food_crafting_message(
+				"You need 2 "
+				+ ingredient_a
+				+ "."
+			)
+
+			return
+
+	remove_consumable_by_name(ingredient_a)
+	remove_consumable_by_name(ingredient_b)
+
+	consumable_inventory.append(
+		recipe.result_item.duplicate(true)
+	)
+
+	AudioManager.play_one_shot(
+		cooking_sound,
+		randf_range(0.96, 1.04),
+		1.0
+	)
+
+	reset_food_craft_slots()
 	rebuild_food_crafting_grid()
-	update_craft_result_label()
 	rebuild_prepare_consumables()
+	save_run()
 	
 func open_food_crafting_from_prepare():
-	food_crafting_return_context = "camp"
 	food_crafting_return_context = "prepare"
 
 	prepare_expedition_panel.visible = false
 	food_craft_panel.visible = true
 
-	selected_food_craft_names.clear()
+	reset_food_craft_slots()
 	update_begin_expedition_button_visibility()
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
-
-func select_food_name_for_crafting(item_name: String):
-	if selected_food_craft_names.has(item_name):
-		selected_food_craft_names.erase(item_name)
-	else:
-		if selected_food_craft_names.size() >= 2:
-			selected_food_craft_names.clear()
-
-		selected_food_craft_names.append(item_name)
-
-	rebuild_food_crafting_grid()
-	update_craft_result_label()
+	call_deferred(
+		"try_show_food_tutorial"
+	)
 	
 func remove_consumable_by_name(item_name: String):
 	for i in consumable_inventory.size():
@@ -9712,11 +10164,13 @@ func would_exceed_dodge_limit(die_data: DiceData, incoming_face: DiceFace, repla
 func open_food_crafting_from_town():
 	food_crafting_return_context = "town"
 	food_craft_panel.visible = true
-	selected_food_craft_names.clear()
+	reset_food_craft_slots()
 	update_begin_expedition_button_visibility()
 	rebuild_food_crafting_grid()
 	update_craft_result_label()
-
+	call_deferred(
+		"try_show_food_tutorial"
+	)
 func bind_world(world: Node3D):
 	combat_camera = world.find_child(
 		"Camera3D",
@@ -9897,7 +10351,8 @@ func apply_end_combat_relics():
 	pass
 
 func is_menu_blocking_input() -> bool:
-	return options_overlay.visible \
+	return tutorial_hint_panel.visible \
+		or options_overlay.visible \
 		or shop_panel.visible \
 		or loot_panel.visible \
 		or edit_dice_panel.visible \
@@ -9999,7 +10454,18 @@ func save_settings():
 		"resolution_index",
 		resolution_option.selected
 	)
+	config.set_value(
+	"tutorial",
+	"enabled",
+	tutorial_hints_enabled
+)
 
+	for flag_name in tutorial_flags:
+		config.set_value(
+			"tutorial_flags",
+			flag_name,
+			bool(tutorial_flags[flag_name])
+		)
 	var err := config.save(SETTINGS_SAVE_PATH)
 
 	if err == OK:
@@ -10498,7 +10964,26 @@ func load_settings():
 	_on_master_volume_changed(master_volume_slider.value)
 	_on_music_volume_changed(music_volume_slider.value)
 	_on_sfx_volume_changed(sfx_volume_slider.value)
-	
+	tutorial_hints_enabled = bool(
+		config.get_value(
+			"tutorial",
+			"enabled",
+			true
+		)
+	)
+
+	for flag_name in tutorial_flags:
+		tutorial_flags[flag_name] = bool(
+			config.get_value(
+				"tutorial_flags",
+				flag_name,
+				false
+			)
+		)
+
+	tutorial_hints_check_box.set_pressed_no_signal(
+		tutorial_hints_enabled
+	)
 func continue_run():
 
 	if !load_run():
@@ -10518,6 +11003,47 @@ func delete_run_save():
 func update_expedition_progress_labels():
 	camp_progress_title_label.text = "Bounty Progress"
 
+	# New bounty-map system.
+	if current_bounty_map != null:
+		var completed_encounters := 0
+
+		for node in current_bounty_map.nodes:
+			if (
+				node.node_type
+				== BountyMapNodeData.NodeType.START
+			):
+				continue
+
+			if (
+				node.state
+				== BountyMapNodeData.NodeState.COMPLETED
+			):
+				completed_encounters += 1
+
+		if (
+			expedition_is_boss_fight
+			or is_current_encounter_boss()
+		):
+			camp_progress_value_label.text = (
+				"Boss Encounter"
+			)
+		else:
+			var encounter_word := (
+				"Encounter"
+				if completed_encounters == 1
+				else "Encounters"
+			)
+
+			camp_progress_value_label.text = (
+				str(completed_encounters)
+				+ " "
+				+ encounter_word
+				+ " Completed"
+			)
+
+		return
+
+	# Old sequential expedition fallback.
 	var total_encounters: int = (
 		expedition_required_encounters + 1
 	)
@@ -11161,10 +11687,22 @@ func finish_failed_beastmaster_transition():
 	update_begin_expedition_button_visibility()
 	
 func begin_beastmaster_phase_two_combat():
-	# start_new_combat() already spawned and rolled the player's dice.
-	# This function only finishes Phase 2-specific initialization.
+	# Phase 2 cleared the old Phase 1 dice.
+	# Create and roll the player's dice exactly once here.
+	if dice_nodes.is_empty():
+		spawn_dice()
 
 	set_combat_ui_enabled(true)
+
+	await get_tree().process_frame
+
+	await roll_all_dice()
+
+	apply_damage_bonus_to_dice_visuals()
+	calculate_auto_block()
+	regroup_dice()
+	update_group_visibility()
+	update_reserve_slots_display()
 
 	roll_enemy_intents()
 	refresh_enemy_buttons()
@@ -11788,7 +12326,16 @@ func show_relic_acquisition(relic: RelicData):
 
 	# Start the pulse without blocking this function.
 	_pulse_relic_glow()
+	if (
+		tutorial_hints_enabled
+		and !tutorial_flags.get("relic", false)
+	):
+		relic_reward_description_label.text += (
+			"\n\nRelics grant passive effects for "
+			+ "the rest of this run."
+		)
 
+		complete_tutorial_flag("relic")
 	# Wait immediately so the Continue signal cannot be missed.
 	await relic_reward_finished
 	
@@ -12151,4 +12698,925 @@ func record_echoable_effect(
 		"source_die": source_die,
 		"target_index": target_index
 	}
+	
+# TUTORIAL #########################################
+
+func should_show_tutorial(flag_name: String) -> bool:
+	if !tutorial_hints_enabled:
+		return false
+
+	if !tutorial_flags.has(flag_name):
+		push_warning(
+			"Unknown tutorial flag: " + flag_name
+		)
+		return false
+
+	return !bool(tutorial_flags[flag_name])
+
+
+func show_tutorial_hint(
+	flag_name: String,
+	title: String,
+	body: String,
+	continue_text: String = "Got It",
+	on_continue: Callable = Callable()
+):
+	if !should_show_tutorial(flag_name):
+		return
+
+	if tutorial_hint_panel.visible:
+		return
+
+	active_tutorial_flag = flag_name
+	tutorial_continue_callback = on_continue
+
+	tutorial_title_label.text = title
+	tutorial_body_label.text = body
+	tutorial_continue_button.text = continue_text
+	tutorial_hint_panel.visible = true
+	tutorial_hint_panel.z_index = 5000
+	tutorial_hint_panel.move_to_front()
+	tutorial_hint_panel.mouse_filter = (
+		Control.MOUSE_FILTER_STOP
+	)
+	tutorial_hint_panel.modulate.a = 0.0
+	tutorial_hint_panel.scale = Vector2(0.96, 0.96)
+
+	tutorial_hint_panel.pivot_offset = (
+		tutorial_hint_panel.size * 0.5
+	)
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_OUT)
+
+	tween.tween_property(
+		tutorial_hint_panel,
+		"modulate:a",
+		1.0,
+		0.16
+	)
+
+	tween.tween_property(
+		tutorial_hint_panel,
+		"scale",
+		Vector2.ONE,
+		0.16
+	)
+
+
+func complete_active_tutorial_hint():
+	if active_tutorial_flag.is_empty():
+		tutorial_hint_panel.visible = false
+		return
+
+	tutorial_flags[active_tutorial_flag] = true
+
+	var callback: Callable = tutorial_continue_callback
+
+	active_tutorial_flag = ""
+	tutorial_continue_callback = Callable()
+	tutorial_hint_panel.visible = false
+
+	save_settings()
+
+	if callback.is_valid():
+		callback.call()
+
+
+func complete_tutorial_flag(flag_name: String):
+	if !tutorial_flags.has(flag_name):
+		return
+
+	if bool(tutorial_flags[flag_name]):
+		return
+
+	tutorial_flags[flag_name] = true
+	save_settings()
+
+
+func hide_tutorial_hint():
+	active_tutorial_flag = ""
+	tutorial_continue_callback = Callable()
+	tutorial_hint_panel.visible = false
+
+func _on_tutorial_hints_toggled(enabled: bool):
+	tutorial_hints_enabled = enabled
+
+	if !enabled:
+		tutorial_hint_panel.visible = false
+		active_tutorial_flag = ""
+		tutorial_continue_callback = Callable()
+
+	save_settings()
+
+func try_show_welcome_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("welcome", false):
+		return
+
+	show_tutorial_hint(
+		"welcome",
+		"Welcome to You Must Die!",
+		(
+			"Complete bounties to grow stronger and defeat "
+			+ "powerful bosses.\n\n"
+			+ "Choose a bounty from the Town Hall to begin.\n\n"
+			+ "The Congregation is recommended for your first bounty."
+		),
+		"Open Bounty Board",
+		Callable(self, "open_bounty_board")
+	)
+	
+func try_show_town_dice_editor_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	# Explain the empty inventory first if the player came here
+	# before earning any faces.
+	if (
+		face_inventory.is_empty()
+		and !tutorial_flags.get("no_faces_yet", false)
+	):
+		show_tutorial_hint(
+			"no_faces_yet",
+			"Customize Your Dice",
+			(
+				"You do not have any spare faces yet.\n\n"
+				+ "Defeat enemies to find new dice faces. "
+				+ "Once collected, those faces appear in "
+				+ "the Face Inventory on the right."
+			),
+			"Continue",
+			Callable(
+				self,
+				"try_show_dice_crafting_tutorial"
+			)
+		)
+
+		return
+
+	try_show_dice_crafting_tutorial()
+
+func try_show_dice_crafting_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("dice_crafting", false):
+		return
+
+	show_tutorial_hint(
+		"dice_crafting",
+		"Dice Crafting",
+		(
+			"Drag unwanted faces into the Sell area "
+			+ "to turn them into Die Fragments.\n\n"
+			+ "Spend Die Fragments using the buttons below "
+			+ "to craft new empty dice of different sizes.\n\n"
+			+ "Larger dice require more fragments."
+		),
+		"Continue"
+	)
+	
+func try_show_first_combat_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("first_combat", false):
+		return
+
+	show_tutorial_hint(
+		"first_combat",
+		"Your Dice Have Rolled",
+		(
+			"Each die produces one face at the beginning "
+			+ "of the round.\n\n"
+			+ "Drag Hit, Crit, and other offensive dice "
+			+ "onto an enemy to target them."
+		),
+		"Continue"
+	)
+	
+func try_show_assignment_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("assign_attack", false):
+		return
+
+	complete_tutorial_flag("assign_attack")
+
+	call_deferred(
+		"show_tutorial_hint",
+		"end_turn",
+		"Resolve the Round",
+		(
+			"Your attack die is now assigned.\n\n"
+			+ "Press End Turn when you are ready. "
+			+ "Your dice resolve first, in the order of assignment, followed by "
+			+ "the enemies."
+		),
+		"Continue"
+	)
+	
+func try_show_camp_faces_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("camp_faces", false):
+		return
+
+	if face_inventory.is_empty():
+		return
+
+	show_tutorial_hint(
+		"camp_faces",
+		"You Found Dice Faces",
+		(
+			"Enemies can drop new faces.\n\n"
+			+ "Open Graft Dice while at camp to stitch "
+			+ "those faces onto your dice."
+		),
+		"Continue"
+	)
+	
+func try_show_dice_editor_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("dice_editor", false):
+		return
+
+	if face_inventory.is_empty():
+		return
+
+	show_tutorial_hint(
+		"dice_editor",
+		"Customize Your Dice",
+		(
+			"Select a die, then drag a face from your "
+			+ "inventory onto one of that die's faces.\n\n"
+			+ "The two faces will swap. Every normal die "
+			+ "must keep at least one Miss face."
+		),
+		"Start Editing"
+	)
+	
+func try_show_fusion_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("fusion", false):
+		return
+
+	show_tutorial_hint(
+		"fusion",
+		"Face Fusion",
+		(
+			"Matching compatible faces can be fused "
+			+ "into a stronger version.\n\n"
+			+ "For example, two Hit 1 faces become Hit 2."
+		),
+		"Continue"
+	)
+
+func setup_tutorial_panel_style():
+	if tutorial_hint_panel == null:
+		return
+
+	var style := StyleBoxFlat.new()
+
+	style.bg_color = Color(
+		0.055,
+		0.035,
+		0.025,
+		0.96
+	)
+
+	style.border_width_left = 4
+	style.border_width_top = 4
+	style.border_width_right = 4
+	style.border_width_bottom = 4
+
+	style.border_color = Color(
+		0.95,
+		0.68,
+		0.16,
+		1.0
+	)
+
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	style.content_margin_top = 16
+	style.content_margin_bottom = 16
+
+	style.shadow_color = Color(
+		0.0,
+		0.0,
+		0.0,
+		0.75
+	)
+
+	style.shadow_size = 8
+	style.shadow_offset = Vector2(0, 4)
+
+	tutorial_hint_panel.add_theme_stylebox_override(
+		"panel",
+		style
+	)
+	
+func setup_tutorial_text_style():
+	if tutorial_title_label != null:
+		tutorial_title_label.add_theme_color_override(
+			"font_color",
+			Color(1.0, 0.78, 0.28)
+		)
+
+		tutorial_title_label.add_theme_color_override(
+			"font_outline_color",
+			Color.BLACK
+		)
+
+		tutorial_title_label.add_theme_constant_override(
+			"outline_size",
+			2
+		)
+
+	if tutorial_body_label != null:
+		tutorial_body_label.add_theme_color_override(
+			"font_color",
+			Color.WHITE
+		)
+
+		tutorial_body_label.add_theme_color_override(
+			"font_outline_color",
+			Color.BLACK
+		)
+
+		tutorial_body_label.add_theme_constant_override(
+			"outline_size",
+			1
+		)
+
+func reset_food_craft_slots():
+	food_craft_slot_names[0] = ""
+	food_craft_slot_names[1] = ""
+
+	food_craft_slot_1.clear_ingredient()
+	food_craft_slot_2.clear_ingredient()
+
+	update_craft_result_label()
+
+
+func handle_food_slot_drop(
+	slot_index: int,
+	item_name: String
+):
+	if slot_index < 0 or slot_index > 1:
+		return
+
+	if item_name.is_empty():
+		return
+
+	var other_slot_index: int = (
+		1 if slot_index == 0 else 0
+	)
+
+	var required_count: int = 1
+
+	if (
+		food_craft_slot_names[other_slot_index]
+		== item_name
+	):
+		required_count = 2
+
+	if (
+		get_consumable_count_by_name(item_name)
+		< required_count
+	):
+		show_food_crafting_message(
+			"You need "
+			+ str(required_count)
+			+ " "
+			+ item_name
+			+ " to fill both slots."
+		)
+
+		return
+
+	food_craft_slot_names[slot_index] = item_name
+
+	var item: ConsumableItem = (
+		find_consumable_by_name(item_name)
+	)
+
+	if item == null:
+		return
+
+	if slot_index == 0:
+		food_craft_slot_1.set_ingredient(
+			item_name,
+			item.icon
+		)
+	else:
+		food_craft_slot_2.set_ingredient(
+			item_name,
+			item.icon
+		)
+
+	AudioManager.play_ui(ui_click_sound)
+	update_craft_result_label()
+
+
+func clear_food_craft_slot(slot_index: int):
+	if slot_index < 0 or slot_index > 1:
+		return
+
+	food_craft_slot_names[slot_index] = ""
+
+	if slot_index == 0:
+		food_craft_slot_1.clear_ingredient()
+	else:
+		food_craft_slot_2.clear_ingredient()
+
+	update_craft_result_label()
+
+
+func find_consumable_by_name(
+	item_name: String
+) -> ConsumableItem:
+	for item in consumable_inventory:
+		if item == null:
+			continue
+
+		if item.item_name == item_name:
+			return item
+
+	return null
+
+func handle_equipped_face_to_inventory(
+	data: Dictionary
+):
+	if dice_panel_read_only:
+		return
+
+	if selected_edit_die == null:
+		show_edit_message("Select a die first.")
+		return
+
+	if !selected_edit_die.editable:
+		show_edit_message(
+			"Cursed dice cannot be edited."
+		)
+		return
+
+	var source_slot: int = int(
+		data.get("slot", -1)
+	)
+
+	if (
+		source_slot < 0
+		or source_slot >= selected_edit_die.faces.size()
+	):
+		return
+
+	var removed_face: DiceFace = (
+		selected_edit_die.faces[source_slot]
+	)
+
+	if removed_face == null:
+		removed_face = create_basic_miss_face()
+
+	if removed_face.result_type == "miss":
+		show_edit_message(
+			"Miss faces cannot be stored."
+		)
+		return
+
+	capture_fusion_undo_state()
+
+	face_inventory.append(
+		removed_face
+	)
+
+	selected_edit_die.faces[source_slot] = (
+		create_basic_miss_face()
+	)
+
+	selected_inventory_face_indices.clear()
+
+	AudioManager.play_one_shot(
+		graft_face_sound
+	)
+
+	refresh_edit_dice_panel()
+	save_run()
+
+func try_show_food_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("food", false):
+		return
+
+	show_tutorial_hint(
+		"food",
+		"Cooking",
+		(
+			"Drag one ingredient into each slot to "
+			+ "discover and craft recipes.\n\n"
+			+ "Food can heal you immediately or grant "
+			+ "bonuses for your next combat.\n\n"
+			+ "Combat-related food bonuses expire after "
+			+ "that combat ends."
+		),
+		"Start Cooking"
+	)
+	
+func generate_test_bounty_map() -> BountyMapData:
+	var map := BountyMapData.new()
+
+	var start_node := create_bounty_map_node(
+		0,
+		BountyMapNodeData.NodeType.START,
+		Vector2(80, 220),
+		[1, 2]
+	)
+
+	var combat_left := create_bounty_map_node(
+		1,
+		BountyMapNodeData.NodeType.COMBAT,
+		Vector2(300, 150),
+		[3]
+	)
+
+	var merchant_right := create_bounty_map_node(
+		2,
+		BountyMapNodeData.NodeType.MERCHANT,
+		Vector2(300, 370),
+		[3]
+	)
+
+	var combat_middle := create_bounty_map_node(
+		3,
+		BountyMapNodeData.NodeType.COMBAT,
+		Vector2(500, 220),
+		[4]
+	)
+
+	var boss_node := create_bounty_map_node(
+		4,
+		BountyMapNodeData.NodeType.BOSS,
+		Vector2(720, 220),
+		[]
+	)
+
+	# Assign actual encounters only to combat/boss nodes.
+	combat_left.encounter = (
+		current_bounty.expedition_encounter_pool
+		.pick_random()
+	)
+
+	combat_middle.encounter = (
+		current_bounty.expedition_encounter_pool
+		.pick_random()
+	)
+
+	boss_node.encounter = (
+		current_bounty.boss_encounter
+	)
+
+	map.nodes = [
+		start_node,
+		combat_left,
+		merchant_right,
+		combat_middle,
+		boss_node
+	]
+
+	start_node.state = (
+		BountyMapNodeData.NodeState.COMPLETED
+	)
+	start_node.revealed = true
+
+	combat_left.state = (
+		BountyMapNodeData.NodeState.AVAILABLE
+	)
+	combat_left.revealed = true
+
+	merchant_right.state = (
+		BountyMapNodeData.NodeState.AVAILABLE
+	)
+	merchant_right.revealed = true
+
+	map.current_node_id = 0
+
+	return map
+	
+func create_bounty_map_node(
+	node_id: int,
+	node_type: BountyMapNodeData.NodeType,
+	node_position: Vector2,
+	connections: Array[int]
+) -> BountyMapNodeData:
+	var node := BountyMapNodeData.new()
+
+	node.node_id = node_id
+	node.node_type = node_type
+	node.position = node_position
+	node.connected_node_ids = connections.duplicate()
+
+	return node
+	
+
+func begin_selected_bounty():
+	if current_bounty == null:
+		return
+
+	current_bounty_map = generate_test_bounty_map()
+	awaiting_bounty_map_selection = true
+
+	show_bounty_map()
+	
+func show_bounty_map():
+	print("STEP 3: show_bounty_map() entered.")
+
+	if current_bounty_map == null:
+		push_error(
+			"Cannot show bounty map: map data is null."
+		)
+		is_in_town = true
+		return
+
+	if current_bounty == null:
+		push_error(
+			"Cannot show bounty map: current bounty is null."
+		)
+		is_in_town = true
+		return
+
+	awaiting_bounty_map_selection = true
+
+	hide_all_major_panels()
+	set_combat_ui_enabled(false)
+
+	print(
+		"STEP 4: Emitting bounty_map_requested for ",
+		current_bounty.bounty_name
+	)
+
+	bounty_map_requested.emit(
+		current_bounty_map,
+		current_bounty.bounty_name
+	)
+	
+func select_bounty_map_node(
+	node_id: int
+):
+	if current_bounty_map == null:
+		return
+
+	var node: BountyMapNodeData = (
+		current_bounty_map.get_node_by_id(
+			node_id
+		)
+	)
+
+	if node == null:
+		return
+
+	if (
+		node.state
+		!= BountyMapNodeData.NodeState.AVAILABLE
+	):
+		return
+
+	current_bounty_map.selected_node_id = node_id
+	awaiting_bounty_map_selection = false
+
+	start_bounty_map_node(node)
+	
+func start_bounty_map_node(
+	node: BountyMapNodeData
+):
+	if node == null:
+		return
+
+	active_bounty_map_node_id = node.node_id
+
+	match node.node_type:
+		BountyMapNodeData.NodeType.COMBAT:
+			start_map_combat_node(node)
+
+		BountyMapNodeData.NodeType.MERCHANT:
+			start_map_merchant_node(node)
+
+		BountyMapNodeData.NodeType.BOSS:
+			start_map_boss_node(node)
+
+		_:
+			show_edit_message(
+				"This node type is not implemented yet."
+			)
+
+			active_bounty_map_node_id = -1
+			show_bounty_map()
+			
+func start_map_merchant_node(
+	node: BountyMapNodeData
+):
+	if node == null:
+		return
+
+	active_bounty_map_node_id = node.node_id
+
+	save_run()
+
+	forest_merchant_requested.emit()
+	
+func start_map_combat_node(
+	node: BountyMapNodeData
+):
+	if node == null:
+		return
+
+	if node.encounter == null:
+		push_error(
+			"Combat map node has no encounter assigned."
+		)
+		return
+
+	current_encounter = node.encounter
+	expedition_is_boss_fight = false
+
+	save_run()
+
+	expedition_started.emit("combat")
+	
+func start_map_boss_node(
+	node: BountyMapNodeData
+):
+	if node == null:
+		return
+
+	if node.encounter == null:
+		push_error(
+			"Boss map node has no encounter assigned."
+		)
+		return
+
+	current_encounter = node.encounter
+	expedition_is_boss_fight = true
+
+	save_run()
+
+	expedition_started.emit("combat")
+	
+func complete_active_bounty_map_node():
+	if active_bounty_map_node_id < 0:
+		return
+
+	complete_bounty_map_node(
+		active_bounty_map_node_id
+	)
+
+	active_bounty_map_node_id = -1
+	
+func complete_bounty_map_node(
+	node_id: int
+):
+	if current_bounty_map == null:
+		return
+
+	var completed_node: BountyMapNodeData = (
+		current_bounty_map.get_node_by_id(
+			node_id
+		)
+	)
+
+	if completed_node == null:
+		return
+
+	completed_node.state = (
+		BountyMapNodeData.NodeState.COMPLETED
+	)
+
+	completed_node.revealed = true
+	current_bounty_map.current_node_id = node_id
+
+	disable_other_available_nodes(
+		completed_node
+	)
+
+	unlock_connected_nodes(
+		completed_node
+	)
+
+	save_run()
+	
+func disable_other_available_nodes(
+	completed_node: BountyMapNodeData
+):
+	for node in current_bounty_map.nodes:
+		if node == completed_node:
+			continue
+
+		if (
+			node.state
+			== BountyMapNodeData.NodeState.AVAILABLE
+		):
+			node.state = (
+				BountyMapNodeData.NodeState.ABANDONED
+			)
+			
+func unlock_connected_nodes(
+	completed_node: BountyMapNodeData
+):
+	for connected_id in (
+		completed_node.connected_node_ids
+	):
+		var connected_node: BountyMapNodeData = (
+			current_bounty_map.get_node_by_id(
+				connected_id
+			)
+		)
+
+		if connected_node == null:
+			continue
+
+		if (
+			connected_node.state
+			== BountyMapNodeData.NodeState.COMPLETED
+		):
+			continue
+
+		connected_node.state = (
+			BountyMapNodeData.NodeState.AVAILABLE
+		)
+
+		connected_node.revealed = true
+		
+func get_random_map_encounter(
+	excluded: EncounterData = null
+) -> EncounterData:
+	if current_bounty == null:
+		return null
+
+	var candidates: Array[EncounterData] = []
+
+	for encounter in (
+		current_bounty.expedition_encounter_pool
+	):
+		if encounter == null:
+			continue
+
+		if encounter == excluded:
+			continue
+
+		candidates.append(encounter)
+
+	if candidates.is_empty():
+		if (
+			current_bounty.expedition_encounter_pool
+			.is_empty()
+		):
+			return null
+
+		return (
+			current_bounty.expedition_encounter_pool
+			.pick_random()
+		)
+
+	return candidates.pick_random()
+
+func open_forest_merchant():
+	forest_merchant_active = true
+
+	hide_all_major_panels()
+	set_combat_ui_enabled(false)
+
+	merchant_panel.visible = true
+	merchant_gold_label.text = (
+		"Gold: " + str(gold)
+	)
+
+	close_merchant_button.text = "Leave"
+
+	# TEMPORARILY use normal merchant stock.
+	rebuild_merchant()
+	
+func close_forest_merchant_and_complete_node():
+	merchant_panel.visible = false
+	forest_merchant_active = false
+
+	complete_active_bounty_map_node()
+	show_bounty_map()
 	
