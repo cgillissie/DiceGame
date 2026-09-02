@@ -88,6 +88,11 @@
 [ext_resource type="Resource" uid="uid://b6v15ssegjgtc" path="res://Resources/Enemies/Exvellus.tres" id="66_uv6w5"]
 [ext_resource type="Resource" uid="uid://bltcnld87vhte" path="res://Resources/Enemies/Nigel.tres" id="67_r7bbj"]
 [ext_resource type="Resource" uid="uid://b5t7lmuntohbm" path="res://Resources/Enemies/Noir.tres" id="68_e5peh"]
+[ext_resource type="Texture2D" uid="uid://cuvepjvja36bq" path="res://Assets/Sprites/UI/Menus/DiceBagIcon.png" id="72_32dfi"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="72_jrou0"]
+[ext_resource type="Texture2D" uid="uid://b7s7kdnkgd0k4" path="res://Assets/Sprites/UI/Menus/DieFragmentsIcon.png" id="73_cf2bd"]
+[ext_resource type="Resource" uid="uid://c4priatr1lxxg" path="res://Resources/Faces/bleed_1_face.tres" id="73_j2g22"]
+[ext_resource type="Resource" uid="uid://d0v7trulgc1bh" path="res://Resources/Faces/freeze_1_face.tres" id="74_phube"]
 [ext_resource type="AudioStream" uid="uid://4n10yy51fa3v" path="res://Assets/Sounds/AtmosphericSounds/DeathSound.wav" id="75_tab3y"]
 [ext_resource type="Resource" uid="uid://grxx6jpankx2" path="res://Resources/Dice/enemy_attack_d6.tres" id="79_qnggo"]
 [ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="85_ihvwq"]
@@ -163,6 +168,10 @@ combat_relic_drop_chance = 0.03
 food_recipes = Array[ExtResource("18_hibaj")]([ExtResource("19_pdsj5"), ExtResource("20_ueoa1"), ExtResource("21_6vcvc")])
 merchant_food_pool = Array[ExtResource("22_7k868")]([ExtResource("23_hpc6h"), ExtResource("24_kltya"), ExtResource("25_e08e2"), ExtResource("26_neg2b"), ExtResource("27_r33sp")])
 merchant_relic_pool = Array[ExtResource("39_s8vy0")]([ExtResource("40_jut3y"), ExtResource("41_v2nl5"), ExtResource("42_dmskm"), ExtResource("43_xdkp6"), ExtResource("44_54nrm"), ExtResource("45_55jeb"), ExtResource("46_gsvbx")])
+forest_merchant_special_face_pool = Array[ExtResource("72_jrou0")]([ExtResource("73_j2g22"), ExtResource("7_7k868"), ExtResource("74_phube"), ExtResource("19_ptfg5"), ExtResource("8_hpc6h")])
+forest_merchant_face_pool = Array[ExtResource("72_jrou0")]([ExtResource("8_hpc6h"), ExtResource("19_ptfg5"), ExtResource("73_j2g22"), ExtResource("74_phube"), ExtResource("7_7k868")])
+forest_merchant_junk_icon = ExtResource("72_32dfi")
+die_fragment_shop_icon = ExtResource("73_cf2bd")
 random_enemy_trait_pool = Array[ExtResource("47_bv80c")]([ExtResource("48_ptfg5"), ExtResource("49_2daye"), ExtResource("50_1semv"), ExtResource("51_2060n"), ExtResource("52_6ml46"), ExtResource("53_qax2n"), ExtResource("54_y86h7"), ExtResource("61_ynmfv")])
 freeze_sound = ExtResource("59_y86h7")
 shatter_death_sound = ExtResource("60_my4ki")

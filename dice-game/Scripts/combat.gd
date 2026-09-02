@@ -372,6 +372,28 @@ var last_unlocked_merchant_faces: Array[DiceFace] = []
 var selected_sell_face: DiceFace = null
 var sell_face_value: int = 2
 
+# Forest Merchant ################################
+
+var forest_merchant_active: bool = false
+
+var forest_merchant_face: DiceFace = null
+var forest_merchant_consumable: ConsumableItem = null
+
+var forest_merchant_fragment_amount: int = 0
+
+var forest_merchant_face_sold: bool = false
+var forest_merchant_consumable_sold: bool = false
+var forest_merchant_fragments_sold: bool = false
+var forest_merchant_junk_sold: bool = false
+
+@export var forest_merchant_face_cost: int = 30
+@export var forest_merchant_fragment_cost: int = 35
+@export var forest_merchant_junk_cost: int = 75
+@export var forest_merchant_special_face_pool: Array[DiceFace]
+@export var forest_merchant_face_pool: Array[DiceFace] = []
+@export var forest_merchant_junk_icon: Texture2D
+@export var die_fragment_shop_icon: Texture2D
+
 # Food Crafting Panel ############################
 @onready var food_craft_panel: Panel = $FoodCraftPanel
 @onready var food_craft_items_container: GridContainer = $FoodCraftPanel/MarginContainer/VBoxContainer/FoodCraftItemsContainer
@@ -509,8 +531,6 @@ var beastmaster_camera_original_size: float
 var expedition_encounter_plan: Array = []
 var loaded_pending_encounter: bool = false
 var expedition_active: bool = false
-
-var forest_merchant_active := false
 
 var food_craft_slot_names: Array[String] = [
 	"",
@@ -8419,7 +8439,45 @@ func roll_merchant_stock():
 
 	for i in min(4, available_foods.size()):
 		merchant_food_stock.append(available_foods[i])
+		
+func roll_forest_merchant_stock():
+	forest_merchant_face = null
+	forest_merchant_consumable = null
+	forest_merchant_fragment_amount = 0
 
+	forest_merchant_face_sold = false
+	forest_merchant_consumable_sold = false
+	forest_merchant_fragments_sold = false
+	forest_merchant_junk_sold = false
+
+	# SPECIAL FACE
+	if !forest_merchant_face_pool.is_empty():
+		forest_merchant_face = (
+			forest_merchant_face_pool.pick_random()
+		)
+
+	# CONSUMABLE
+	var valid_consumables: Array[ConsumableItem] = []
+
+	for item in merchant_food_pool:
+		if item == null:
+			continue
+
+		if item.food_tier > unlocked_food_tier:
+			continue
+
+		valid_consumables.append(item)
+
+	if !valid_consumables.is_empty():
+		forest_merchant_consumable = (
+			valid_consumables.pick_random()
+		)
+
+	# DIE FRAGMENTS
+	forest_merchant_fragment_amount = (
+		randi_range(2, 4)
+	)
+	
 func open_merchant():
 	forest_merchant_active = false
 	close_merchant_button.text = "Close"
@@ -13278,7 +13336,12 @@ func generate_test_bounty_map() -> BountyMapData:
 		Vector2(720, 220),
 		[]
 	)
-
+	var event_node := create_bounty_map_node(
+		3,
+		BountyMapNodeData.NodeType.EVENT,
+		Vector2(500, 150),
+		[4]
+	)
 	# Assign actual encounters only to combat/boss nodes.
 	combat_left.encounter = (
 		current_bounty.expedition_encounter_pool
@@ -13298,6 +13361,7 @@ func generate_test_bounty_map() -> BountyMapData:
 		start_node,
 		combat_left,
 		merchant_right,
+		event_node,
 		combat_middle,
 		boss_node
 	]
@@ -13316,6 +13380,12 @@ func generate_test_bounty_map() -> BountyMapData:
 		BountyMapNodeData.NodeState.AVAILABLE
 	)
 	merchant_right.revealed = true
+
+	event_node.event_type = (
+		"witch"
+		if randf() < 0.5
+		else "well"
+	)
 
 	map.current_node_id = 0
 
@@ -13421,10 +13491,36 @@ func start_bounty_map_node(
 
 		BountyMapNodeData.NodeType.BOSS:
 			start_map_boss_node(node)
-
+			
+		BountyMapNodeData.NodeType.EVENT:
+			start_map_event_node(node)
 		_:
 			show_edit_message(
 				"This node type is not implemented yet."
+			)
+
+			active_bounty_map_node_id = -1
+			show_bounty_map()
+			
+func start_map_event_node(
+	node: BountyMapNodeData
+):
+	if node == null:
+		return
+
+	active_bounty_map_node_id = node.node_id
+
+	match node.event_type:
+		"witch":
+			expedition_started.emit("witch")
+
+		"well":
+			expedition_started.emit("well")
+
+		_:
+			push_error(
+				"Event node has invalid event type: "
+				+ node.event_type
 			)
 
 			active_bounty_map_node_id = -1
@@ -13604,19 +13700,462 @@ func open_forest_merchant():
 	set_combat_ui_enabled(false)
 
 	merchant_panel.visible = true
+
+	close_merchant_button.text = "Leave"
+
 	merchant_gold_label.text = (
 		"Gold: " + str(gold)
 	)
 
-	close_merchant_button.text = "Leave"
-
-	# TEMPORARILY use normal merchant stock.
-	rebuild_merchant()
+	roll_forest_merchant_stock()
+	rebuild_forest_merchant()
 	
+func rebuild_forest_merchant():
+	clear_container(
+		merchant_stock_container
+	)
+
+	merchant_gold_label.text = (
+		"Gold: " + str(gold)
+	)
+
+	build_forest_merchant_face_offer()
+	build_forest_merchant_consumable_offer()
+	build_forest_merchant_fragment_offer()
+	build_forest_merchant_junk_offer()
+	
+func build_forest_merchant_face_offer():
+	if forest_merchant_face == null:
+		return
+
+	var button = (
+		inventory_face_button_scene.instantiate()
+	)
+
+	merchant_stock_container.add_child(button)
+
+	button.setup(
+		forest_merchant_face,
+		false,
+		-1
+	)
+
+	var price_label := (
+		button.get_node_or_null("PriceLabel")
+	)
+
+	if price_label != null:
+		if forest_merchant_face_sold:
+			price_label.text = "SOLD"
+		else:
+			price_label.text = (
+				str(forest_merchant_face_cost)
+				+ "g"
+			)
+
+	button.tooltip_text = (
+		get_face_display_name(
+			forest_merchant_face
+		)
+		+ "\nSpecial Face"
+		+ "\nCost: "
+		+ str(forest_merchant_face_cost)
+		+ "g"
+	)
+
+	button.disabled = (
+		forest_merchant_face_sold
+		or gold < forest_merchant_face_cost
+	)
+
+	if !forest_merchant_face_sold:
+		button.pressed.connect(
+			buy_forest_merchant_face
+		)
+		
+func buy_forest_merchant_face():
+	if forest_merchant_face_sold:
+		return
+
+	if forest_merchant_face == null:
+		return
+
+	if gold < forest_merchant_face_cost:
+		return
+
+	gold -= forest_merchant_face_cost
+
+	face_inventory.append(
+		forest_merchant_face.duplicate(true)
+	)
+
+	forest_merchant_face_sold = true
+
+	AudioManager.play_ui(
+		coin_purchase_sound
+	)
+
+	update_gold_label()
+	rebuild_forest_merchant()
+	save_run()
+	
+func build_forest_merchant_consumable_offer():
+	if forest_merchant_consumable == null:
+		return
+
+	var item := forest_merchant_consumable
+
+	var button = item_button_scene.instantiate()
+
+	merchant_stock_container.add_child(
+		button
+	)
+
+	var price_text := (
+		"SOLD"
+		if forest_merchant_consumable_sold
+		else str(item.cost) + "g"
+	)
+
+	button.setup(
+		item.icon,
+		"",
+		price_text
+	)
+
+	button.tooltip_text = (
+		item.item_name
+		+ "\n"
+		+ item.description
+	)
+
+	button.disabled = (
+		forest_merchant_consumable_sold
+		or gold < item.cost
+	)
+
+	if !forest_merchant_consumable_sold:
+		button.pressed.connect(
+			buy_forest_merchant_consumable
+		)
+		
+func buy_forest_merchant_consumable():
+	if forest_merchant_consumable_sold:
+		return
+
+	if forest_merchant_consumable == null:
+		return
+
+	var item := forest_merchant_consumable
+
+	if gold < item.cost:
+		return
+
+	gold -= item.cost
+
+	consumable_inventory.append(
+		item.duplicate(true)
+	)
+
+	forest_merchant_consumable_sold = true
+
+	AudioManager.play_ui(
+		coin_purchase_sound
+	)
+
+	update_gold_label()
+	rebuild_forest_merchant()
+	save_run()
+
 func close_forest_merchant_and_complete_node():
 	merchant_panel.visible = false
 	forest_merchant_active = false
 
 	complete_active_bounty_map_node()
 	show_bounty_map()
+	
+func build_forest_merchant_fragment_offer():
+	var button = item_button_scene.instantiate()
+
+	merchant_stock_container.add_child(
+		button
+	)
+
+	var price_text := (
+		"SOLD"
+		if forest_merchant_fragments_sold
+		else str(
+			forest_merchant_fragment_cost
+		) + "g"
+	)
+
+	button.setup(
+		die_fragment_shop_icon,
+		"x" + str(
+			forest_merchant_fragment_amount
+		),
+		price_text
+	)
+
+	button.tooltip_text = (
+		"Die Fragments"
+		+ "\n"
+		+ str(
+			forest_merchant_fragment_amount
+		)
+		+ " Die Fragments"
+	)
+
+	button.disabled = (
+		forest_merchant_fragments_sold
+		or gold < forest_merchant_fragment_cost
+	)
+
+	if !forest_merchant_fragments_sold:
+		button.pressed.connect(
+			buy_forest_merchant_fragments
+		)
+		
+func buy_forest_merchant_fragments():
+	if forest_merchant_fragments_sold:
+		return
+
+	if gold < forest_merchant_fragment_cost:
+		return
+
+	gold -= forest_merchant_fragment_cost
+
+	die_fragments += (
+		forest_merchant_fragment_amount
+	)
+
+	forest_merchant_fragments_sold = true
+
+	AudioManager.play_ui(
+		coin_purchase_sound
+	)
+
+	update_gold_label()
+	refresh_die_crafting_panel()
+	rebuild_forest_merchant()
+	save_run()
+	
+func build_forest_merchant_junk_offer():
+	var button = item_button_scene.instantiate()
+
+	merchant_stock_container.add_child(
+		button
+	)
+
+	var price_text := (
+		"SOLD"
+		if forest_merchant_junk_sold
+		else str(
+			forest_merchant_junk_cost
+		) + "g"
+	)
+
+	button.setup(
+		forest_merchant_junk_icon,
+		"",
+		price_text
+	)
+
+	button.tooltip_text = (
+		"Bag of Junk"
+		+ "\n"
+		+ "The merchant isn't sure there's "
+		+ "anything useful inside."
+	)
+
+	button.disabled = (
+		forest_merchant_junk_sold
+		or gold < forest_merchant_junk_cost
+	)
+
+	if !forest_merchant_junk_sold:
+		button.pressed.connect(
+			buy_forest_merchant_junk
+		)
+		
+func buy_forest_merchant_junk():
+	if forest_merchant_junk_sold:
+		return
+
+	if gold < forest_merchant_junk_cost:
+		return
+
+	gold -= forest_merchant_junk_cost
+	forest_merchant_junk_sold = true
+
+	AudioManager.play_ui(
+		coin_purchase_sound
+	)
+
+	var reward_text := (
+		roll_bag_of_junk_reward()
+	)
+
+	print(
+		"BAG OF JUNK REWARD: ",
+		reward_text
+	)
+
+	print(
+		"After junk bag:"
+		+ " faces=" + str(face_inventory.size())
+		+ " consumables=" + str(consumable_inventory.size())
+		+ " fragments=" + str(die_fragments)
+		+ " relics=" + str(owned_relics.size())
+	)
+
+	update_gold_label()
+	rebuild_forest_merchant()
+	save_run()
+
+	show_edit_message(
+		"Bag of Junk:\n"
+		+ reward_text
+	)
+	
+func roll_bag_of_junk_reward() -> String:
+	var roll := randf()
+
+	print(
+		"Bag of Junk roll: ",
+		roll
+	)
+
+	if roll < 0.25:
+		return give_junk_consumable()
+
+	if roll < 0.50:
+		return give_junk_fragments()
+
+	if roll < 0.75:
+		return give_junk_face()
+
+	if roll < 0.90:
+		return give_junk_special_face()
+
+	return give_junk_relic()
+	
+func give_junk_consumable() -> String:
+	var valid_items: Array[ConsumableItem] = []
+
+	for item in merchant_food_pool:
+		if item == null:
+			continue
+
+		if item.food_tier > unlocked_food_tier:
+			continue
+
+		valid_items.append(item)
+
+	if valid_items.is_empty():
+		return give_junk_fragments()
+
+	var item: ConsumableItem = (
+		valid_items.pick_random()
+	)
+
+	consumable_inventory.append(
+		item.duplicate(true)
+	)
+
+	return (
+		"You found "
+		+ item.item_name
+		+ "!"
+	)
+	
+func give_junk_fragments() -> String:
+	var amount := randi_range(1, 6)
+
+	die_fragments += amount
+
+	refresh_die_crafting_panel()
+
+	return (
+		"You found "
+		+ str(amount)
+		+ " Die Fragments!"
+	)
+	
+func give_junk_face() -> String:
+	var available_faces: Array[DiceFace] = []
+
+	for face in merchant_unlocked_faces:
+		if face != null:
+			available_faces.append(face)
+
+	for face in forest_merchant_face_pool:
+		if face != null:
+			available_faces.append(face)
+
+	if available_faces.is_empty():
+		return give_junk_fragments()
+
+	var face: DiceFace = (
+		available_faces.pick_random()
+	)
+
+	face_inventory.append(
+		face.duplicate(true)
+	)
+
+	return (
+		"You found "
+		+ get_face_display_name(face)
+		+ "!"
+	)
+	
+func give_junk_special_face() -> String:
+	if forest_merchant_face_pool.is_empty():
+		return give_junk_fragments()
+
+	var face: DiceFace = (
+		forest_merchant_face_pool.pick_random()
+	)
+
+	face_inventory.append(
+		face.duplicate(true)
+	)
+
+	return (
+		"You found a valuable face: "
+		+ get_face_display_name(face)
+		+ "!"
+	)
+	
+func give_junk_relic() -> String:
+	var valid_relics: Array[RelicData] = []
+
+	for relic in merchant_relic_pool:
+		if relic == null:
+			continue
+
+		if has_relic_name(
+			relic.relic_name
+		):
+			continue
+
+		valid_relics.append(relic)
+
+	if valid_relics.is_empty():
+		return give_junk_special_face()
+
+	var relic: RelicData = (
+		valid_relics.pick_random()
+	)
+
+	owned_relics.append(relic)
+
+	update_active_food_icons()
+
+	return (
+		"You found a relic: "
+		+ relic.relic_name
+		+ "!"
+	)
 	

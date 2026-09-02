@@ -86,33 +86,6 @@ func _ready():
 		combat.try_show_welcome_tutorial()
 	music_player.bus = "Music"
 	
-	combat.request_music_change.connect(
-		_on_request_music_change
-	)
-
-	combat.request_music_fade_out.connect(
-		_on_request_music_fade_out
-	)
-
-	combat.town_menu_closed.connect(
-		reset_town_interaction
-	)
-
-	combat.expedition_started.connect(
-		start_expedition_world
-	)
-
-	if !combat.bounty_map_requested.is_connected(
-		load_bounty_map_world
-	):
-		combat.bounty_map_requested.connect(
-			load_bounty_map_world
-		)
-
-	combat.return_to_town_requested.connect(
-		return_to_town
-	)
-	
 	if !music_player.finished.is_connected(_on_music_finished):
 		music_player.finished.connect(_on_music_finished)
 	
@@ -240,17 +213,10 @@ func start_forest_merchant_world():
 			active_world as ForestMerchantEncounter
 		)
 
-		merchant_world.leave_requested.connect(
-			_on_forest_merchant_leave_requested
-		)
-
 	combat.visible = true
 	combat.open_forest_merchant()
 
 	await fade_from_black()
-	
-func _on_forest_merchant_leave_requested():
-	combat.close_forest_merchant_and_complete_node()
 	
 func get_combat_scene_for_current_encounter() -> PackedScene:
 	if combat.current_encounter != null and combat.current_encounter.override_combat_scene != null:
@@ -805,27 +771,15 @@ func _on_witch_choice_made(accepted: bool):
 
 	await fade_to_black()
 
+	combat.complete_active_bounty_map_node()
 	combat.visible = true
 
-	await play_music_fade(expedition_music.pick_random())
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
 
-	var scene_to_load := get_combat_scene_for_current_encounter()
+	combat.show_bounty_map()
 
-	if scene_to_load == null:
-		push_error("No combat scene found after Witch encounter.")
-		await fade_from_black()
-		return
-
-	load_world(scene_to_load)
-	combat.bind_world(active_world)
-	combat.capture_combat_camera_home()
-	combat.set_combat_ui_enabled(false)
-	combat.show_expedition_camp()
-	combat.expedition_progress += 1
-	combat.save_run()
-
-	await fade_from_black()
-	
 func start_water_well_world():
 	await fade_to_black()
 	await fade_audio_out(music_player, 0.75)
@@ -929,25 +883,13 @@ func finish_water_well_event():
 	combat.visible = true
 	pending_well_relic = null
 
-	await play_music_fade(expedition_music.pick_random())
+	combat.complete_active_bounty_map_node()
 
-	var scene_to_load := get_combat_scene_for_current_encounter()
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
 
-	if scene_to_load == null:
-		push_error("No combat scene found after Well encounter.")
-		await fade_from_black()
-		return
-
-	load_world(scene_to_load)
-	combat.bind_world(active_world)
-	combat.capture_combat_camera_home()
-	combat.set_combat_ui_enabled(false)
-	combat.show_expedition_camp()
-
-	combat.expedition_progress += 1
-	combat.save_run()
-
-	await fade_from_black()
+	combat.show_bounty_map()
 	
 func _on_request_music_fade_out():
 	await fade_audio_out(music_player, 1.0)
@@ -1061,3 +1003,18 @@ func _on_bounty_map_camp_requested():
 
 	combat.visible = true
 	combat.open_expedition_camp_from_map()
+
+func finish_map_event_to_bounty_map():
+	await fade_to_black()
+
+	combat.visible = true
+	pending_well_relic = null
+
+	combat.complete_active_bounty_map_node()
+
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
+
+	combat.show_bounty_map()
+	

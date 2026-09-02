@@ -144,3 +144,7 @@ func update_tooltip():
 					+ enemy.enemy_name
 					+ "\n"
 				)
+		BountyMapNodeData.NodeType.EVENT:
+			tooltip_text = "Unknown Event"
+			
+			

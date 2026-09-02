@@ -25,3 +25,4 @@ var state: NodeState = NodeState.LOCKED
 var encounter_id: String = ""
 var revealed: bool = false
 var encounter: EncounterData = null
+var event_type: String = ""
