@@ -14,6 +14,7 @@
 [ext_resource type="Resource" uid="uid://cvkofa3fdpxj2" path="res://Resources/Encounters/The Beast Master/raven_flock.tres" id="8_kwqcf"]
 [ext_resource type="Resource" uid="uid://6hqvuwyfp4aw" path="res://Resources/Encounters/The Beast Master/stampede.tres" id="9_bkmbr"]
 [ext_resource type="Resource" uid="uid://bf23o57mj8xi2" path="res://Resources/Encounters/The Beast Master/wolf_pack.tres" id="10_vyxp2"]
+[ext_resource type="Resource" uid="uid://2a2hro5n2rmn" path="res://Resources/Bounties/The Chieftain.tres" id="11_oc61x"]
 
 [resource]
 script = ExtResource("2_i80lr")
@@ -26,4 +27,6 @@ reward_food_tier_unlock = 2
 reward_volatile_cores = 1
 reward_gold = 300
 reward_reserve_slots = 1
+prerequisite_bounty = ExtResource("11_oc61x")
+bounty_map_route_length = 8
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

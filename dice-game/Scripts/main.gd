@@ -125,25 +125,102 @@ func _process(delta):
 	apply_town_camera_shake(delta)
 	
 func load_saved_expedition():
+	if !combat.expedition_active:
+		return
+
+	match combat.expedition_location:
+		"combat":
+			await load_saved_combat()
+			return
+
+		"map":
+			await load_saved_bounty_map()
+			return
+
+		"merchant":
+			await load_saved_bounty_map()
+			return
+
+		"witch":
+			await load_saved_bounty_map()
+			return
+
+		"well":
+			await load_saved_bounty_map()
+			return
+
+		_:
+			await load_saved_bounty_map()
+	
+func load_saved_bounty_map():
+	if combat.current_bounty_map == null:
+		push_error(
+			"Saved expedition has no bounty map."
+		)
+
+		await return_to_town()
+		return
+
+	if combat.current_bounty == null:
+		push_error(
+			"Saved expedition has no current bounty."
+		)
+
+		await return_to_town()
+		return
+
+	combat.active_bounty_map_node_id = -1
+	combat.expedition_location = "map"
+
+	combat.show_bounty_map()
+	
+func load_saved_combat():
 	await fade_to_black()
 
-	var scene_to_load := get_combat_scene_for_current_encounter()
+	if combat.current_encounter == null:
+		push_error(
+			"Saved combat has no encounter."
+		)
+
+		await fade_from_black()
+		return
+
+	var scene_to_load := (
+		get_combat_scene_for_current_encounter()
+	)
 
 	if scene_to_load == null:
-		push_error("No combat scene found for saved expedition.")
+		push_error(
+			"No combat scene found for saved encounter."
+		)
+
 		await fade_from_black()
 		return
 
 	load_world(scene_to_load)
 
+	combat.visible = true
 	combat.bind_world(active_world)
 	combat.capture_combat_camera_home()
-	combat.set_combat_ui_enabled(false)
-	combat.show_expedition_camp()
-	
-	await play_music_fade(expedition_music.pick_random())
+	combat.set_combat_ui_enabled(true)
+
+	# Existing save behavior intentionally restores
+	# combat from its starting HP.
+	combat.player_hp = (
+		combat.player_hp_at_combat_start
+	)
+
+	await combat.prepare_new_combat()
+
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
+
 	await fade_from_black()
+
+	await combat.begin_new_combat()
 	
+
 func load_world(scene: PackedScene):
 	if scene == null:
 		push_error(

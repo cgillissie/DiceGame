@@ -6,7 +6,7 @@ signal reward_acknowledged
 @onready var well_panel: Control = $CanvasLayer/WellPanel
 @onready var pull_bucket_button: Button = $CanvasLayer/WellPanel/MarginContainer/VBoxContainer/HBoxContainer/PullBucketButton
 @onready var leave_button: Button = $CanvasLayer/WellPanel/MarginContainer/VBoxContainer/HBoxContainer/LeaveButton
-
+@onready var event_panel: Control = $CanvasLayer/WellPanel
 @export var wind_sound: AudioStream
 @onready var wind_player: AudioStreamPlayer = $WindPlayer
 
@@ -33,11 +33,14 @@ func _ready():
 
 
 func _on_pull_bucket_pressed():
-	pull_bucket_button.disabled = true
-	leave_button.disabled = true
+	hide_event_ui()
 	well_choice_made.emit(true)
 
+
 func _on_leave_pressed():
-	pull_bucket_button.disabled = true
-	leave_button.disabled = true
+	hide_event_ui()
 	well_choice_made.emit(false)
+	
+func hide_event_ui():
+	if event_panel != null:
+		event_panel.visible = false

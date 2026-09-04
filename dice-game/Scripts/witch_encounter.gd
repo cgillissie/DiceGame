@@ -10,6 +10,7 @@ signal witch_choice_made(accepted: bool)
 @onready var player_sprite: AnimatedSprite3D = $PlayerSprite
 @onready var witch_sprite: AnimatedSprite3D = $WitchSprite
 @onready var camera: Camera3D = $Camera3D
+@onready var event_panel: Control = $CanvasLayer/WitchPanel
 var camera_base_position: Vector3
 var camera_time := 0.0
 
@@ -50,8 +51,14 @@ func _process(delta):
 
 	camera.position = camera_base_position + offset
 func _on_accept_pressed():
+	hide_event_ui()
 	witch_choice_made.emit(true)
 
 
 func _on_ignore_pressed():
+	hide_event_ui()
 	witch_choice_made.emit(false)
+	
+func hide_event_ui():
+	if event_panel != null:
+		event_panel.visible = false

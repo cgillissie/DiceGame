@@ -123,7 +123,8 @@ var break_focus_targets: Array[int] = []
 var current_bounty_map: BountyMapData = null
 var awaiting_bounty_map_selection: bool = false
 var active_bounty_map_node_id: int = -1
-
+var expedition_location: String = "town"
+var bounty_map_available_events: Array[String] = []
 @export var encounter_pool: Array[EncounterData]
 var current_encounter: EncounterData
 var active_enemies: Array = []
@@ -8047,7 +8048,26 @@ func rebuild_bounty_board():
 		else:
 			final_boss_button.text = "Final Boss Locked (" + str(completed_bounties.size()) + "/" + str(required_bounties_for_final_boss) + ")"
 			final_boss_button.disabled = true
-			
+		var unlocked := is_bounty_unlocked(bounty)
+
+		button.disabled = !unlocked
+
+		if !unlocked:
+			button.text = (
+				bounty.bounty_name
+				+ " — Locked"
+			)
+		else:
+			button.text = bounty.bounty_name
+		if (
+			!unlocked
+			and bounty.prerequisite_bounty != null
+		):
+			button.tooltip_text = (
+				"Complete "
+				+ bounty.prerequisite_bounty.bounty_name
+				+ " to unlock this bounty."
+			)
 func select_final_boss_bounty():
 	if !final_boss_unlocked:
 		return
@@ -8127,7 +8147,7 @@ func complete_current_bounty():
 	current_bounty = null
 	current_encounter = null
 	expedition_encounter_plan.clear()
-
+	expedition_location = "town"
 	save_run()
 	return_to_town_requested.emit()
 	
@@ -8357,9 +8377,7 @@ func open_prepare_expedition():
 	prepare_start_expedition_button.text = "Start Expedition"
 	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
 	prepare_expedition_label.text = "Prepare Expedition"
-	prepare_selected_bounty_label.text = \
-		"Bounty: " + current_bounty.bounty_name + \
-		"\nEncounters: " + str(current_bounty.min_encounters_before_boss) + "-" + str(current_bounty.max_encounters_before_boss)
+	prepare_selected_bounty_label.text = ("Bounty: " + current_bounty.bounty_name)
 	rebuild_prepare_consumables()
 	update_begin_expedition_button_visibility()
 	
@@ -8399,7 +8417,11 @@ func confirm_start_expedition():
 	expedition_encounter_plan.clear()
 	expedition_required_encounters = 0
 
-	current_bounty_map = generate_test_bounty_map()
+	current_bounty_map = (
+		generate_layered_bounty_map(
+			current_bounty.bounty_map_route_length
+		)
+	)
 
 	if current_bounty_map == null:
 		push_error(
@@ -10593,6 +10615,22 @@ func save_run():
 	config.set_value("expedition", "is_boss_fight", expedition_is_boss_fight)
 	config.set_value("run", "witch_seen", witch_seen_this_run)
 	config.set_value("run", "well_seen", well_seen_this_run)
+	config.set_value("expedition", "location", expedition_location)
+	config.set_value("bounty_map", "active_node_id", active_bounty_map_node_id)
+	var bounty_map_save: Dictionary = {}
+
+	if current_bounty_map != null:
+		bounty_map_save = (
+			serialize_bounty_map(
+				current_bounty_map
+			)
+		)
+
+	config.set_value(
+		"bounty_map",
+		"data",
+		bounty_map_save
+	)
 	var saved_plan: Array = []
 
 	for node in expedition_encounter_plan:
@@ -10728,7 +10766,50 @@ func serialize_consumable(item: ConsumableItem) -> Dictionary:
 		"grants_trait_path": item.grants_trait.resource_path if item.grants_trait != null else ""
 	}
 
+func serialize_bounty_map_node(
+	node: BountyMapNodeData
+) -> Dictionary:
+	if node == null:
+		return {}
 
+	return {
+		"node_id": node.node_id,
+		"node_type": int(node.node_type),
+		"position_x": node.position.x,
+		"position_y": node.position.y,
+		"connected_node_ids":
+			node.connected_node_ids.duplicate(),
+		"state": int(node.state),
+		"revealed": node.revealed,
+		"event_type": node.event_type,
+		"encounter_path":
+			get_resource_path(node.encounter)
+	}
+
+func serialize_bounty_map(
+	map_data: BountyMapData
+) -> Dictionary:
+	if map_data == null:
+		return {}
+
+	var saved_nodes: Array = []
+
+	for node in map_data.nodes:
+		if node == null:
+			continue
+
+		saved_nodes.append(
+			serialize_bounty_map_node(node)
+		)
+
+	return {
+		"current_node_id":
+			map_data.current_node_id,
+		"selected_node_id":
+			map_data.selected_node_id,
+		"nodes":
+			saved_nodes
+	}
 
 func deserialize_face(data: Dictionary) -> DiceFace:
 	var face := DiceFace.new()
@@ -10785,6 +10866,111 @@ func deserialize_consumable(data: Dictionary) -> ConsumableItem:
 
 	return item
 	
+func deserialize_bounty_map_node(
+	data: Dictionary
+) -> BountyMapNodeData:
+	var node := BountyMapNodeData.new()
+
+	node.node_id = int(
+		data.get("node_id", -1)
+	)
+
+	node.node_type = int(
+		data.get(
+			"node_type",
+			BountyMapNodeData.NodeType.COMBAT
+		)
+	)
+
+	node.position = Vector2(
+		float(data.get("position_x", 0.0)),
+		float(data.get("position_y", 0.0))
+	)
+
+	var saved_connections: Array = (
+		data.get(
+			"connected_node_ids",
+			[]
+		)
+	)
+
+	node.connected_node_ids.clear()
+
+	for connected_id in saved_connections:
+		node.connected_node_ids.append(
+			int(connected_id)
+		)
+
+	node.state = int(
+		data.get(
+			"state",
+			BountyMapNodeData.NodeState.LOCKED
+		)
+	)
+
+	node.revealed = bool(
+		data.get("revealed", false)
+	)
+
+	node.event_type = String(
+		data.get("event_type", "")
+	)
+
+	var encounter_path := String(
+		data.get("encounter_path", "")
+	)
+
+	if !encounter_path.is_empty():
+		var loaded_encounter := load(
+			encounter_path
+		)
+
+		if loaded_encounter is EncounterData:
+			node.encounter = loaded_encounter
+		else:
+			push_warning(
+				"Could not restore map encounter: "
+				+ encounter_path
+			)
+
+	return node
+
+func deserialize_bounty_map(
+	data: Dictionary
+) -> BountyMapData:
+	if data.is_empty():
+		return null
+
+	var map := BountyMapData.new()
+
+	map.current_node_id = int(
+		data.get("current_node_id", 0)
+	)
+
+	map.selected_node_id = int(
+		data.get("selected_node_id", -1)
+	)
+
+	map.nodes.clear()
+
+	var saved_nodes: Array = (
+		data.get("nodes", [])
+	)
+
+	for node_data in saved_nodes:
+		if !(node_data is Dictionary):
+			continue
+
+		var node := (
+			deserialize_bounty_map_node(
+				node_data
+			)
+		)
+
+		map.nodes.append(node)
+
+	return map
+
 func get_resource_path(resource: Resource) -> String:
 	if resource == null:
 		return ""
@@ -10803,7 +10989,6 @@ func load_run():
 	mulligems = config.get_value("run", "mulligems", mulligems)
 	volatile_cores = config.get_value("run", "volatile_cores", volatile_cores)
 	die_fragments = config.get_value("run", "die_fragments", die_fragments)
-	expedition_active = config.get_value("expedition", "expedition_active", false)
 	is_in_town = config.get_value("expedition", "is_in_town", true)
 	max_player_hp = int(
 		config.get_value(
@@ -10862,6 +11047,7 @@ func load_run():
 
 	current_bounty = null
 	expedition_active = config.get_value("expedition", "expedition_active", false)
+	expedition_location = String(config.get_value("expedition", "location", "town"))
 	expedition_progress = config.get_value("expedition", "progress", expedition_progress)
 
 	expedition_encounter_plan.clear()
@@ -10907,6 +11093,44 @@ func load_run():
 			if bounty.bounty_name == saved_bounty_name:
 				current_bounty = bounty
 				break
+	var saved_map_data = config.get_value("bounty_map", "data", {})
+
+	current_bounty_map = null
+
+	if (
+		saved_map_data is Dictionary
+		and !saved_map_data.is_empty()
+	):
+		current_bounty_map = (
+			deserialize_bounty_map(
+				saved_map_data
+			)
+		)
+
+	active_bounty_map_node_id = int(
+		config.get_value(
+			"bounty_map",
+			"active_node_id",
+			-1
+		)
+	)
+	if (
+		current_bounty_map != null
+		and active_bounty_map_node_id >= 0
+	):
+		var active_map_node := (
+			current_bounty_map.get_node_by_id(
+				active_bounty_map_node_id
+			)
+		)
+
+		if (
+			active_map_node != null
+			and active_map_node.encounter != null
+		):
+			current_encounter = (
+				active_map_node.encounter
+			)
 	if expedition_active and current_encounter != null:
 		loaded_pending_encounter = true
 		is_in_town = false
@@ -13411,7 +13635,11 @@ func begin_selected_bounty():
 	if current_bounty == null:
 		return
 
-	current_bounty_map = generate_test_bounty_map()
+	current_bounty_map = (
+		generate_layered_bounty_map(
+			current_bounty.bounty_map_route_length
+		)
+	)
 	awaiting_bounty_map_selection = true
 
 	show_bounty_map()
@@ -13432,7 +13660,7 @@ func show_bounty_map():
 		)
 		is_in_town = true
 		return
-
+	expedition_location = "map"
 	awaiting_bounty_map_selection = true
 
 	hide_all_major_panels()
@@ -13442,7 +13670,7 @@ func show_bounty_map():
 		"STEP 4: Emitting bounty_map_requested for ",
 		current_bounty.bounty_name
 	)
-
+	save_run()
 	bounty_map_requested.emit(
 		current_bounty_map,
 		current_bounty.bounty_name
@@ -13512,9 +13740,13 @@ func start_map_event_node(
 
 	match node.event_type:
 		"witch":
+			expedition_location = "witch"
+			save_run()
 			expedition_started.emit("witch")
 
 		"well":
+			expedition_location = "well"
+			save_run()
 			expedition_started.emit("well")
 
 		_:
@@ -13533,7 +13765,8 @@ func start_map_merchant_node(
 		return
 
 	active_bounty_map_node_id = node.node_id
-
+	expedition_location = "merchant"
+	
 	save_run()
 
 	forest_merchant_requested.emit()
@@ -13551,6 +13784,7 @@ func start_map_combat_node(
 		return
 
 	current_encounter = node.encounter
+	expedition_location = "combat"
 	expedition_is_boss_fight = false
 
 	save_run()
@@ -13570,6 +13804,7 @@ func start_map_boss_node(
 		return
 
 	current_encounter = node.encounter
+	expedition_location = "combat"
 	expedition_is_boss_fight = true
 
 	save_run()
@@ -13739,7 +13974,11 @@ func build_forest_merchant_face_offer():
 		false,
 		-1
 	)
+	var value_label := button.get_node_or_null("ValueLabel")
 
+	if value_label != null:
+		value_label.visible = false
+		
 	var price_label := (
 		button.get_node_or_null("PriceLabel")
 	)
@@ -14159,3 +14398,514 @@ func give_junk_relic() -> String:
 		+ "!"
 	)
 	
+func is_bounty_unlocked(
+	bounty: BountyData
+) -> bool:
+	if bounty == null:
+		return false
+
+	if bounty.prerequisite_bounty == null:
+		return true
+
+	return bounty.prerequisite_bounty.completed
+	
+func generate_layered_bounty_map(route_length: int) -> BountyMapData:
+	bounty_map_available_events = [
+		"witch",
+		"well"
+	]
+	var map := BountyMapData.new()
+
+	var next_node_id := 0
+
+	# START is structural and does not count toward route_length.
+	var start_node := create_bounty_map_node(
+		next_node_id,
+		BountyMapNodeData.NodeType.START,
+		Vector2(100, 540),
+		[]
+	)
+	
+	next_node_id += 1
+
+	start_node.state = (
+		BountyMapNodeData.NodeState.COMPLETED
+	)
+	start_node.revealed = true
+
+	map.nodes.append(start_node)
+	map.current_node_id = start_node.node_id
+
+	# route_length includes the boss.
+	# So a 6-node bounty has:
+	# 5 normal encounter layers + boss.
+	var encounter_layer_count := route_length - 1
+
+	var layers: Array = []
+
+	for layer_index in range(encounter_layer_count):
+		var layer_nodes: Array = []
+
+		var node_count := randi_range(2, 3)
+		var previous_layer: Array = []
+
+		if layer_index > 0:
+			previous_layer = layers[layer_index - 1]
+			
+		for node_index in range(node_count):
+			var node_type := choose_bounty_map_node_type(
+				layer_index,
+				encounter_layer_count,
+				previous_layer
+			)
+
+			var position := get_bounty_map_node_position(
+				layer_index,
+				encounter_layer_count,
+				node_index,
+				node_count
+			)
+
+			var node := create_bounty_map_node(
+				next_node_id,
+				node_type,
+				position,
+				[]
+			)
+			node.revealed = true
+			
+			next_node_id += 1
+
+			assign_bounty_map_node_content(node)
+
+			layer_nodes.append(node)
+			map.nodes.append(node)
+			normalize_bounty_map_layer(layer_nodes)
+		layers.append(layer_nodes)
+
+	# Boss comes after every normal layer.
+	var boss_node := create_bounty_map_node(
+		next_node_id,
+		BountyMapNodeData.NodeType.BOSS,
+		Vector2(1720, 540),
+		[]
+	)
+	boss_node.revealed = true
+	boss_node.encounter = current_bounty.boss_encounter
+
+	map.nodes.append(boss_node)
+
+	connect_bounty_map_layers(
+		start_node,
+		layers,
+		boss_node
+	)
+
+	reveal_initial_bounty_map_nodes(
+		start_node,
+		layers
+	)
+
+	return map
+	
+func normalize_bounty_map_layer(
+	layer_nodes: Array
+) -> void:
+	if layer_nodes.is_empty():
+		return
+
+	var combat_count := 0
+	var event_count := 0
+	var merchant_count := 0
+
+	for node in layer_nodes:
+		match node.node_type:
+			BountyMapNodeData.NodeType.COMBAT:
+				combat_count += 1
+
+			BountyMapNodeData.NodeType.EVENT:
+				event_count += 1
+
+			BountyMapNodeData.NodeType.MERCHANT:
+				merchant_count += 1
+
+	# Every layer should contain at least one Combat.
+	if combat_count == 0:
+		var node_to_change = (
+			layer_nodes.pick_random()
+		)
+
+		node_to_change.node_type = (
+			BountyMapNodeData.NodeType.COMBAT
+		)
+
+		assign_bounty_map_node_content(
+			node_to_change
+		)
+
+	# Never allow more than one Merchant
+	# in a single layer.
+	while merchant_count > 1:
+		for node in layer_nodes:
+			if (
+				node.node_type
+				!= BountyMapNodeData.NodeType.MERCHANT
+			):
+				continue
+
+			node.node_type = (
+				BountyMapNodeData.NodeType.COMBAT
+			)
+
+			assign_bounty_map_node_content(node)
+
+			merchant_count -= 1
+
+			if merchant_count <= 1:
+				break
+
+	# Same for Events.
+	while event_count > 1:
+		for node in layer_nodes:
+			if (
+				node.node_type
+				!= BountyMapNodeData.NodeType.EVENT
+			):
+				continue
+
+			node.node_type = (
+				BountyMapNodeData.NodeType.COMBAT
+			)
+
+			assign_bounty_map_node_content(node)
+
+			event_count -= 1
+
+			if event_count <= 1:
+				break
+
+func choose_bounty_map_node_type(
+	layer_index: int,
+	layer_count: int,
+	previous_layer: Array
+) -> int:
+	# First encounter layer is always combat.
+	if layer_index == 0:
+		return BountyMapNodeData.NodeType.COMBAT
+
+	# Final pre-boss layer is always combat.
+	if layer_index == layer_count - 1:
+		return BountyMapNodeData.NodeType.COMBAT
+
+	var previous_has_event := false
+	var previous_has_merchant := false
+
+	for previous_node in previous_layer:
+		if previous_node == null:
+			continue
+
+		if (
+			previous_node.node_type
+			== BountyMapNodeData.NodeType.EVENT
+		):
+			previous_has_event = true
+
+		if (
+			previous_node.node_type
+			== BountyMapNodeData.NodeType.MERCHANT
+		):
+			previous_has_merchant = true
+
+	var roll := randi_range(1, 100)
+
+	# If the previous layer already contains Events,
+	# strongly favor Combat and prevent another Event layer.
+	if previous_has_event:
+		if roll <= 80:
+			return BountyMapNodeData.NodeType.COMBAT
+
+		return BountyMapNodeData.NodeType.MERCHANT
+
+	# Same idea for Merchants.
+	if previous_has_merchant:
+		if roll <= 80:
+			return BountyMapNodeData.NodeType.COMBAT
+
+		return BountyMapNodeData.NodeType.EVENT
+
+	# Normal middle-layer distribution.
+	if roll <= 65:
+		return BountyMapNodeData.NodeType.COMBAT
+
+	if roll <= 83:
+		return BountyMapNodeData.NodeType.EVENT
+
+	return BountyMapNodeData.NodeType.MERCHANT
+	
+func assign_bounty_map_node_content(
+	node: BountyMapNodeData
+) -> void:
+	match node.node_type:
+		BountyMapNodeData.NodeType.COMBAT:
+			node.encounter = (
+				current_bounty
+				.expedition_encounter_pool
+				.pick_random()
+			)
+
+		BountyMapNodeData.NodeType.EVENT:
+			node.encounter = null
+
+			if bounty_map_available_events.is_empty():
+				# No unique events remain.
+				# Convert this node into Combat.
+				node.node_type = (
+					BountyMapNodeData.NodeType.COMBAT
+				)
+
+				node.encounter = (
+					current_bounty
+						.expedition_encounter_pool
+						.pick_random()
+				)
+
+				node.event_type = ""
+				return
+
+			var chosen_event: String = (
+				bounty_map_available_events
+					.pick_random()
+			)
+
+			node.event_type = chosen_event
+
+			bounty_map_available_events.erase(
+				chosen_event
+			)
+
+		BountyMapNodeData.NodeType.MERCHANT:
+			node.encounter = null
+			
+func get_bounty_map_node_position(
+	layer_index: int,
+	layer_count: int,
+	node_index: int,
+	node_count: int
+) -> Vector2:
+	var start_x := 300.0
+	var end_x := 1520.0
+
+	var x_step: float = (
+		(end_x - start_x)
+		/ float(max(layer_count - 1, 1))
+	)
+
+	var x := (
+		start_x
+		+ (layer_index * x_step)
+	)
+
+	var center_y := 540.0
+	var vertical_spacing := 230.0
+
+	var total_height := (
+		(node_count - 1)
+		* vertical_spacing
+	)
+
+	var starting_y := (
+		center_y
+		- (total_height / 2.0)
+	)
+
+	var y := (
+		starting_y
+		+ (node_index * vertical_spacing)
+	)
+
+	# Prevent every layer from looking perfectly aligned.
+	y += randf_range(-55.0, 55.0)
+
+	return Vector2(x, y)
+	
+func connect_bounty_map_layers(
+	start_node: BountyMapNodeData,
+	layers: Array,
+	boss_node: BountyMapNodeData
+) -> void:
+	if layers.is_empty():
+		start_node.connected_node_ids.append(
+			boss_node.node_id
+		)
+		return
+
+	var first_layer: Array = layers[0]
+
+	# START can reach every first-layer option.
+	for node in first_layer:
+		start_node.connected_node_ids.append(
+			node.node_id
+		)
+
+	# Connect each layer to the next.
+	for layer_index in range(layers.size() - 1):
+		var current_layer: Array = layers[layer_index]
+		var next_layer: Array = layers[layer_index + 1]
+
+		connect_two_bounty_map_layers(
+			current_layer,
+			next_layer
+		)
+
+	# Every final route reaches the boss.
+	var final_layer: Array = layers[layers.size() - 1]
+
+	for node in final_layer:
+		node.connected_node_ids.append(
+			boss_node.node_id
+		)
+		
+func connect_two_bounty_map_layers(
+	current_layer: Array,
+	next_layer: Array
+) -> void:
+	if current_layer.is_empty():
+		return
+
+	if next_layer.is_empty():
+		return
+
+	# First make sure every current node
+	# has somewhere to go.
+	for i in range(current_layer.size()):
+		var current_node = current_layer[i]
+
+		var target_index := int(
+			round(
+				float(i)
+				/ max(current_layer.size() - 1, 1)
+				* (next_layer.size() - 1)
+			)
+		)
+
+		target_index = clamp(
+			target_index,
+			0,
+			next_layer.size() - 1
+		)
+
+		var target_node = next_layer[target_index]
+
+		if (
+			target_node.node_id
+			not in current_node.connected_node_ids
+		):
+			current_node.connected_node_ids.append(
+				target_node.node_id
+			)
+
+	# Then make sure every node in the next layer
+	# has at least one way into it.
+	for next_node in next_layer:
+		var has_incoming := false
+
+		for current_node in current_layer:
+			if (
+				next_node.node_id
+				in current_node.connected_node_ids
+			):
+				has_incoming = true
+				break
+
+		if !has_incoming:
+			var closest_node = (
+				get_closest_bounty_map_node(
+					next_node,
+					current_layer
+				)
+			)
+
+			closest_node.connected_node_ids.append(
+				next_node.node_id
+			)
+
+	# Add occasional extra connections.
+	for current_node in current_layer:
+		if randf() > 0.45:
+			continue
+
+		var closest_node = (
+			get_closest_bounty_map_node(
+				current_node,
+				next_layer
+			)
+		)
+
+		var closest_index := next_layer.find(
+			closest_node
+		)
+
+		var possible_indices: Array[int] = []
+
+		if closest_index > 0:
+			possible_indices.append(
+				closest_index - 1
+			)
+
+		if closest_index < next_layer.size() - 1:
+			possible_indices.append(
+				closest_index + 1
+			)
+
+		if possible_indices.is_empty():
+			continue
+
+		var extra_index: int = (
+			possible_indices.pick_random()
+		)
+
+		var extra_node = next_layer[extra_index]
+
+		if (
+			extra_node.node_id
+			not in current_node.connected_node_ids
+		):
+			current_node.connected_node_ids.append(
+				extra_node.node_id
+			)
+			
+func get_closest_bounty_map_node(
+	source_node: BountyMapNodeData,
+	candidates: Array
+) -> BountyMapNodeData:
+	var closest_node: BountyMapNodeData = null
+	var closest_distance: float = INF
+
+	for candidate in candidates:
+		var distance: float = absf(
+			source_node.position.y
+			- candidate.position.y
+		)
+
+		if distance < closest_distance:
+			closest_distance = distance
+			closest_node = candidate
+
+	return closest_node
+
+func reveal_initial_bounty_map_nodes(
+	start_node: BountyMapNodeData,
+	layers: Array
+) -> void:
+	if layers.is_empty():
+		return
+
+	var first_layer: Array = layers[0]
+
+	for node in first_layer:
+		node.state = (
+			BountyMapNodeData.NodeState.AVAILABLE
+		)
+
+		node.revealed = true
+		

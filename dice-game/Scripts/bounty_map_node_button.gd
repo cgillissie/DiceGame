@@ -39,7 +39,7 @@ func update_visual():
 			disabled = true
 
 		BountyMapNodeData.NodeState.LOCKED:
-			visible = node_data.revealed
+			visible = true
 			disabled = true
 			modulate = Color(0.4, 0.4, 0.4)
 
