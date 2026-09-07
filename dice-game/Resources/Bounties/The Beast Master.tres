@@ -2,6 +2,7 @@
 
 [ext_resource type="Resource" uid="uid://b40i1xmoyv82t" path="res://Resources/Encounters/The Beast Master/BeastMasterBossFight.tres" id="1_i80lr"]
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="1_nt1r6"]
+[ext_resource type="Texture2D" uid="uid://dcvccv0c537v8" path="res://Assets/Sprites/BeastMaster.png" id="2_2mnrm"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_i80lr"]
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="3_0ry4k"]
 [ext_resource type="Resource" uid="uid://8cxgvqfafhnw" path="res://Resources/Encounters/The Beast Master/apex_predators.tres" id="3_oc61x"]
@@ -29,4 +30,5 @@ reward_gold = 300
 reward_reserve_slots = 1
 prerequisite_bounty = ExtResource("11_oc61x")
 bounty_map_route_length = 8
+boss_icon = ExtResource("2_2mnrm")
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

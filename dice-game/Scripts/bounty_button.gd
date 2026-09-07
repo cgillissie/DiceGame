@@ -13,6 +13,8 @@ class_name BountyButton
 
 var bounty_data: BountyData
 
+
+	
 func setup(bounty: BountyData):
 	bounty_data = bounty
 	text = ""
@@ -26,10 +28,16 @@ func setup(bounty: BountyData):
 	clear_rewards()
 
 	if bounty.mulligem_reward > 0:
-		add_reward(mulligem_icon, str(bounty.mulligem_reward))
+		add_reward(
+			mulligem_icon,
+			str(bounty.mulligem_reward)
+		)
 
 	if bounty.reward_gold > 0:
-		add_reward(gold_icon, str(bounty.reward_gold))
+		add_reward(
+			gold_icon,
+			str(bounty.reward_gold)
+		)
 
 	if bounty.reward_volatile_cores > 0:
 		add_reward(

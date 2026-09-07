@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://djepipp2tiae2" path="res://Scenes/bounty_map_screen.gd" id="1_eovwj"]
 [ext_resource type="PackedScene" uid="uid://crwwxuy30qd00" path="res://Scenes/bounty_map_node_button.tscn" id="2_dr58u"]
 [ext_resource type="FontFile" uid="uid://ikng2ikqxt7i" path="res://Assets/Fonts/PixelOperator8-Bold.ttf" id="2_re2aw"]
-[ext_resource type="Texture2D" uid="uid://b5ee8exgwe82a" path="res://Assets/Sprites/UI/Menus/OpenScroll.png" id="3_k2td3"]
+[ext_resource type="Texture2D" uid="uid://dwlipbup7qbt6" path="res://Assets/Sprites/UI/Menus/BlankMapBackground.png" id="3_k2td3"]
 [ext_resource type="Script" uid="uid://cwqk6s6wqnhhi" path="res://Scripts/bounty_map_connection_layer.gd" id="5_k2td3"]
 
 [node name="ForestBountyMap" type="Control" unique_id=338370257]

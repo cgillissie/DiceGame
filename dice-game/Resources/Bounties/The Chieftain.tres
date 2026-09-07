@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://ctfkbrmr3g7s4" path="res://Scripts/EncounterData.gd" id="1_4cakj"]
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/The Chieftain/goblin_encounter.tres" id="2_7eg0c"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="2_8417e"]
+[ext_resource type="Texture2D" uid="uid://b5nbjfv5oqjj0" path="res://Assets/Sprites/GoblinChieftain.png" id="2_p0ykb"]
 [ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/The Chieftain/bandit_ambush.tres" id="3_0ials"]
 [ext_resource type="Resource" uid="uid://bsbwvg4keah8q" path="res://Resources/Encounters/The Chieftain/lone_goblin.tres" id="4_jgeje"]
 [ext_resource type="Resource" uid="uid://b3jlupekp6fkb" path="res://Resources/Encounters/The Chieftain/goblin_wolf.tres" id="7_8ielu"]
@@ -25,4 +26,5 @@ reward_gold = 200
 reward_reserve_slots = 1
 prerequisite_bounty = ExtResource("7_murap")
 bounty_map_route_length = 7
+boss_icon = ExtResource("2_p0ykb")
 metadata/_custom_type_script = "uid://cj0xiilvtky86"

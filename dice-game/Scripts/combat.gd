@@ -622,7 +622,6 @@ func _ready():
 	restart_run_button.pressed.connect(restart_run)
 	bounty_board_button.pressed.connect(open_bounty_board)
 	town_edit_dice_button.pressed.connect(open_edit_dice_panel_from_town)
-	final_boss_button.pressed.connect(select_final_boss_bounty)
 	start_expedition_button.pressed.connect(open_prepare_expedition)
 	close_bounty_board_button.pressed.connect(close_bounty_board)
 	camp_edit_dice_button.pressed.connect(open_edit_dice_panel_from_camp)
@@ -8042,23 +8041,18 @@ func rebuild_bounty_board():
 			button.tooltip_text += (
 				"\n\nRecommended first bounty."
 			)
-		if final_boss_unlocked:
-			final_boss_button.text = "Final Boss"
-			final_boss_button.disabled = false
-		else:
-			final_boss_button.text = "Final Boss Locked (" + str(completed_bounties.size()) + "/" + str(required_bounties_for_final_boss) + ")"
-			final_boss_button.disabled = true
+			
 		var unlocked := is_bounty_unlocked(bounty)
 
 		button.disabled = !unlocked
 
 		if !unlocked:
-			button.text = (
-				bounty.bounty_name
-				+ " — Locked"
-			)
+			button.bounty_label.text = bounty.bounty_name
 		else:
-			button.text = bounty.bounty_name
+			button.bounty_label.text = (
+				bounty.bounty_name
+			)
+
 		if (
 			!unlocked
 			and bounty.prerequisite_bounty != null
@@ -8068,17 +8062,7 @@ func rebuild_bounty_board():
 				+ bounty.prerequisite_bounty.bounty_name
 				+ " to unlock this bounty."
 			)
-func select_final_boss_bounty():
-	if !final_boss_unlocked:
-		return
 
-	if final_boss_bounty == null:
-		print("Final boss bounty is not assigned.")
-		return
-
-	select_bounty(final_boss_bounty)
-	town_menu_closed.emit()
-	
 func select_bounty(bounty: BountyData):
 	current_bounty = bounty
 	
@@ -10783,7 +10767,9 @@ func serialize_bounty_map_node(
 		"revealed": node.revealed,
 		"event_type": node.event_type,
 		"encounter_path":
-			get_resource_path(node.encounter)
+			get_resource_path(node.encounter),
+		"boss_icon_path":
+			get_resource_path(node.boss_icon)
 	}
 
 func serialize_bounty_map(
@@ -10932,7 +10918,17 @@ func deserialize_bounty_map_node(
 				"Could not restore map encounter: "
 				+ encounter_path
 			)
+	var boss_icon_path := String(
+		data.get("boss_icon_path", "")
+	)
 
+	if !boss_icon_path.is_empty():
+		var loaded_icon := load(
+			boss_icon_path
+		)
+
+		if loaded_icon is Texture2D:
+			node.boss_icon = loaded_icon
 	return node
 
 func deserialize_bounty_map(
@@ -14482,7 +14478,7 @@ func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 			map.nodes.append(node)
 			normalize_bounty_map_layer(layer_nodes)
 		layers.append(layer_nodes)
-
+		ensure_bounty_map_has_merchant(layers)
 	# Boss comes after every normal layer.
 	var boss_node := create_bounty_map_node(
 		next_node_id,
@@ -14492,7 +14488,7 @@ func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 	)
 	boss_node.revealed = true
 	boss_node.encounter = current_bounty.boss_encounter
-
+	boss_node.boss_icon = current_bounty.boss_icon
 	map.nodes.append(boss_node)
 
 	connect_bounty_map_layers(
@@ -14508,6 +14504,60 @@ func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 
 	return map
 	
+func ensure_bounty_map_has_merchant(
+	layers: Array
+) -> void:
+	var has_merchant := false
+
+	for layer in layers:
+		for node in layer:
+			if (
+				node.node_type
+				== BountyMapNodeData.NodeType.MERCHANT
+			):
+				has_merchant = true
+				break
+
+		if has_merchant:
+			break
+
+	if has_merchant:
+		return
+
+	if layers.size() <= 2:
+		return
+
+	var valid_layer_indices: Array[int] = []
+
+	# Avoid first layer and final pre-boss layer.
+	for i in range(1, layers.size() - 1):
+		valid_layer_indices.append(i)
+
+	if valid_layer_indices.is_empty():
+		return
+
+	var chosen_layer_index: int = (
+		valid_layer_indices.pick_random()
+	)
+
+	var chosen_layer: Array = (
+		layers[chosen_layer_index]
+	)
+
+	if chosen_layer.is_empty():
+		return
+
+	var chosen_node: BountyMapNodeData = (
+		chosen_layer.pick_random()
+	)
+
+	chosen_node.node_type = (
+		BountyMapNodeData.NodeType.MERCHANT
+	)
+
+	chosen_node.encounter = null
+	chosen_node.event_type = ""
+
 func normalize_bounty_map_layer(
 	layer_nodes: Array
 ) -> void:

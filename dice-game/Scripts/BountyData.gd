@@ -19,3 +19,4 @@ class_name BountyData
 @export var reward_max_hp: int = 2
 @export var prerequisite_bounty: BountyData
 @export_range(2, 20, 1) var bounty_map_route_length: int = 6
+@export var boss_icon: Texture2D

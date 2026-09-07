@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://d1ck73cvwcthh" path="res://Assets/Sprites/UI/Menus/ReservedDieIcon.png" id="7_oeb10"]
 
 [node name="BountyButton" type="Button" unique_id=58846388]
-custom_minimum_size = Vector2(260, 80)
+custom_minimum_size = Vector2(380, 80)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

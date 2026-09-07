@@ -26,3 +26,4 @@ var encounter_id: String = ""
 var revealed: bool = false
 var encounter: EncounterData = null
 var event_type: String = ""
+var boss_icon: Texture2D = null
