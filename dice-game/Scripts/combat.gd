@@ -327,6 +327,7 @@ var owned_dice: Array[DiceData] = []
 
 var relic_reward_pending: RelicData = null
 var relic_reward_acknowledged: bool = false
+var generic_reward_showcase_active: bool = false
 signal relic_reward_finished
 
 # Consumable Items #############################################
@@ -489,6 +490,7 @@ var tutorial_hints_enabled: bool = true
 var tutorial_flags: Dictionary = {
 	"welcome": false,
 	"bounty_board": false,
+	"bounty_map": false,
 	"first_combat": false,
 	"assign_attack": false,
 	"end_turn": false,
@@ -499,7 +501,7 @@ var tutorial_flags: Dictionary = {
 	"fusion": false,
 	"merchant": false,
 	"food": false,
-	"relic": false
+	"relic": false,
 }
 
 var active_tutorial_flag: String = ""
@@ -2135,13 +2137,24 @@ func clear_dragged_die_state():
 	dragged_die_original_index = -1
 	
 func move_die_to_assigned_enemy(die: DiceNode):
-	var container := get_assigned_container(die.assigned_enemy_index)
+	var container := get_assigned_container(
+		die.assigned_enemy_index
+	)
+
 	AudioManager.play_ui(dice_select_sound)
+
 	if container == null:
 		return
 
 	die.set_compact_mode(true)
 	die.reparent(container)
+
+	die.visible = true
+
+	var panel = container.get_parent().get_parent()
+
+	if panel != null:
+		panel.visible = true
 
 	update_assigned_panel_visibility()
 	
@@ -7998,11 +8011,12 @@ func open_bounty_board():
 			"bounty_board",
 			"Choose a Bounty",
 			(
-				"Each bounty contains several encounters "
-				+ "followed by a boss.\n\n"
-				+ "The Congregation is recommended for "
-				+ "new players, but you may choose any "
-				+ "available bounty."
+				"Bounties are completed in order.\n\n"
+				+ "Finish each bounty to unlock the next one. "
+				+ "Every bounty sends you on an expedition "
+				+ "through a branching map that ends with "
+				+ "its boss.\n\n"
+				+ "Select The Congregation to begin."
 			),
 			"Choose a Bounty"
 		)
@@ -8025,33 +8039,16 @@ func rebuild_bounty_board():
 		var button: BountyButton = bounty_button_scene.instantiate()
 		bounty_buttons_container.add_child(button)
 
-		button.setup(bounty)
-		button.pressed.connect(select_bounty.bind(bounty))
-		if (
-			tutorial_hints_enabled
-			and !tutorial_flags.get("bounty_board", false)
-			and bounty.bounty_name == "The Congregation"
-		):
-			button.modulate = Color(
-				1.0,
-				0.9,
-				0.45
-			)
-
-			button.tooltip_text += (
-				"\n\nRecommended first bounty."
-			)
-			
 		var unlocked := is_bounty_unlocked(bounty)
 
-		button.disabled = !unlocked
+		button.setup(
+			bounty,
+			unlocked
+		)
 
-		if !unlocked:
-			button.bounty_label.text = bounty.bounty_name
-		else:
-			button.bounty_label.text = (
-				bounty.bounty_name
-			)
+		button.pressed.connect(
+			select_bounty.bind(bounty)
+		)
 
 		if (
 			!unlocked
@@ -10316,6 +10313,9 @@ func set_combat_ui_enabled(enabled: bool):
 	end_round_button.disabled = !enabled
 	mulligem_button.visible = enabled
 
+	assigned_dice_overlay.visible = enabled
+	enemy_roll_overlay.visible = enabled
+
 	# This function only controls combat UI.
 	# It should not change whether the player is in town.
 	update_begin_expedition_button_visibility()
@@ -12530,11 +12530,84 @@ func open_steam_store_page():
 			"Could not open the Steam store page. Error: "
 			+ str(error)
 		)
+
+func show_reward_acquisition(
+	reward_icon: Texture2D,
+	reward_name: String,
+	reward_description: String
+):
+	relic_reward_pending = null
+	generic_reward_showcase_active = true
+	relic_reward_acknowledged = false
+
+	relic_reward_icon.texture = reward_icon
+	relic_reward_name_label.text = reward_name
+	relic_reward_description_label.text = reward_description
+
+	relic_reward_overlay.visible = true
+	relic_reward_overlay.modulate.a = 0.0
+
+	relic_reward_icon.scale = Vector2(0.25, 0.25)
+	relic_reward_icon.modulate.a = 0.0
+
+	relic_reward_glow.scale = Vector2(0.4, 0.4)
+	relic_reward_glow.modulate.a = 0.0
+	relic_reward_glow.rotation = 0.0
+
+	relic_reward_continue_button.disabled = true
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		relic_reward_overlay,
+		"modulate:a",
+		1.0,
+		0.25
+	)
+
+	tween.tween_property(
+		relic_reward_icon,
+		"scale",
+		Vector2.ONE,
+		0.45
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	tween.tween_property(
+		relic_reward_icon,
+		"modulate:a",
+		1.0,
+		0.25
+	)
+
+	tween.tween_property(
+		relic_reward_glow,
+		"scale",
+		Vector2.ONE,
+		0.45
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	tween.tween_property(
+		relic_reward_glow,
+		"modulate:a",
+		1.0,
+		0.35
+	)
+
+	await tween.finished
+
+	relic_reward_continue_button.disabled = false
+
+	_pulse_relic_glow()
+
+	await relic_reward_finished
+
 func show_relic_acquisition(relic: RelicData):
 	if relic == null:
 		return
-
+	
 	relic_reward_pending = relic
+	generic_reward_showcase_active = false
 	relic_reward_acknowledged = false
 
 	relic_reward_icon.texture = relic.icon
@@ -12667,10 +12740,12 @@ func _on_relic_reward_continue_pressed():
 	relic_reward_acknowledged = true
 	relic_reward_continue_button.disabled = true
 
-	await animate_relic_reward_to_active_area()
+	if !generic_reward_showcase_active:
+		await animate_relic_reward_to_active_area()
 
 	relic_reward_overlay.visible = false
 	relic_reward_pending = null
+	generic_reward_showcase_active = false
 
 	relic_reward_finished.emit()
 	
@@ -13100,15 +13175,59 @@ func try_show_welcome_tutorial():
 		"welcome",
 		"Welcome to You Must Die!",
 		(
-			"Complete bounties to grow stronger and defeat "
-			+ "powerful bosses.\n\n"
-			+ "Choose a bounty from the Town Hall to begin.\n\n"
-			+ "The Congregation is recommended for your first bounty."
+			"Complete bounties to grow stronger and "
+			+ "unlock new challenges.\n\n"
+			+ "Bounties are completed in order, beginning "
+			+ "with The Congregation.\n\n"
+			+ "Visit the Town Hall to choose your bounty."
 		),
 		"Open Bounty Board",
 		Callable(self, "open_bounty_board")
 	)
 	
+func try_show_bounty_map_tutorial():
+	if !tutorial_hints_enabled:
+		return
+
+	if tutorial_flags.get("bounty_map", false):
+		return
+
+	# The tutorial UI is a child of Combat, so Combat must
+	# temporarily be visible while this hint is on the map.
+	visible = true
+
+	hide_all_major_panels()
+	hide_all_combat_ui()
+	set_combat_ui_enabled(false)
+
+	show_tutorial_hint(
+		"bounty_map",
+		"Plan Your Route",
+		(
+			"Each bounty is an expedition through a "
+			+ "branching map.\n\n"
+			+ "Blue nodes are destinations you can travel "
+			+ "to next. Choosing a route may make other "
+			+ "branches unavailable.\n\n"
+			+ "Crossed swords are Combat encounters. "
+			+ "Hover over an available Combat node to see "
+			+ "which enemies are waiting there.\n\n"
+			+ "The bag marks a Merchant, and ? marks an "
+			+ "unknown event.\n\n"
+			+ "Use Camp whenever you are on the map to "
+			+ "prepare before choosing your next encounter."
+		),
+		"Continue",
+		Callable(
+			self,
+			"finish_bounty_map_tutorial"
+		)
+	)
+
+func finish_bounty_map_tutorial():
+	# Return control completely to the separate bounty-map scene.
+	visible = false
+
 func try_show_town_dice_editor_tutorial():
 	if !tutorial_hints_enabled:
 		return
@@ -14227,33 +14346,35 @@ func buy_forest_merchant_junk():
 		coin_purchase_sound
 	)
 
-	var reward_text := (
+	var reward: Dictionary = (
 		roll_bag_of_junk_reward()
 	)
 
 	print(
 		"BAG OF JUNK REWARD: ",
-		reward_text
-	)
-
-	print(
-		"After junk bag:"
-		+ " faces=" + str(face_inventory.size())
-		+ " consumables=" + str(consumable_inventory.size())
-		+ " fragments=" + str(die_fragments)
-		+ " relics=" + str(owned_relics.size())
+		reward.get("name", "Unknown")
 	)
 
 	update_gold_label()
 	rebuild_forest_merchant()
 	save_run()
 
-	show_edit_message(
-		"Bag of Junk:\n"
-		+ reward_text
+	merchant_panel.visible = false
+
+	await show_reward_acquisition(
+		reward.get("icon"),
+		reward.get("name", "Bag of Junk"),
+		reward.get(
+			"description",
+			"You found something useful!"
+		)
 	)
+
+	merchant_panel.visible = true
+	merchant_gold_label.text = "Gold: " + str(gold)
+	rebuild_forest_merchant()
 	
-func roll_bag_of_junk_reward() -> String:
+func roll_bag_of_junk_reward() -> Dictionary:
 	var roll := randf()
 
 	print(
@@ -14275,7 +14396,7 @@ func roll_bag_of_junk_reward() -> String:
 
 	return give_junk_relic()
 	
-func give_junk_consumable() -> String:
+func give_junk_consumable() -> Dictionary:
 	var valid_items: Array[ConsumableItem] = []
 
 	for item in merchant_food_pool:
@@ -14298,26 +14419,30 @@ func give_junk_consumable() -> String:
 		item.duplicate(true)
 	)
 
-	return (
-		"You found "
-		+ item.item_name
-		+ "!"
-	)
-	
-func give_junk_fragments() -> String:
+	return {
+		"icon": item.icon,
+		"name": item.item_name,
+		"description": item.description
+	}
+
+
+func give_junk_fragments() -> Dictionary:
 	var amount := randi_range(1, 6)
 
 	die_fragments += amount
 
 	refresh_die_crafting_panel()
 
-	return (
-		"You found "
-		+ str(amount)
-		+ " Die Fragments!"
-	)
-	
-func give_junk_face() -> String:
+	return {
+		"icon": die_fragment_shop_icon,
+		"name": str(amount) + " Die Fragments",
+		"description": (
+			"Useful scraps for crafting new dice."
+		)
+	}
+
+
+func give_junk_face() -> Dictionary:
 	var available_faces: Array[DiceFace] = []
 
 	for face in merchant_unlocked_faces:
@@ -14339,13 +14464,14 @@ func give_junk_face() -> String:
 		face.duplicate(true)
 	)
 
-	return (
-		"You found "
-		+ get_face_display_name(face)
-		+ "!"
-	)
-	
-func give_junk_special_face() -> String:
+	return {
+		"icon": face.icon,
+		"name": get_face_display_name(face),
+		"description": "A new die face."
+	}
+
+
+func give_junk_special_face() -> Dictionary:
 	if forest_merchant_face_pool.is_empty():
 		return give_junk_fragments()
 
@@ -14357,13 +14483,14 @@ func give_junk_special_face() -> String:
 		face.duplicate(true)
 	)
 
-	return (
-		"You found a valuable face: "
-		+ get_face_display_name(face)
-		+ "!"
-	)
-	
-func give_junk_relic() -> String:
+	return {
+		"icon": face.icon,
+		"name": get_face_display_name(face),
+		"description": "A valuable die face!"
+	}
+
+
+func give_junk_relic() -> Dictionary:
 	var valid_relics: Array[RelicData] = []
 
 	for relic in merchant_relic_pool:
@@ -14388,11 +14515,11 @@ func give_junk_relic() -> String:
 
 	update_active_food_icons()
 
-	return (
-		"You found a relic: "
-		+ relic.relic_name
-		+ "!"
-	)
+	return {
+		"icon": relic.icon,
+		"name": relic.relic_name,
+		"description": relic.description
+	}
 	
 func is_bounty_unlocked(
 	bounty: BountyData

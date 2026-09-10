@@ -12,52 +12,84 @@ class_name BountyButton
 @export var reserve_icon: Texture2D
 
 var bounty_data: BountyData
+var bounty_unlocked: bool = true
 
 
-	
-func setup(bounty: BountyData):
+func _ready():
+	if bounty_data != null:
+		refresh_button()
+
+func setup(
+	bounty: BountyData,
+	unlocked: bool = true
+):
 	bounty_data = bounty
+	bounty_unlocked = unlocked
 	text = ""
 
-	if bounty_label == null:
-		push_error("BountyButton is missing BountyLabel.")
+	if !is_node_ready():
 		return
 
-	bounty_label.text = bounty.bounty_name
+	refresh_button()
+
+func refresh_button():
+	if bounty_data == null:
+		return
+
+	if bounty_label == null:
+		return
+
+	if rewards_grid == null:
+		return
+
+	disabled = !bounty_unlocked
+	text = ""
+
+	if bounty_unlocked:
+		bounty_label.text = bounty_data.bounty_name
+	else:
+		bounty_label.text = (
+			bounty_data.bounty_name
+			+ " — Locked"
+		)
 
 	clear_rewards()
 
-	if bounty.mulligem_reward > 0:
+	if bounty_data.mulligem_reward > 0:
 		add_reward(
 			mulligem_icon,
-			str(bounty.mulligem_reward)
+			str(bounty_data.mulligem_reward)
 		)
 
-	if bounty.reward_gold > 0:
+	if bounty_data.reward_gold > 0:
 		add_reward(
 			gold_icon,
-			str(bounty.reward_gold)
+			str(bounty_data.reward_gold)
 		)
 
-	if bounty.reward_volatile_cores > 0:
+	if bounty_data.reward_volatile_cores > 0:
 		add_reward(
 			volatile_core_icon,
-			str(bounty.reward_volatile_cores)
+			str(
+				bounty_data.reward_volatile_cores
+			)
 		)
 
-	if bounty.reward_reserve_slots > 0:
+	if bounty_data.reward_reserve_slots > 0:
 		add_reward(
 			reserve_icon,
-			str(bounty.reward_reserve_slots)
+			str(
+				bounty_data.reward_reserve_slots
+			)
 		)
 
-	for face in bounty.unlocked_merchant_faces:
+	for face in bounty_data.unlocked_merchant_faces:
 		add_reward(face.icon, "")
 
-	for relic in bounty.unlocked_relics:
+	for relic in bounty_data.unlocked_relics:
 		add_reward(relic.icon, "")
 
-	for recipe in bounty.unlocked_recipes:
+	for recipe in bounty_data.unlocked_recipes:
 		add_reward(recipe.icon, "")
 
 func clear_rewards():

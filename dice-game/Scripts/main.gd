@@ -1003,10 +1003,11 @@ func load_bounty_map_world(
 		return
 
 	await fade_to_black()
-
+	
 	print("STEP 6: Loading forest map world.")
 
 	combat.hide_all_major_panels()
+	combat.hide_all_combat_ui()
 	combat.set_combat_ui_enabled(false)
 	combat.visible = false
 
@@ -1056,6 +1057,8 @@ func load_bounty_map_world(
 	print("STEP 7: Forest bounty map loaded.")
 
 	await fade_from_black()
+	if combat != null:
+		combat.try_show_bounty_map_tutorial()
 	
 func _on_bounty_map_node_selected(
 	node_id: int
