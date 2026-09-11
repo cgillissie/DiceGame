@@ -24,6 +24,8 @@ var current_item_name: String = ""
 func _ready():
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	ingredient_icon.visible = false
+
+	setup_slot_style()
 	refresh_visual()
 
 
@@ -58,10 +60,23 @@ func _drop_data(
 
 
 func _gui_input(event: InputEvent):
-	if (
+	if !(
 		event is InputEventMouseButton
-		and event.button_index == MOUSE_BUTTON_RIGHT
 		and event.pressed
+	):
+		return
+
+	if (
+		event.button_index == MOUSE_BUTTON_LEFT
+		and !current_item_name.is_empty()
+	):
+		ingredient_removed.emit(slot_index)
+		accept_event()
+		return
+
+	if (
+		event.button_index == MOUSE_BUTTON_RIGHT
+		and !current_item_name.is_empty()
 	):
 		ingredient_removed.emit(slot_index)
 		accept_event()
@@ -86,6 +101,45 @@ func clear_ingredient():
 
 func refresh_visual():
 	if current_item_name.is_empty():
-		ingredient_name_label.text = "Empty"
+		ingredient_name_label.text = "DROP\nINGREDIENT"
+		tooltip_text = "Drag an ingredient here."
 	else:
 		ingredient_name_label.text = current_item_name
+		tooltip_text = "Click to remove " + current_item_name + "."
+
+func setup_slot_style():
+	var style := StyleBoxFlat.new()
+
+	style.bg_color = Color(
+		0.08,
+		0.08,
+		0.08,
+		0.9
+	)
+
+	style.border_color = Color(
+		0.75,
+		0.75,
+		0.75,
+		1.0
+	)
+
+	style.border_width_left = 3
+	style.border_width_top = 3
+	style.border_width_right = 3
+	style.border_width_bottom = 3
+
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+
+	style.content_margin_left = 8
+	style.content_margin_right = 8
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+
+	add_theme_stylebox_override(
+		"panel",
+		style
+	)

@@ -4455,6 +4455,7 @@ func close_edit_dice_panel():
 	inventory_faces_container.get_parent().get_parent().visible = true
 	close_edit_button.text = "Close"
 	update_begin_expedition_button_visibility()
+	close_context_tutorial()
 	
 func refresh_edit_dice_panel():
 	print("Refreshing editor. Dice:", owned_dice.size(), " Faces:", face_inventory.size())
@@ -8025,6 +8026,7 @@ func close_bounty_board():
 	bounty_board_panel.visible = false
 	town_menu_closed.emit()
 	update_begin_expedition_button_visibility()
+	close_context_tutorial()
 	
 func rebuild_bounty_board():
 	clear_container(bounty_buttons_container)
@@ -8372,6 +8374,7 @@ func cancel_prepare_expedition():
 	update_begin_expedition_button_visibility()
 	
 func confirm_start_expedition():
+	hide_tutorial_hint()
 	prepare_expedition_panel.visible = false
 
 	if prepare_return_context == "camp":
@@ -8521,7 +8524,8 @@ func close_merchant():
 
 	close_merchant_button.text = "Close"
 	town_menu_closed.emit()
-
+	close_context_tutorial()
+	
 func rebuild_merchant():
 	clear_container(merchant_stock_container)
 
@@ -9917,6 +9921,7 @@ func close_food_crafting():
 
 	update_camp_hp_label()
 	update_begin_expedition_button_visibility()
+	close_context_tutorial()
 	
 func rebuild_food_crafting_grid():
 	clear_container(food_craft_items_container)
@@ -13066,7 +13071,10 @@ func should_show_tutorial(flag_name: String) -> bool:
 
 	return !bool(tutorial_flags[flag_name])
 
-
+func close_context_tutorial():
+	if tutorial_hint_panel.visible:
+		hide_tutorial_hint()
+		
 func show_tutorial_hint(
 	flag_name: String,
 	title: String,

@@ -253,7 +253,7 @@ func update_visual():
 	var dynamic_value: int = -1
 
 	match face.result_type:
-		"mana_shield":
+		"fireball", "mana_shield":
 			dynamic_value = count_die_misses()
 
 		"blizzard", "chain_lightning":

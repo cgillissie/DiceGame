@@ -11,10 +11,14 @@ var node_data: BountyMapNodeData = null
 @export var combat_icon: Texture2D
 @export var merchant_icon: Texture2D
 
+var idle_pulse_tween: Tween = null
 var hover_tween: Tween = null
 
-const HOVER_SCALE := Vector2(1.15, 1.15)
+var is_hovered: bool = false
+
 const NORMAL_SCALE := Vector2.ONE
+const PULSE_SCALE := Vector2(1.08, 1.08)
+const HOVER_SCALE := Vector2(1.15, 1.15)
 const HOVER_DURATION := 0.08
 
 func _ready():
@@ -59,6 +63,7 @@ func setup(data: BountyMapNodeData):
 	
 	update_visual()
 	update_tooltip()
+	start_available_pulse()
 	
 func update_visual():
 	if node_data == null:
@@ -224,6 +229,55 @@ func update_tooltip():
 			
 			
 func _on_mouse_entered():
+	is_hovered = true
+
+	stop_available_pulse()
+
+	if (
+		hover_tween != null
+		and hover_tween.is_valid()
+	):
+		hover_tween.kill()
+
+	hover_tween = create_tween()
+	hover_tween.set_trans(Tween.TRANS_QUAD)
+	hover_tween.set_ease(Tween.EASE_OUT)
+
+	hover_tween.tween_property(
+		self,
+		"scale",
+		HOVER_SCALE,
+		0.12
+	)
+
+
+func _on_mouse_exited():
+	is_hovered = false
+
+	if (
+		hover_tween != null
+		and hover_tween.is_valid()
+	):
+		hover_tween.kill()
+
+	hover_tween = create_tween()
+	hover_tween.set_trans(Tween.TRANS_QUAD)
+	hover_tween.set_ease(Tween.EASE_OUT)
+
+	hover_tween.tween_property(
+		self,
+		"scale",
+		NORMAL_SCALE,
+		0.12
+	)
+
+	await hover_tween.finished
+
+	start_available_pulse()
+
+func start_available_pulse():
+	stop_available_pulse()
+
 	if node_data == null:
 		return
 
@@ -231,46 +285,39 @@ func _on_mouse_entered():
 		node_data.state
 		!= BountyMapNodeData.NodeState.AVAILABLE
 	):
+		scale = NORMAL_SCALE
 		return
 
-	if hover_tween != null:
-		hover_tween.kill()
+	if is_hovered:
+		return
 
-	hover_tween = create_tween()
+	scale = NORMAL_SCALE
 
-	hover_tween.set_trans(
-		Tween.TRANS_QUAD
-	)
+	idle_pulse_tween = create_tween()
+	idle_pulse_tween.set_loops()
+	idle_pulse_tween.set_trans(Tween.TRANS_SINE)
+	idle_pulse_tween.set_ease(Tween.EASE_IN_OUT)
 
-	hover_tween.set_ease(
-		Tween.EASE_OUT
-	)
-
-	hover_tween.tween_property(
+	idle_pulse_tween.tween_property(
 		self,
 		"scale",
-		HOVER_SCALE,
-		HOVER_DURATION
+		PULSE_SCALE,
+		0.8
 	)
 
-
-func _on_mouse_exited():
-	if hover_tween != null:
-		hover_tween.kill()
-
-	hover_tween = create_tween()
-
-	hover_tween.set_trans(
-		Tween.TRANS_QUAD
-	)
-
-	hover_tween.set_ease(
-		Tween.EASE_OUT
-	)
-
-	hover_tween.tween_property(
+	idle_pulse_tween.tween_property(
 		self,
 		"scale",
 		NORMAL_SCALE,
-		HOVER_DURATION
+		0.8
 	)
+
+func stop_available_pulse():
+	if (
+		idle_pulse_tween != null
+		and idle_pulse_tween.is_valid()
+	):
+		idle_pulse_tween.kill()
+
+	idle_pulse_tween = null
+	
