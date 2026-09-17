@@ -1,0 +1,739 @@
+[gd_scene format=3 uid="uid://c15kxv5sqb5yd"]
+
+[ext_resource type="Script" uid="uid://j0t22hy8g882" path="res://Scenes/Levels/abandoned_camp_encounter.gd" id="1_fk4gl"]
+[ext_resource type="PackedScene" uid="uid://u2wd2rtxq7p2" path="res://Scenes/Levels/forest_level.tscn" id="1_m0du0"]
+[ext_resource type="AudioStream" uid="uid://doluhcisg0yen" path="res://Assets/Sounds/AtmosphericSounds/WindHowling.wav" id="2_8hgcb"]
+[ext_resource type="Texture2D" uid="uid://dy2tibtm827jk" path="res://Assets/Sprites/WorldSprites/Tent.png" id="2_p4jua"]
+[ext_resource type="Texture2D" uid="uid://54uqg7nbkvfl" path="res://Assets/Sprites/WorldSprites/Backpack.png" id="3_menly"]
+[ext_resource type="SpriteFrames" uid="uid://cm47wceobs6ug" path="res://Resources/SpriteFrames/AbandonedCampfireSpriteFrames.tres" id="4_pxemu"]
+[ext_resource type="Texture2D" uid="uid://dfs0r3qo8ehm5" path="res://Assets/Sprites/WorldSprites/Pine Tree01.png" id="5_menly"]
+[ext_resource type="Texture2D" uid="uid://c5xnnpd3o3tsb" path="res://Assets/Sprites/WorldSprites/Pine Tree02.png" id="6_pxemu"]
+[ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="7_pxemu"]
+[ext_resource type="FontFile" uid="uid://ikng2ikqxt7i" path="res://Assets/Fonts/PixelOperator8-Bold.ttf" id="8_iaadf"]
+[ext_resource type="Script" uid="uid://caxovqr0srfds" path="res://Scenes/Levels/well_camera.gd" id="11_238qm"]
+
+[sub_resource type="Environment" id="Environment_fk4gl"]
+
+[node name="Node3D" type="Node3D" unique_id=1225161694]
+script = ExtResource("1_fk4gl")
+ambience_sound = ExtResource("2_8hgcb")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1328724616]
+environment = SubResource("Environment_fk4gl")
+
+[node name="ForestLevel" parent="." unique_id=1838685095 instance=ExtResource("1_m0du0")]
+
+[node name="Tent" type="Sprite3D" parent="ForestLevel" unique_id=990563176]
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, 0, 2.4423838, -19.491999)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("2_p4jua")
+
+[node name="Backpack" type="Sprite3D" parent="ForestLevel" unique_id=100194525]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0.22990611, 1.9379591, -20.612705)
+billboard = 1
+shaded = true
+texture_filter = 0
+texture = ExtResource("3_menly")
+
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="ForestLevel" unique_id=1763862185]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 1.4609033, 1.970145, -21.453913)
+billboard = 1
+shaded = true
+texture_filter = 0
+sprite_frames = ExtResource("4_pxemu")
+autoplay = "default"
+
+[node name="trees" type="Node3D" parent="ForestLevel" unique_id=1516788022]
+transform = Transform3D(-0.43470034, 0, -1.4356309, 0, 1.5, 0, 1.4356309, 0, -0.43470034, -25.230835, 1.3573077, -26.496998)
+
+[node name="Sprite3D" type="Sprite3D" parent="ForestLevel/trees" unique_id=1393803653]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -11.757336, 1.4575143, -9.831629)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D2" type="Sprite3D" parent="ForestLevel/trees" unique_id=1623062576]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -8.987946, 1.5873342, -11.210924)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D3" type="Sprite3D" parent="ForestLevel/trees" unique_id=238477831]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -3.313991, 1.4575143, -9.83163)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D4" type="Sprite3D" parent="ForestLevel/trees" unique_id=5230926]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0.76188624, 1.5873342, -11.210924)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D5" type="Sprite3D" parent="ForestLevel/trees" unique_id=2129272717]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -3.7860522, 1.4575143, -12.610931)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D6" type="Sprite3D" parent="ForestLevel/trees" unique_id=818110049]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -1.0166621, 1.5873342, -13.990227)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D7" type="Sprite3D" parent="ForestLevel/trees" unique_id=451127141]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 3.5356417, 1.4575143, -12.610931)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D8" type="Sprite3D" parent="ForestLevel/trees" unique_id=610658963]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 6.305032, 1.5873342, -13.990227)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D9" type="Sprite3D" parent="ForestLevel/trees" unique_id=325471081]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 9.223133, 1.4575143, -11.181623)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D10" type="Sprite3D" parent="ForestLevel/trees" unique_id=1021518946]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 11.992523, 1.5873342, -12.560919)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D11" type="Sprite3D" parent="ForestLevel/trees" unique_id=1805226345]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 5.7004867, 1.4575143, -11.181623)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D12" type="Sprite3D" parent="ForestLevel/trees" unique_id=487659061]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 8.469876, 1.5873342, -12.56092)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D13" type="Sprite3D" parent="ForestLevel/trees" unique_id=198790749]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -15.87953, 1.4575143, -11.181623)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D14" type="Sprite3D" parent="ForestLevel/trees" unique_id=1501614829]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -0.3030523, 1.5873342, -12.560919)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D15" type="Sprite3D" parent="ForestLevel/trees" unique_id=1276152954]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 1.9018483, 1.4575143, -14.161776)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D16" type="Sprite3D" parent="ForestLevel/trees" unique_id=1295386475]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -8.492506, 1.5873342, -15.541071)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D17" type="Sprite3D" parent="ForestLevel/trees" unique_id=2097801257]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -5.989953, 1.4575143, -14.161776)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D18" type="Sprite3D" parent="ForestLevel/trees" unique_id=1345697522]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -2.8639092, 1.5873342, -15.541071)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D45" type="Sprite3D" parent="ForestLevel/trees" unique_id=1555208095]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -3.9587855, 1.4575143, -1.9257984)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D46" type="Sprite3D" parent="ForestLevel/trees" unique_id=461160014]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -3.6479425, 1.5873342, -12.406663)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D47" type="Sprite3D" parent="ForestLevel/trees" unique_id=820729047]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -4.7645235, 1.4575143, -9.776361)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D48" type="Sprite3D" parent="ForestLevel/trees" unique_id=109071724]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -4.629033, 1.5873342, -6.807477)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D49" type="Sprite3D" parent="ForestLevel/trees" unique_id=1836953715]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -7.465678, 1.4575143, -3.4662228)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D50" type="Sprite3D" parent="ForestLevel/trees" unique_id=2049525344]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -7.1548357, 1.5873342, -13.947086)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D51" type="Sprite3D" parent="ForestLevel/trees" unique_id=503853685]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -8.271419, 1.4575143, -11.316785)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D52" type="Sprite3D" parent="ForestLevel/trees" unique_id=917646631]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -6.5801663, 1.5873342, -8.347899)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D53" type="Sprite3D" parent="ForestLevel/trees" unique_id=242290765]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -9.7720375, 1.4575143, -1.0027714)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D54" type="Sprite3D" parent="ForestLevel/trees" unique_id=1543522883]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -9.461195, 1.5873342, -11.483636)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D55" type="Sprite3D" parent="ForestLevel/trees" unique_id=2099767712]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -10.577779, 1.4575143, -8.853333)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D56" type="Sprite3D" parent="ForestLevel/trees" unique_id=1097825491]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -8.886525, 1.5873342, -5.884449)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D57" type="Sprite3D" parent="ForestLevel/trees" unique_id=635114254]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -7.46352, 1.4575143, -4.243582)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D58" type="Sprite3D" parent="ForestLevel/trees" unique_id=1296775474]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -7.1526775, 1.5873342, -14.724445)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D59" type="Sprite3D" parent="ForestLevel/trees" unique_id=862199221]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -8.269264, 1.4575143, -12.094143)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D60" type="Sprite3D" parent="ForestLevel/trees" unique_id=2024445763]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -6.5780077, 1.5873342, -9.1252575)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D61" type="Sprite3D" parent="ForestLevel/trees" unique_id=470436845]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -7.46352, 1.4575143, -5.714113)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D62" type="Sprite3D" parent="ForestLevel/trees" unique_id=2090039318]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -7.152677, 1.5873342, -16.194979)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D63" type="Sprite3D" parent="ForestLevel/trees" unique_id=151971213]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -8.269264, 1.4575143, -13.564674)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D64" type="Sprite3D" parent="ForestLevel/trees" unique_id=1035739311]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -6.578007, 1.5873342, -10.59579)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D65" type="Sprite3D" parent="ForestLevel/trees" unique_id=393591393]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -11.319491, 1.4575143, -2.3368301)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D66" type="Sprite3D" parent="ForestLevel/trees" unique_id=1990079860]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -11.008648, 1.5873342, -12.817696)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D67" type="Sprite3D" parent="ForestLevel/trees" unique_id=1865510143]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -12.1252365, 1.4575143, -10.187391)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D68" type="Sprite3D" parent="ForestLevel/trees" unique_id=477676199]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -10.433979, 1.5873342, -7.218508)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D69" type="Sprite3D" parent="ForestLevel/trees" unique_id=721705284]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -12.242404, 1.4575143, -3.1217804)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D70" type="Sprite3D" parent="ForestLevel/trees" unique_id=226647564]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -11.9315605, 1.5873342, -13.602646)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D71" type="Sprite3D" parent="ForestLevel/trees" unique_id=1800042894]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -13.048151, 1.4575143, -10.972342)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D72" type="Sprite3D" parent="ForestLevel/trees" unique_id=1953541946]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -11.356893, 1.5873342, -8.003458)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D73" type="Sprite3D" parent="ForestLevel/trees" unique_id=1884540772]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -12.242405, 1.4575143, -6.7120705)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D74" type="Sprite3D" parent="ForestLevel/trees" unique_id=1106271546]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -11.9315605, 1.5873342, -17.192936)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D75" type="Sprite3D" parent="ForestLevel/trees" unique_id=1624041045]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -13.048151, 1.4575143, -14.562632)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D76" type="Sprite3D" parent="ForestLevel/trees" unique_id=1593455640]
+transform = Transform3D(1.0209806, 0, -9.947743, 0, 10, 0, 9.947743, 0, 1.0209806, -11.356893, 1.5873342, -11.593748)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D19" type="Sprite3D" parent="ForestLevel/trees" unique_id=238004542]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -5.6332984, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D20" type="Sprite3D" parent="ForestLevel/trees" unique_id=1183753124]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -2.8639092, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D21" type="Sprite3D" parent="ForestLevel/trees" unique_id=1462362547]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -16.655287, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D22" type="Sprite3D" parent="ForestLevel/trees" unique_id=1461319280]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -13.885897, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D23" type="Sprite3D" parent="ForestLevel/trees" unique_id=565361499]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -2.2347674, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D24" type="Sprite3D" parent="ForestLevel/trees" unique_id=630718995]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0.53462183, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D25" type="Sprite3D" parent="ForestLevel/trees" unique_id=917622880]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 6.4629197, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D26" type="Sprite3D" parent="ForestLevel/trees" unique_id=659281103]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 9.232309, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D27" type="Sprite3D" parent="ForestLevel/trees" unique_id=1795154932]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 10.246768, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D28" type="Sprite3D" parent="ForestLevel/trees" unique_id=1092614426]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 13.016157, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D29" type="Sprite3D" parent="ForestLevel/trees" unique_id=1146575771]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 7.637961, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D30" type="Sprite3D" parent="ForestLevel/trees" unique_id=630713153]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 10.407351, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D31" type="Sprite3D" parent="ForestLevel/trees" unique_id=1965362813]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 3.4868646, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D32" type="Sprite3D" parent="ForestLevel/trees" unique_id=313300611]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 6.2562537, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D33" type="Sprite3D" parent="ForestLevel/trees" unique_id=887590942]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0.0982157, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D34" type="Sprite3D" parent="ForestLevel/trees" unique_id=121429803]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 2.8676047, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D35" type="Sprite3D" parent="ForestLevel/trees" unique_id=1795064175]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -3.8332462, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D36" type="Sprite3D" parent="ForestLevel/trees" unique_id=50255965]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -1.063857, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D37" type="Sprite3D" parent="ForestLevel/trees" unique_id=17973731]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -7.8669515, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D38" type="Sprite3D" parent="ForestLevel/trees" unique_id=1041642335]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -5.0975623, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D39" type="Sprite3D" parent="ForestLevel/trees" unique_id=323614582]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 1.6561142, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D40" type="Sprite3D" parent="ForestLevel/trees" unique_id=854453771]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 4.4255033, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D41" type="Sprite3D" parent="ForestLevel/trees" unique_id=1685469696]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -9.477714, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D42" type="Sprite3D" parent="ForestLevel/trees" unique_id=295345620]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -6.708325, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="Sprite3D43" type="Sprite3D" parent="ForestLevel/trees" unique_id=1859594356]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -11.774206, 1.5836437, -3.2858634)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("5_menly")
+
+[node name="Sprite3D44" type="Sprite3D" parent="ForestLevel/trees" unique_id=1234792030]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, -9.004817, 1.7134635, -4.6651587)
+billboard = 1
+shaded = true
+no_depth_test = true
+texture_filter = 0
+texture = ExtResource("6_pxemu")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=274119200]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 2.8868306, 3.4466238, -20.524912)
+light_color = Color(0.87918305, 0.96683055, 0.71925193, 1)
+light_energy = 0.992
+light_specular = 0.905
+omni_range = 4.448
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1300015800]
+
+[node name="CampPanel" type="Panel" parent="CanvasLayer" unique_id=586453648]
+custom_minimum_size = Vector2(1000, 260)
+offset_left = 460.0
+offset_top = 800.0
+offset_right = 1460.0
+offset_bottom = 1060.0
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/CampPanel" unique_id=1034551774]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/CampPanel/MarginContainer" unique_id=1032886625]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer" unique_id=597544453]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("8_iaadf")
+theme_override_font_sizes/font_size = 32
+text = "Abandoned Campsite"
+
+[node name="DescriptionLabel" type="Label" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer" unique_id=1968243522]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_pxemu")
+theme_override_font_sizes/font_size = 20
+text = "The coals are still warm, but whoever was here seems to have left in a hurry..."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer" unique_id=1794082432]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="RestButton" type="Button" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1211672232]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("7_pxemu")
+text = "Rest"
+
+[node name="SearchButton" type="Button" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1392242088]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("7_pxemu")
+text = "Search the Backpack"
+
+[node name="LeaveButton" type="Button" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1336398756]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("7_pxemu")
+text = "Leave"
+
+[node name="CampAmbiencePlayer" type="AudioStreamPlayer" parent="." unique_id=792942817]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1078674780]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 5.4666686, 1.997369, -20.411432)
+current = true
+fov = 31.8
+script = ExtResource("11_238qm")

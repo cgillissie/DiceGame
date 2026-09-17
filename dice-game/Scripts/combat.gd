@@ -527,6 +527,7 @@ signal bounty_map_requested(
 const PLAN_COMBAT := "combat"
 const PLAN_WITCH := "witch"
 const PLAN_WELL := "well"
+const PLAN_CAMP := "camp"
 
 var beastmaster_camera_original_transform: Transform3D
 var beastmaster_camera_original_size: float
@@ -8341,6 +8342,7 @@ func open_trophies():
 
 	trophy_list_label.text = text
 	update_begin_expedition_button_visibility()
+	
 func close_trophies():
 	trophy_panel.visible = false
 	town_panel.visible = true
@@ -13872,6 +13874,11 @@ func start_map_event_node(
 			save_run()
 			expedition_started.emit("well")
 
+		"camp":
+			expedition_location = "camp_event"
+			save_run()
+			expedition_started.emit("camp")
+
 		_:
 			push_error(
 				"Event node has invalid event type: "
@@ -14543,7 +14550,8 @@ func is_bounty_unlocked(
 func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 	bounty_map_available_events = [
 		"witch",
-		"well"
+		"well",
+		"camp"
 	]
 	var map := BountyMapData.new()
 
@@ -14614,6 +14622,7 @@ func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 			normalize_bounty_map_layer(layer_nodes)
 		layers.append(layer_nodes)
 		ensure_bounty_map_has_merchant(layers)
+		ensure_bounty_map_has_event(layers)
 	# Boss comes after every normal layer.
 	var boss_node := create_bounty_map_node(
 		next_node_id,
@@ -14639,6 +14648,66 @@ func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 
 	return map
 	
+func ensure_bounty_map_has_event(
+	layers: Array
+) -> void:
+	if layers.size() <= 2:
+		return
+
+	# First check whether generation already
+	# produced an Event naturally.
+	for layer in layers:
+		for node in layer:
+			if (
+				node.node_type
+				== BountyMapNodeData.NodeType.EVENT
+			):
+				return
+
+	# No Event exists, so choose a valid
+	# middle layer.
+	var valid_layer_indices: Array[int] = []
+
+	# Avoid the first encounter layer
+	# and final pre-boss layer.
+	for i in range(1, layers.size() - 1):
+		valid_layer_indices.append(i)
+
+	if valid_layer_indices.is_empty():
+		return
+
+	valid_layer_indices.shuffle()
+
+	# Prefer converting a Combat node.
+	for layer_index in valid_layer_indices:
+		var layer: Array = layers[layer_index]
+
+		var combat_nodes: Array = []
+
+		for node in layer:
+			if (
+				node.node_type
+				== BountyMapNodeData.NodeType.COMBAT
+			):
+				combat_nodes.append(node)
+
+		if combat_nodes.is_empty():
+			continue
+
+		var chosen_node: BountyMapNodeData = (
+			combat_nodes.pick_random()
+		)
+
+		chosen_node.node_type = (
+			BountyMapNodeData.NodeType.EVENT
+		)
+
+		assign_bounty_map_node_content(
+			chosen_node
+		)
+
+		return
+
 func ensure_bounty_map_has_merchant(
 	layers: Array
 ) -> void:

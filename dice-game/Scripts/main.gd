@@ -29,6 +29,7 @@ var town_camera_tween_version: int = 0
 @export var water_well_scene: PackedScene
 @export var forest_bounty_map_scene: PackedScene
 @export var forest_merchant_scene: PackedScene
+@export var abandoned_camp_scene: PackedScene
 
 @export var camera_zoom_sound: AudioStream
 @export var critical_hit_sound: AudioStream
@@ -148,7 +149,10 @@ func load_saved_expedition():
 		"well":
 			await load_saved_bounty_map()
 			return
-
+			
+		"camp_event":
+			await load_saved_bounty_map()
+			return
 		_:
 			await load_saved_bounty_map()
 	
@@ -589,7 +593,12 @@ func start_expedition_world(
 		await start_water_well_world()
 		return
 
+	if event_type == "camp":
+		await start_abandoned_camp_world()
+		return
+
 	await fade_to_black()
+
 
 	await play_music_fade(
 		expedition_music.pick_random()
@@ -857,6 +866,44 @@ func _on_witch_choice_made(accepted: bool):
 
 	combat.show_bounty_map()
 
+func start_abandoned_camp_world():
+	await fade_to_black()
+
+	load_world(abandoned_camp_scene)
+
+	combat.hide_all_major_panels()
+	combat.visible = false
+
+	if active_world.has_signal("camp_choice_made"):
+		active_world.camp_choice_made.connect(
+			_on_abandoned_camp_choice_made
+		)
+
+	await fade_from_black()
+	
+func _on_abandoned_camp_choice_made(
+	choice: String
+):
+	print(
+		"ABANDONED CAMP CHOICE: ",
+		choice
+	)
+
+	await finish_abandoned_camp_event()
+
+func finish_abandoned_camp_event():
+	await fade_to_black()
+
+	combat.visible = true
+
+	combat.complete_active_bounty_map_node()
+
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
+
+	combat.show_bounty_map()
+	
 func start_water_well_world():
 	await fade_to_black()
 	await fade_audio_out(music_player, 0.75)

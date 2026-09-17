@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" uid="uid://e3r520hbkcd" path="res://Scenes/forest_merchant_encounter.tscn" id="9_e6rcu"]
 [ext_resource type="AudioStream" uid="uid://bgmo0w5xr83h3" path="res://Assets/Sounds/Crafting/ClothTear.wav" id="9_kqrg6"]
 [ext_resource type="Resource" uid="uid://cgvso7b6layc4" path="res://Resources/Encounters/The Chieftain/goblin_encounter.tres" id="9_wsu2k"]
+[ext_resource type="PackedScene" uid="uid://c15kxv5sqb5yd" path="res://Scenes/Levels/abandoned_camp_encounter.tscn" id="10_j2g22"]
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/The Congregation/knight_priest_encounter.tres" id="10_k12tt"]
 [ext_resource type="AudioStream" uid="uid://bfark12vdqk0h" path="res://Assets/Sounds/Crafting/DiceSmithAnvil.wav" id="10_nwwfm"]
 [ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/The Chieftain/bandit_ambush.tres" id="11_h1bgf"]
@@ -119,6 +120,7 @@ witch_encounter_scene = ExtResource("4_2daye")
 water_well_scene = ExtResource("7_fd3ed")
 forest_bounty_map_scene = ExtResource("37_e6rcu")
 forest_merchant_scene = ExtResource("9_e6rcu")
+abandoned_camp_scene = ExtResource("10_j2g22")
 camera_zoom_sound = ExtResource("4_r33sp")
 critical_hit_sound = ExtResource("5_8cuat")
 critical_roll_sound = ExtResource("6_o1aky")
