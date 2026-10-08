@@ -27,6 +27,7 @@
 [ext_resource type="Resource" uid="uid://b15etw1mjr3wf" path="res://Resources/Encounters/The Congregation/knight_priest_encounter.tres" id="10_k12tt"]
 [ext_resource type="AudioStream" uid="uid://bfark12vdqk0h" path="res://Assets/Sounds/Crafting/DiceSmithAnvil.wav" id="10_nwwfm"]
 [ext_resource type="Resource" uid="uid://cbhejdob6qdba" path="res://Resources/Encounters/The Chieftain/bandit_ambush.tres" id="11_h1bgf"]
+[ext_resource type="PackedScene" uid="uid://dnq1gtrn20srt" path="res://Scenes/old_shrine_encounter.tscn" id="11_phube"]
 [ext_resource type="Theme" uid="uid://m4nfa8q8nfv" path="res://Resources/Themes/GameUITheme.tres" id="12_536cc"]
 [ext_resource type="AudioStream" uid="uid://dtqm580kideu7" path="res://Assets/Music/YouMustDieOST05.wav" id="12_kwxat"]
 [ext_resource type="Script" uid="uid://cj0xiilvtky86" path="res://Scripts/BountyData.gd" id="13_wsu2k"]
@@ -121,6 +122,7 @@ water_well_scene = ExtResource("7_fd3ed")
 forest_bounty_map_scene = ExtResource("37_e6rcu")
 forest_merchant_scene = ExtResource("9_e6rcu")
 abandoned_camp_scene = ExtResource("10_j2g22")
+old_shrine_scene = ExtResource("11_phube")
 camera_zoom_sound = ExtResource("4_r33sp")
 critical_hit_sound = ExtResource("5_8cuat")
 critical_roll_sound = ExtResource("6_o1aky")

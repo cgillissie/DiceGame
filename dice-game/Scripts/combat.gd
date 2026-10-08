@@ -406,10 +406,13 @@ var forest_merchant_junk_sold: bool = false
 	$FoodCraftPanel/MarginContainer/VBoxContainer
 	/IngredientSlotsHBox/IngredientSlot1
 )
-
+@onready var active_food_count_label: Label = $PrepareExpeditionPanel/MarginContainer/VBoxContainer/ActiveFoodCountLabel
 @onready var food_craft_slot_2: FoodCraftSlot = (
 	$FoodCraftPanel/MarginContainer/VBoxContainer
 	/IngredientSlotsHBox/IngredientSlot2
+)
+@onready var camp_active_food_label: Label = (
+	$ExpeditionCampPanel/MarginContainer/VBoxContainer/CampActiveFoodLabel
 )
 # TRAITS ########################################
 @export var regenerating_icon_texture: Texture2D
@@ -555,8 +558,7 @@ var enemy_block: int = 0
 var enemy_crit_damage: int = 0
 var enemy_heal: int = 0
 
-var witch_seen_this_run: bool = false
-var well_seen_this_run: bool = false
+var seen_events_this_run: Array[String] = []
 
 var combat_number: int = 0
 var base_enemy_hp: int = 20
@@ -3265,7 +3267,6 @@ func end_round():
 				lose_combat()
 				is_resolving_turn = false
 				return
-	
 	# ---------------------------------------------------------
 	# END-OF-ROUND EFFECTS
 	# ---------------------------------------------------------
@@ -3496,7 +3497,8 @@ func remove_defeated_enemies():
 				)
 
 				await enemy_node.death_animation()
-
+				
+		reindex_enemy_targets_after_removal(index)
 		active_enemies.remove_at(index)
 
 		if index < enemy_3d_nodes.size():
@@ -3533,6 +3535,45 @@ func remove_defeated_enemies():
 	refresh_enemy_buttons()
 	update_enemy_3d_nodes()
 	
+func reindex_enemy_targets_after_removal(
+	removed_index: int
+):
+	reversal_targets = reindex_target_array(
+		reversal_targets,
+		removed_index
+	)
+
+	dodge_targets = reindex_target_array(
+		dodge_targets,
+		removed_index
+	)
+
+	break_focus_targets = reindex_target_array(
+		break_focus_targets,
+		removed_index
+	)
+
+func reindex_target_array(
+	targets: Array[int],
+	removed_index: int
+) -> Array[int]:
+	var updated_targets: Array[int] = []
+
+	for target_index in targets:
+		if target_index == removed_index:
+			continue
+
+		if target_index > removed_index:
+			updated_targets.append(
+				target_index - 1
+			)
+		else:
+			updated_targets.append(
+				target_index
+			)
+
+	return updated_targets
+
 func clear_beastmaster_phase_one_statuses(
 	enemy: Dictionary
 ):
@@ -3854,8 +3895,13 @@ func show_loot_panel():
 	
 func update_camp_hp_label():
 	if camp_hp_label != null:
-		camp_hp_label.text = "HP: " + str(player_hp) + "/" + str(max_player_hp)
-		
+		camp_hp_label.text = (
+			"HP: " + str(player_hp)
+			+ "/" + str(combat_max_player_hp)
+		)
+
+	update_camp_active_food_label()
+	
 func update_prepare_hp_label():
 	if prepare_hp_label == null:
 		return
@@ -3898,6 +3944,88 @@ func add_volatile_core_reward():
 func add_reserve_slot_reward():
 	reserve_slots += 1
 	start_new_combat()
+
+func rest_at_abandoned_camp() -> int:
+	var heal_amount: int = 10
+	var hp_before: int = player_hp
+
+	player_hp = min(
+		player_hp + heal_amount,
+		max_player_hp
+	)
+
+	var actual_healing: int = (
+		player_hp - hp_before
+	)
+
+	update_player_hp_label()
+	save_run()
+
+	return actual_healing
+	
+func search_abandoned_camp_backpack() -> ConsumableItem:
+	var valid_items: Array[ConsumableItem] = []
+
+	for item in merchant_food_pool:
+		if item == null:
+			continue
+
+		if item.food_tier > unlocked_food_tier:
+			continue
+
+		valid_items.append(item)
+
+	if valid_items.is_empty():
+		return null
+
+	var reward: ConsumableItem = (
+		valid_items.pick_random()
+	)
+
+	var reward_copy: ConsumableItem = (
+		reward.duplicate(true)
+	)
+
+	consumable_inventory.append(
+		reward_copy
+	)
+
+	save_run()
+
+	return reward_copy
+
+
+func start_abandoned_camp_ambush():
+	if current_bounty == null:
+		push_error(
+			"Cannot start campsite ambush: "
+			+ "current_bounty is null."
+		)
+		return
+
+	if (
+		current_bounty
+		.expedition_encounter_pool
+		.is_empty()
+	):
+		push_error(
+			"Cannot start campsite ambush: "
+			+ "bounty has no encounters."
+		)
+		return
+
+	current_encounter = (
+		current_bounty
+		.expedition_encounter_pool
+		.pick_random()
+	)
+
+	expedition_location = "combat"
+	expedition_is_boss_fight = false
+
+	save_run()
+
+	expedition_started.emit("combat")
 
 func heal_reward():
 	player_hp += 10
@@ -3948,8 +4076,7 @@ func restart_run():
 
 	if final_boss_bounty != null:
 		final_boss_bounty.completed = false
-	witch_seen_this_run = false
-	well_seen_this_run = false
+	seen_events_this_run.clear()
 	endless_choice_pending = false
 	endless_choice_overlay.visible = false
 	if FileAccess.file_exists(RUN_SAVE_PATH):
@@ -8352,19 +8479,11 @@ func open_prepare_expedition():
 	if current_bounty == null:
 		print("No bounty selected.")
 		return
-	
+
 	prepare_return_context = "town"
 	town_panel.visible = false
-	prepare_selected_bounty_label.visible = true
-	prepare_expedition_panel.visible = true
-	prepare_cancel_button.visible = true
-	prepare_hp_label.visible = false
-	prepare_start_expedition_button.text = "Start Expedition"
-	prepare_selected_bounty_label.text = "Bounty: " + current_bounty.bounty_name
-	prepare_expedition_label.text = "Prepare Expedition"
-	prepare_selected_bounty_label.text = ("Bounty: " + current_bounty.bounty_name)
-	rebuild_prepare_consumables()
-	update_begin_expedition_button_visibility()
+
+	await confirm_start_expedition()
 	
 func cancel_prepare_expedition():
 	prepare_expedition_panel.visible = false
@@ -8713,6 +8832,12 @@ func buy_consumable(item: ConsumableItem):
 	rebuild_merchant()
 	
 func rebuild_prepare_consumables():
+	active_food_count_label.text = (
+	"Active Food: "
+	+ str(active_food_items.size())
+	+ " / 3"
+)
+
 	clear_container(prepare_consumables_container)
 
 	var item_counts: Dictionary = {}
@@ -8750,6 +8875,32 @@ func rebuild_prepare_consumables():
 			+ "\n"
 			+ item.description
 		)
+
+		# Healing-only foods do not occupy an active slot.
+		var is_instant_heal: bool = (
+			item.heal_amount > 0
+			and item.next_combat_block == 0
+			and item.next_combat_damage == 0
+			and item.next_combat_max_hp == 0
+		)
+
+		var already_active: bool = (
+			is_food_already_active(item)
+		)
+
+		var food_slots_full: bool = (
+			active_food_items.size() >= 3
+		)
+
+		if !is_instant_heal and (
+			already_active or food_slots_full
+		):
+			button.disabled = true
+
+			if already_active:
+				button.tooltip_text += "\nAlready active"
+			else:
+				button.tooltip_text += "\nFood slots full (3/3)"
 
 		button.pressed.connect(
 			use_consumable_item.bind(item)
@@ -8797,7 +8948,7 @@ func use_consumable_item(item: ConsumableItem):
 
 	if index == -1:
 		return
-	AudioManager.play_one_shot(food_eat_sound)
+
 	# Instant heal food: can be used multiple times, does not become an active buff.
 	if (
 		item.heal_amount > 0
@@ -8805,6 +8956,7 @@ func use_consumable_item(item: ConsumableItem):
 		and item.next_combat_damage == 0
 		and item.next_combat_max_hp == 0
 	):
+		AudioManager.play_one_shot(food_eat_sound)
 		player_hp += item.heal_amount
 
 		if player_hp > combat_max_player_hp:
@@ -8816,6 +8968,7 @@ func use_consumable_item(item: ConsumableItem):
 		update_camp_hp_label()
 		update_prepare_hp_label()
 		rebuild_prepare_consumables()
+		
 		save_run()
 		return
 
@@ -8823,6 +8976,12 @@ func use_consumable_item(item: ConsumableItem):
 	if is_food_already_active(item):
 		return
 
+	# A maximum of 3 food buffs can be active at once.
+	if active_food_items.size() >= 3:
+		return
+		
+	AudioManager.play_one_shot(food_eat_sound)
+	
 	active_food_items.append(item)
 	apply_consumable_trait(item)
 	next_combat_bonus_block += item.next_combat_block
@@ -8841,12 +9000,20 @@ func use_consumable_item(item: ConsumableItem):
 		player_hp = temporary_max_hp
 
 	consumable_inventory.remove_at(index)
-
+	
+	update_camp_active_food_label()
 	rebuild_prepare_consumables()
 	update_active_food_icons()
 	update_prepare_hp_label()
 	save_run()
 
+func update_camp_active_food_label():
+	camp_active_food_label.text = (
+		"Active Food: "
+		+ str(active_food_items.size())
+		+ " / 3"
+	)
+	
 func find_consumable_index_by_name(item_name: String) -> int:
 	for i in consumable_inventory.size():
 		if consumable_inventory[i].item_name == item_name:
@@ -10586,9 +10753,11 @@ func save_run():
 	config.set_value("run", "mulligems", mulligems)
 	config.set_value("run", "volatile_cores", volatile_cores)
 	config.set_value("run", "die_fragments", die_fragments)
-	var should_save_pending_encounter := expedition_active \
-		and !expedition_camp_panel.visible \
+	var should_save_pending_encounter: bool = (
+		expedition_active
+		and expedition_location == "combat"
 		and current_encounter != null
+	)
 	config.set_value(
 		"expedition",
 		"current_encounter",
@@ -10604,8 +10773,11 @@ func save_run():
 	config.set_value("run", "reserve_slots", reserve_slots)
 	config.set_value("expedition", "required_encounters", expedition_required_encounters)
 	config.set_value("expedition", "is_boss_fight", expedition_is_boss_fight)
-	config.set_value("run", "witch_seen", witch_seen_this_run)
-	config.set_value("run", "well_seen", well_seen_this_run)
+	config.set_value(
+		"run",
+		"seen_events",
+		seen_events_this_run
+	)
 	config.set_value("expedition", "location", expedition_location)
 	config.set_value("bounty_map", "active_node_id", active_bounty_map_node_id)
 	var bounty_map_save: Dictionary = {}
@@ -11035,8 +11207,18 @@ func load_run():
 	expedition_required_encounters = config.get_value("expedition", "required_encounters", expedition_required_encounters)
 	expedition_is_boss_fight = config.get_value("expedition", "is_boss_fight", expedition_is_boss_fight)
 	reserve_slots = config.get_value("run", "reserve_slots", reserve_slots)
-	witch_seen_this_run = config.get_value("run", "witch_seen", false)
-	well_seen_this_run = config.get_value("run", "well_seen", false)
+	seen_events_this_run.clear()
+
+	var saved_seen_events: Array = config.get_value(
+		"run",
+		"seen_events",
+		[]
+	)
+
+	for event_type in saved_seen_events:
+		seen_events_this_run.append(
+			String(event_type)
+		)
 	update_reserve_slots_display()
 	var encounter_path: String = config.get_value("expedition", "current_encounter", "")
 	if encounter_path != "":
@@ -11084,13 +11266,7 @@ func load_run():
 				"type": PLAN_WELL,
 				"encounter": null
 			})
-
-	var node := get_current_plan_node()
-
-	if !node.is_empty() and node.get("type") == PLAN_COMBAT:
-		current_encounter = node["encounter"]
-	else:
-		current_encounter = null
+			
 	if saved_bounty_name != "":
 		for bounty in bounty_pool:
 			if bounty.bounty_name == saved_bounty_name:
@@ -11130,14 +11306,20 @@ func load_run():
 		if (
 			active_map_node != null
 			and active_map_node.encounter != null
+			and expedition_location == "combat"
 		):
-			current_encounter = (
-				active_map_node.encounter
-			)
-	if expedition_active and current_encounter != null:
-		loaded_pending_encounter = true
+			current_encounter = active_map_node.encounter
+	if expedition_active:
 		is_in_town = false
-		player_hp = player_hp_at_combat_start
+
+		if (
+			expedition_location == "combat"
+			and current_encounter != null
+		):
+			loaded_pending_encounter = true
+			player_hp = player_hp_at_combat_start
+		else:
+			loaded_pending_encounter = false
 	completed_bounties.clear()
 	var completed_bounty_names: Array = config.get_value("progress", "completed_bounties", [])
 
@@ -11451,75 +11633,6 @@ func end_demo():
 func continue_endless_mode():
 	endless_choice_overlay.visible = false
 	reset_bounties_for_endless_mode()
-
-func build_expedition_plan():
-	expedition_encounter_plan.clear()
-
-	if current_bounty == null:
-		return
-
-	if current_bounty.expedition_encounter_pool.is_empty():
-		push_error(
-			"Current bounty has no normal encounters."
-		)
-		return
-
-	if expedition_required_encounters <= 0:
-		push_error(
-			"Expedition required encounter count is invalid."
-		)
-		return
-
-	var available_events: Array[String] = []
-
-	if !well_seen_this_run:
-		available_events.append(PLAN_WELL)
-
-	if !witch_seen_this_run:
-		available_events.append(PLAN_WITCH)
-
-	var previous_node_was_event: bool = false
-
-	# Build every pre-boss node.
-	for node_index in expedition_required_encounters:
-		# The first node must always be combat because expedition
-		# startup expects an EncounterData resource.
-		if node_index == 0:
-			append_random_combat_to_expedition_plan()
-			previous_node_was_event = false
-			continue
-
-		# An event can only be placed after a combat.
-		var should_use_event: bool = (
-			!previous_node_was_event
-			and !available_events.is_empty()
-			and randf() < 0.5
-		)
-
-		if should_use_event:
-			var event_type: String = (
-				available_events.pick_random()
-			)
-
-			available_events.erase(event_type)
-
-			expedition_encounter_plan.append({
-				"type": event_type,
-				"encounter": null
-			})
-
-			previous_node_was_event = true
-		else:
-			append_random_combat_to_expedition_plan()
-			previous_node_was_event = false
-
-	# The boss always follows all required pre-boss nodes.
-	expedition_encounter_plan.append({
-		"type": PLAN_COMBAT,
-		"encounter": current_bounty.boss_encounter
-	})
-
-	print_expedition_plan()
 
 func append_random_combat_to_expedition_plan():
 	expedition_encounter_plan.append({
@@ -13862,7 +13975,10 @@ func start_map_event_node(
 		return
 
 	active_bounty_map_node_id = node.node_id
-
+	
+	if !seen_events_this_run.has(node.event_type):
+		seen_events_this_run.append(node.event_type)
+		
 	match node.event_type:
 		"witch":
 			expedition_location = "witch"
@@ -13878,7 +13994,11 @@ func start_map_event_node(
 			expedition_location = "camp_event"
 			save_run()
 			expedition_started.emit("camp")
-
+			
+		"shrine":
+			expedition_location = "shrine_event"
+			save_run()
+			expedition_started.emit("shrine")
 		_:
 			push_error(
 				"Event node has invalid event type: "
@@ -14551,8 +14671,12 @@ func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 	bounty_map_available_events = [
 		"witch",
 		"well",
-		"camp"
+		"camp",
+		"shrine"
 	]
+
+	for seen_event in seen_events_this_run:
+		bounty_map_available_events.erase(seen_event)
 	var map := BountyMapData.new()
 
 	var next_node_id := 0
@@ -15163,3 +15287,45 @@ func reveal_initial_bounty_map_nodes(
 
 		node.revealed = true
 		
+func make_shrine_gold_offering() -> DiceFace:
+	if gold < 20:
+		return null
+
+	if merchant_unlocked_faces.is_empty():
+		return null
+
+	gold -= 20
+	update_gold_label()
+
+	var reward: DiceFace = (
+		merchant_unlocked_faces.pick_random()
+	)
+
+	var reward_copy: DiceFace = reward.duplicate(true)
+	face_inventory.append(reward_copy)
+
+	save_run()
+
+	return reward_copy
+
+
+func make_shrine_blood_offering() -> DiceFace:
+	if player_hp <= 10:
+		return null
+
+	if forest_merchant_face_pool.is_empty():
+		return null
+
+	player_hp -= 10
+	update_player_hp_label()
+
+	var reward: DiceFace = (
+		forest_merchant_face_pool.pick_random()
+	)
+
+	var reward_copy: DiceFace = reward.duplicate(true)
+	face_inventory.append(reward_copy)
+
+	save_run()
+
+	return reward_copy

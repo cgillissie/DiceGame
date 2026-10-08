@@ -1411,6 +1411,11 @@ text = "Camp"
 layout_mode = 2
 horizontal_alignment = 1
 
+[node name="CampActiveFoodLabel" type="Label" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=1253692827]
+layout_mode = 2
+text = "Active Food 0 / 3"
+horizontal_alignment = 1
+
 [node name="CampStatusLabel" type="Label" parent="ExpeditionCampPanel/MarginContainer/VBoxContainer" unique_id=1961535326]
 layout_mode = 2
 size_flags_horizontal = 4
@@ -1556,6 +1561,10 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("8_d53gg")
+
+[node name="ActiveFoodCountLabel" type="Label" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=1028116298]
+layout_mode = 2
+horizontal_alignment = 1
 
 [node name="PrepareConsumablesContainer" type="GridContainer" parent="PrepareExpeditionPanel/MarginContainer/VBoxContainer" unique_id=9204060]
 layout_mode = 2

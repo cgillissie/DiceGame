@@ -730,7 +730,22 @@ size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("7_pxemu")
 text = "Leave"
 
+[node name="ResultLabel" type="Label" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer" unique_id=1837285560]
+visible = false
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_pxemu")
+horizontal_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="CanvasLayer/CampPanel/MarginContainer/VBoxContainer" unique_id=1415756512]
+visible = false
+custom_minimum_size = Vector2(300, 60)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_pxemu")
+text = "Continue"
+
 [node name="CampAmbiencePlayer" type="AudioStreamPlayer" parent="." unique_id=792942817]
+autoplay = true
+bus = &"SFX"
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1078674780]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 5.4666686, 1.997369, -20.411432)

@@ -30,6 +30,7 @@ var town_camera_tween_version: int = 0
 @export var forest_bounty_map_scene: PackedScene
 @export var forest_merchant_scene: PackedScene
 @export var abandoned_camp_scene: PackedScene
+@export var old_shrine_scene: PackedScene
 
 @export var camera_zoom_sound: AudioStream
 @export var critical_hit_sound: AudioStream
@@ -131,6 +132,14 @@ func load_saved_expedition():
 
 	match combat.expedition_location:
 		"combat":
+			if combat.current_encounter == null:
+				push_warning(
+					"Saved combat encounter missing. Returning to bounty map."
+				)
+
+				await load_saved_bounty_map()
+				return
+
 			await load_saved_combat()
 			return
 
@@ -151,6 +160,10 @@ func load_saved_expedition():
 			return
 			
 		"camp_event":
+			await load_saved_bounty_map()
+			return
+			
+		"shrine_event":
 			await load_saved_bounty_map()
 			return
 		_:
@@ -580,23 +593,21 @@ func start_expedition_world(
 	event_type: String = "combat"
 ):
 	if event_type == "witch":
-		combat.witch_seen_this_run = true
-		combat.save_run()
-
 		await start_witch_encounter_world()
 		return
 
 	if event_type == "well":
-		combat.well_seen_this_run = true
-		combat.save_run()
-
 		await start_water_well_world()
 		return
 
 	if event_type == "camp":
 		await start_abandoned_camp_world()
 		return
-
+		
+	if event_type == "shrine":
+		await start_old_shrine_world()
+		return
+		
 	await fade_to_black()
 
 
@@ -866,6 +877,77 @@ func _on_witch_choice_made(accepted: bool):
 
 	combat.show_bounty_map()
 
+func start_old_shrine_world():
+	await fade_to_black()
+
+	load_world(old_shrine_scene)
+
+	combat.hide_all_major_panels()
+	combat.visible = false
+
+	if active_world.has_signal("shrine_choice_made"):
+		active_world.shrine_choice_made.connect(
+			_on_old_shrine_choice_made
+		)
+
+	await fade_from_black()
+	
+func _on_old_shrine_choice_made(choice: String):
+	match choice:
+		"gold":
+			var reward: DiceFace = (
+				combat.make_shrine_gold_offering()
+			)
+
+			if reward == null:
+				await finish_old_shrine_event()
+				return
+
+			combat.visible = true
+
+			await combat.show_reward_acquisition(
+				reward.icon,
+				combat.get_face_display_name(reward),
+				"A new die face."
+			)
+
+			await finish_old_shrine_event()
+
+		"blood":
+			var reward: DiceFace = (
+				combat.make_shrine_blood_offering()
+			)
+
+			if reward == null:
+				await finish_old_shrine_event()
+				return
+
+			combat.visible = true
+
+			await combat.show_reward_acquisition(
+				reward.icon,
+				combat.get_face_display_name(reward),
+				"A powerful die face."
+			)
+
+			await finish_old_shrine_event()
+
+		"leave":
+			await finish_old_shrine_event()
+
+func finish_old_shrine_event():
+	await fade_to_black()
+
+	combat.visible = true
+
+	combat.complete_active_bounty_map_node()
+
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
+
+	combat.show_bounty_map()
+	
 func start_abandoned_camp_world():
 	await fade_to_black()
 
@@ -878,18 +960,82 @@ func start_abandoned_camp_world():
 		active_world.camp_choice_made.connect(
 			_on_abandoned_camp_choice_made
 		)
-
+	if active_world.has_signal("camp_finished"):
+		active_world.camp_finished.connect(
+			_on_abandoned_camp_finished
+		)
+		
 	await fade_from_black()
+	
+
+func _on_abandoned_camp_finished(
+	start_ambush: bool
+):
+	if start_ambush:
+		combat.start_abandoned_camp_ambush()
+		return
+
+	await finish_abandoned_camp_event()
 	
 func _on_abandoned_camp_choice_made(
 	choice: String
 ):
-	print(
-		"ABANDONED CAMP CHOICE: ",
-		choice
-	)
+	match choice:
+		"rest":
+			var healed: int = (
+				combat.rest_at_abandoned_camp()
+			)
 
-	await finish_abandoned_camp_event()
+			if healed > 0:
+				active_world.show_result(
+					"You rest beside the dying fire.\n"
+					+ "Recovered "
+					+ str(healed)
+					+ " HP."
+				)
+			else:
+				active_world.show_result(
+					"You rest beside the dying fire.\n"
+					+ "Your wounds need no tending."
+				)
+
+		"search":
+			var ambushed: bool = (
+				randf() < 0.25
+			)
+
+			if ambushed:
+				active_world.show_result(
+					"The backpack is empty.\n\n"
+					+ "A branch snaps somewhere "
+					+ "behind you...",
+					true
+				)
+			else:
+				var reward: ConsumableItem = (
+					combat.search_abandoned_camp_backpack()
+				)
+
+				if reward != null:
+					active_world.hide_event_ui()
+
+					combat.visible = true
+
+					await combat.show_reward_acquisition(
+						reward.icon,
+						reward.item_name,
+						reward.description
+					)
+
+					await finish_abandoned_camp_event()
+				else:
+					active_world.show_result(
+						"You search the backpack,\n"
+						+ "but find nothing useful."
+					)
+
+		"leave":
+			await finish_abandoned_camp_event()
 
 func finish_abandoned_camp_event():
 	await fade_to_black()
