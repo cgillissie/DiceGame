@@ -13,7 +13,7 @@
 [ext_resource type="Resource" uid="uid://b26c0k3rivpqs" path="res://Resources/Consumables/FoodMeatHaunch.tres" id="8_y20ep"]
 [ext_resource type="Resource" uid="uid://b0axp0mbl6kld" path="res://Resources/Consumables/FoodCarrot.tres" id="9_4t2nf"]
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="9_62f34"]
-[ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_1_face.tres" id="9_yj4j8"]
+[ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_5_face.tres" id="9_yj4j8"]
 [ext_resource type="Resource" uid="uid://c4ce8fhdnmv4r" path="res://Resources/Consumables/FoodBread.tres" id="10_5v1h7"]
 [ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="10_l8k08"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="11_hy6y8"]

@@ -132,11 +132,14 @@ func load_saved_expedition():
 
 	match combat.expedition_location:
 		"combat":
+			if combat.combat_loot_pending:
+				await load_saved_combat_loot()
+				return
+
 			if combat.current_encounter == null:
 				push_warning(
 					"Saved combat encounter missing. Returning to bounty map."
 				)
-
 				await load_saved_bounty_map()
 				return
 
@@ -237,7 +240,41 @@ func load_saved_combat():
 
 	await combat.begin_new_combat()
 	
+func load_saved_combat_loot():
+	await fade_to_black()
 
+	if combat.current_encounter == null:
+		push_error("Saved combat loot has no encounter.")
+		await fade_from_black()
+		return
+
+	var scene_to_load := (
+		get_combat_scene_for_current_encounter()
+	)
+
+	if scene_to_load == null:
+		push_error("No combat scene found for saved loot.")
+		await fade_from_black()
+		return
+
+	load_world(scene_to_load)
+
+	combat.visible = true
+	combat.bind_world(active_world)
+	combat.capture_combat_camera_home()
+
+	combat.combat_over = true
+	combat.set_combat_ui_enabled(false)
+
+	combat.hide_all_major_panels()
+	combat.show_loot_panel()
+
+	await play_music_fade(
+		expedition_music.pick_random()
+	)
+
+	await fade_from_black()
+	
 func load_world(scene: PackedScene):
 	if scene == null:
 		push_error(

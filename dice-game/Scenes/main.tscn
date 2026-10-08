@@ -75,7 +75,9 @@
 [ext_resource type="Script" uid="uid://dfpvpxr31s7ak" path="res://Scripts/EnemyTrait.gd" id="47_bv80c"]
 [ext_resource type="Resource" uid="uid://cs2belubiu3an" path="res://Resources/Traits/armored_1.tres" id="48_ptfg5"]
 [ext_resource type="Resource" uid="uid://skl127pice4j" path="res://Resources/Traits/berserker_2.tres" id="49_2daye"]
+[ext_resource type="Texture2D" uid="uid://biefayg72ips6" path="res://Assets/Sprites/UI/Menus/Gold01.png" id="49_nb1ia"]
 [ext_resource type="Resource" uid="uid://c0ojcob53cive" path="res://Resources/Traits/regenerating_1.tres" id="50_1semv"]
+[ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/Menus/VolatileCore.png" id="51_3ahwd"]
 [ext_resource type="AudioStream" uid="uid://ctc28gscpvyh6" path="res://Assets/Sounds/AttackSFX/Fireball.wav" id="51_55idt"]
 [ext_resource type="AudioStream" uid="uid://cjbssud1w44sx" path="res://Assets/Sounds/Crafting/DiceSmithSalvage.wav" id="51_87bhu"]
 [ext_resource type="Resource" uid="uid://bfo0d3b00358m" path="res://Resources/Traits/regenerating_2.tres" id="51_2060n"]
@@ -163,6 +165,9 @@ reserve_unlocked_texture = ExtResource("34_vxl7x")
 reserve_locked_texture = ExtResource("35_ihvwq")
 encounter_pool = Array[ExtResource("7_fdnlq")]([SubResource("Resource_v3f3w"), ExtResource("9_wsu2k"), ExtResource("10_k12tt"), ExtResource("11_h1bgf")])
 heal_icon_texture = ExtResource("41_wl4bb")
+gold_icon = ExtResource("49_nb1ia")
+mulligem_icon = ExtResource("85_ihvwq")
+volatile_core_icon = ExtResource("51_3ahwd")
 bounty_pool = Array[ExtResource("13_wsu2k")]([ExtResource("14_k12tt"), ExtResource("15_h1bgf"), ExtResource("33_lx3vj")])
 beastmaster_phase2_music = ExtResource("34_lx3vj")
 fireball_sound = ExtResource("51_55idt")

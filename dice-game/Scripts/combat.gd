@@ -88,6 +88,11 @@ var shatter_camera_original_size: float
 @onready var player_health_bar: TextureProgressBar = $PlayerHealthBar
 @onready var player_health_label: Label = $PlayerHealthBar/PlayerHealthLabel
 
+@onready var hud_gold_label: Label = $CurrencyHUD/CurrencyHBox/GoldDisplay/Label
+@onready var hud_mulligem_label: Label = $CurrencyHUD/CurrencyHBox/MulligemDisplay/Label
+@onready var hud_volatile_core_label: Label = $CurrencyHUD/CurrencyHBox/VolatileCoreDisplay/Label
+@onready var hud_die_fragment_label: Label = $CurrencyHUD/CurrencyHBox/DieFragmentDisplay/Label
+
 var player_3d_node: Player3D = null
 
 #Roll animation area
@@ -203,10 +208,16 @@ var selected_edit_die: DiceData = null
 var edit_dice_return_context: String = ""
 var fusion_undo_face_inventory: Array[DiceFace] = []
 var fusion_undo_owned_dice_faces: Array = []
+
 # Loot panel
 @onready var loot_panel: Panel = $LootPanel
 @onready var loot_continue_button: Button = $LootPanel/MarginContainer/LootVBox/LootContinueButton
 @onready var loot_rich_text_label: RichTextLabel = $LootPanel/MarginContainer/LootVBox/RichTextLabel
+@onready var rewards_container: VBoxContainer = $LootPanel/MarginContainer/LootVBox/RewardsScrollContainer/RewardsContainer
+
+@export var gold_icon: Texture2D
+@export var mulligem_icon: Texture2D
+@export var volatile_core_icon: Texture2D
 
 var last_dropped_faces: Array[DiceFace] = []
 var last_dropped_face: DiceFace = null
@@ -584,6 +595,9 @@ var mulligems: int = 0
 var mulligem_used_this_turn: bool = false
 var last_mulligems_gained: int = 0
 
+var pending_combat_rewards: Array[Dictionary] = []
+var combat_loot_pending: bool = false
+
 @onready var mulligem_button: Button = $DiceArea/MulligemButton
 @onready var mulligem_icons_container: HBoxContainer = $DiceArea/MulligemButton/CenterContainer/MulligemIconsContainer
 @export var mulligem_icon_texture: Texture2D
@@ -893,6 +907,7 @@ func update_mulligem_button():
 		icon_modulate = Color(0.45, 0.45, 0.45, 1.0)
 
 	mulligem_icons_container.modulate = icon_modulate
+	update_currency_hud()
 	
 func has_mulligem_reroll_targets() -> bool:
 	for die in dice_nodes:
@@ -3699,6 +3714,11 @@ func win_combat():
 	player_health_bar.visible = false
 	player_health_label.visible = false
 	end_round_button.disabled = true
+	
+	pending_combat_rewards.clear()
+	combat_loot_pending = true
+	expedition_location = "combat"
+	
 	last_volatile_cores_gained = 0
 	var total_gold_reward := 0
 	last_dropped_faces.clear()
@@ -3706,7 +3726,11 @@ func win_combat():
 	last_dropped_die = null
 	last_dropped_foods.clear()
 	last_die_fragments_gained = randi_range(1, 3)
-	die_fragments += last_die_fragments_gained
+
+	add_pending_combat_reward(
+		"die_fragment",
+		last_die_fragments_gained
+	)
 	last_mulligems_gained = 0
 	last_unlocked_relics.clear()
 
@@ -3720,8 +3744,9 @@ func win_combat():
 			if owned_relics.has(relic):
 				continue
 
-			owned_relics.append(relic)
 			last_unlocked_relics.append(relic)
+
+			add_pending_combat_reward("relic", 0, relic)
 
 			# Stop after awarding one guaranteed relic.
 			break
@@ -3731,36 +3756,47 @@ func win_combat():
 			var face_drop: DiceFace = enemy_data.face_drop_pool.pick_random()
 			var face_copy := face_drop.duplicate(true)
 
-			face_inventory.append(face_copy)
 			last_dropped_faces.append(face_copy)
+			add_pending_combat_reward("face", 0, face_copy)
+			
 		if randf() <= enemy_data.volatile_core_drop_chance:
-			volatile_cores += 1
 			last_volatile_cores_gained += 1
 		if randf() <= enemy_data.dice_drop_chance:
 			if enemy_data.dice_drop_pool.size() > 0:
 				if last_dropped_die == null:
-					last_dropped_die = enemy_data.dice_drop_pool.pick_random()
-					owned_dice.append(last_dropped_die.duplicate(true))
+					var die_drop: DiceData = enemy_data.dice_drop_pool.pick_random()
+					var die_copy: DiceData = die_drop.duplicate(true)
+
+					last_dropped_die = die_copy
+					add_pending_combat_reward("die", 0, die_copy)
+					
 		if randf() <= enemy_data.food_drop_chance:
 			if enemy_data.food_drop_pool.size() > 0:
 				var food_drop: ConsumableItem = enemy_data.food_drop_pool.pick_random()
-				consumable_inventory.append(food_drop)
-				last_dropped_foods.append(food_drop)
+				var food_copy: ConsumableItem = food_drop.duplicate(true)
+
+				last_dropped_foods.append(food_copy)
+				add_pending_combat_reward("food", 0, food_copy)
+				
+	if last_volatile_cores_gained > 0:
+		add_pending_combat_reward("volatile_core", last_volatile_cores_gained)
 	clear_food_buffs()
-	if has_relic("Lucky Coin"):
-		gold += 5
-		gold_reward += 5
-	gold += total_gold_reward
 	gold_reward = total_gold_reward
+
+	if has_relic("Lucky Coin"):
+		gold_reward += 10
+
+	if gold_reward > 0:
+		add_pending_combat_reward("gold", gold_reward)
 	if randf() <= mulligem_drop_chance:
-		add_mulligems(1)
 		last_mulligems_gained += 1
 	if last_dropped_faces.size() > 0:
 		last_dropped_face = last_dropped_faces[0]
 	if expedition_is_boss_fight:
-		add_mulligems(1)
 		last_mulligems_gained += 1
-	
+	if last_mulligems_gained > 0:
+		add_pending_combat_reward("mulligem", last_mulligems_gained)
+		
 	next_combat_bonus_damage = 0
 	next_combat_bonus_block = 0
 	next_combat_heal = 0
@@ -3796,9 +3832,9 @@ func win_combat():
 				valid_relics.pick_random()
 			)
 
-			owned_relics.append(dropped_relic)
 			last_unlocked_relics.append(dropped_relic)
-			update_active_food_icons()
+
+			add_pending_combat_reward("relic", 0, dropped_relic)
 	run_encounters_completed += 1
 
 	# Only normal encounters advance expedition progress here.
@@ -3811,8 +3847,6 @@ func win_combat():
 		and !expedition_is_boss_fight
 	):
 		complete_active_bounty_map_node()
-	save_run()
-	show_loot_panel()
 	update_volatile_core_button()
 	
 	active_food_items.clear()
@@ -3827,72 +3861,195 @@ func win_combat():
 	combat_max_player_hp = max_player_hp
 
 	save_run()
+	show_loot_panel()
 	
 	# Functions for combat rewards
 	
 func show_loot_panel():
-	if last_unlocked_relics.size() > 0:
-		var relic: RelicData = last_unlocked_relics[0]
-		await show_relic_acquisition(relic)
-	
 	loot_panel.visible = true
 	shop_panel.visible = false
 
-	var loot_text := ""
-
-	loot_text += "[center][b]Loot Claimed![/b][/center]\n\n"
-	loot_text += "[center]Gold: +" + str(gold_reward) + "[/center]\n\n"
-
-	# Faces
-	if last_dropped_faces.size() > 0:
-		loot_text += "[center][color=gold]Faces[/color]\n"
-
-		for face in last_dropped_faces:
-			loot_text += get_face_display_name(face) + "\n"
-
-		loot_text += "\n"
-
-	# Food
-	if last_dropped_foods.size() > 0:
-		loot_text += "[color=green]Food[/color]\n"
-
-		for food in last_dropped_foods:
-			loot_text += food.item_name + "\n"
-
-		loot_text += "\n"
-		
-	if last_unlocked_relics.size() > 0:
-		loot_text += "[center][color=yellow]Relics[/color]\n"
-
-		for relic in last_unlocked_relics:
-			loot_text += relic.relic_name + "\n"
-
-		loot_text += "\n"
-		
-	# Volatile Cores
-	if last_volatile_cores_gained > 0:
-		loot_text += "[center][color=orange]Volatile Cores: +" + str(last_volatile_cores_gained) + "[/color]\n\n"
-
-	# Die Fragments
-	if last_die_fragments_gained > 0:
-		loot_text += "[center][color=cyan]Die Fragments: +" + str(last_die_fragments_gained) + "[/color]\n\n"
-
-	# Bonus Dice
-	if last_dropped_die != null:
-		loot_text += "[center][color=lightblue]BONUS DROP![/color][/center]\n"
-		loot_text += "[center]" + last_dropped_die.die_name + "[/center]\n"
-		
-	if last_unlocked_merchant_faces.size() > 0:
-		loot_text += "\n[center][color=yellow]New Merchant Stock![/color][/center]\n"
-
-		for face in last_unlocked_merchant_faces:
-			loot_text += "[center]" + get_face_display_name(face) + "[/center]\n"
-	if last_mulligems_gained > 0:
-		loot_text += "[center][color=violet]Mulligems: +" + str(last_mulligems_gained) + "[/color]\n\n"
 	loot_rich_text_label.clear()
-	loot_rich_text_label.append_text(loot_text)
-		
+	loot_rich_text_label.append_text(
+		"[center][b]Victory![/b][/center]\n"
+		+ "[center]Click each reward to collect it.[/center]"
+	)
+
+	populate_combat_reward_buttons()
+	update_loot_continue_button()
 	
+func update_loot_continue_button():
+	var all_claimed := true
+
+	for reward in pending_combat_rewards:
+		if !reward.get("claimed", false):
+			all_claimed = false
+			break
+
+	loot_continue_button.disabled = !all_claimed
+
+func add_pending_combat_reward(
+	reward_type: String,
+	amount: int = 0,
+	reward_resource: Resource = null
+):
+	pending_combat_rewards.append({
+		"type": reward_type,
+		"amount": amount,
+		"resource": reward_resource,
+		"claimed": false
+	})
+
+func claim_pending_combat_reward(index: int):
+	if index < 0 or index >= pending_combat_rewards.size():
+		return
+
+	var reward: Dictionary = pending_combat_rewards[index]
+
+	if reward.get("claimed", false):
+		return
+
+	var reward_type: String = reward.get("type", "")
+	var amount: int = int(reward.get("amount", 0))
+	var resource: Resource = reward.get("resource", null)
+	
+	if reward_type in ["face", "food", "die", "relic"]:
+		if resource == null:
+			push_warning(
+				"Cannot claim combat reward: missing resource for "
+				+ reward_type
+			)
+			return
+			
+	match reward_type:
+		"gold":
+			gold += amount
+			update_gold_label()
+
+		"face":
+			if resource is DiceFace:
+				face_inventory.append(resource)
+
+		"food":
+			if resource is ConsumableItem:
+				consumable_inventory.append(resource)
+
+		"volatile_core":
+			volatile_cores += amount
+			update_volatile_core_button()
+
+		"die_fragment":
+			die_fragments += amount
+			update_die_fragment_display()
+			
+		"die":
+			if resource is DiceData:
+				owned_dice.append(resource)
+
+		"relic":
+			if resource is RelicData:
+				if !has_relic_name(resource.relic_name):
+					owned_relics.append(resource)
+					update_active_food_icons()
+
+		"mulligem":
+			mulligems += amount
+			update_mulligem_button()
+
+		_:
+			push_warning(
+				"Unknown combat reward type: " + reward_type
+			)
+			return
+
+	reward["claimed"] = true
+	pending_combat_rewards[index] = reward
+
+	save_run()
+
+func serialize_pending_combat_rewards() -> Array:
+	var saved_rewards: Array = []
+
+	for reward in pending_combat_rewards:
+		var reward_type: String = reward.get("type", "")
+		var resource: Resource = reward.get("resource", null)
+
+		var saved_reward: Dictionary = {
+			"type": reward_type,
+			"amount": reward.get("amount", 0),
+			"claimed": reward.get("claimed", false)
+		}
+
+		match reward_type:
+			"face":
+				if resource is DiceFace:
+					saved_reward["resource"] = serialize_face(resource)
+
+			"die":
+				if resource is DiceData:
+					saved_reward["resource"] = serialize_die(resource)
+
+			"food":
+				if resource is ConsumableItem:
+					saved_reward["resource"] = serialize_consumable(resource)
+
+			"relic":
+				if resource is RelicData:
+					saved_reward["resource"] = resource.relic_name
+
+		saved_rewards.append(saved_reward)
+
+	return saved_rewards
+
+func deserialize_pending_combat_rewards(
+	saved_rewards: Array
+):
+	pending_combat_rewards.clear()
+
+	for saved_reward in saved_rewards:
+		if !(saved_reward is Dictionary):
+			continue
+
+		var reward_type: String = String(
+			saved_reward.get("type", "")
+		)
+
+		var reward: Dictionary = {
+			"type": reward_type,
+			"amount": int(saved_reward.get("amount", 0)),
+			"resource": null,
+			"claimed": bool(saved_reward.get("claimed", false))
+		}
+
+		var resource_data = saved_reward.get("resource", null)
+
+		match reward_type:
+			"face":
+				if resource_data is Dictionary:
+					reward["resource"] = deserialize_face(
+						resource_data
+					)
+
+			"die":
+				if resource_data is Dictionary:
+					reward["resource"] = deserialize_die(
+						resource_data
+					)
+
+			"food":
+				if resource_data is Dictionary:
+					reward["resource"] = deserialize_consumable(
+						resource_data
+					)
+
+			"relic":
+				if resource_data is String:
+					reward["resource"] = find_relic_by_name(
+						resource_data
+					)
+
+		pending_combat_rewards.append(reward)
+
 func update_camp_hp_label():
 	if camp_hp_label != null:
 		camp_hp_label.text = (
@@ -3914,6 +4071,14 @@ func update_prepare_hp_label():
 	)
 	
 func open_shop_after_loot():
+	for reward in pending_combat_rewards:
+		if !reward.get("claimed", false):
+			return
+
+	combat_loot_pending = false
+	pending_combat_rewards.clear()
+	save_run()
+
 	loot_panel.visible = false
 
 	var defeated_boss := (
@@ -3921,12 +4086,12 @@ func open_shop_after_loot():
 		or is_current_encounter_boss()
 	)
 	if (
-		current_bounty_map != null
+		defeated_boss
+		and current_bounty_map != null
 		and active_bounty_map_node_id >= 0
 	):
 		complete_active_bounty_map_node()
-
-		current_bounty_map.completed = true
+		
 	if defeated_boss:
 		expedition_is_boss_fight = true
 		complete_current_bounty()
@@ -4441,6 +4606,7 @@ func buy_heal():
 func update_gold_label():
 	gold_label.text = "Gold: " + str(gold)
 	update_shop_buttons()
+	update_currency_hud()
 	
 func next_fight():
 	shop_panel.visible = false
@@ -5056,6 +5222,10 @@ func update_volatile_core_button():
 
 	apply_volatile_core_button.disabled = false
 	apply_volatile_core_button.modulate = Color.WHITE
+	update_currency_hud()
+	
+func update_die_fragment_display():
+	update_currency_hud()
 	
 func get_max_face_value_for_die(die_data: DiceData, face: DiceFace) -> int:
 	if face.result_type in [
@@ -5243,7 +5413,8 @@ func craft_empty_die(sides: int):
 		return
 
 	die_fragments -= sides
-
+	update_die_fragment_display()
+	
 	var new_die := DiceData.new()
 	new_die.die_name = "Empty D" + str(sides)
 	new_die.sides = sides
@@ -9865,7 +10036,7 @@ func handle_sell_face_drop(data: Dictionary):
 
 	die_fragments += 1
 	last_die_fragments_gained = 1
-
+	update_die_fragment_display()
 	selected_inventory_face_indices.clear()
 
 	AudioManager.play_one_shot(
@@ -10843,7 +11014,8 @@ func save_run():
 			dice_save.append(serialize_die(die))
 
 	config.set_value("inventory", "owned_dice", dice_save)
-
+	config.set_value("rewards", "pending_combat_rewards", serialize_pending_combat_rewards())
+	config.set_value("rewards", "combat_loot_pending", combat_loot_pending)
 	var face_save := []
 	for face in face_inventory:
 		if face != null:
@@ -11234,7 +11406,8 @@ func load_run():
 	expedition_active = config.get_value("expedition", "expedition_active", false)
 	expedition_location = String(config.get_value("expedition", "location", "town"))
 	expedition_progress = config.get_value("expedition", "progress", expedition_progress)
-
+	combat_loot_pending = bool(
+		config.get_value("rewards", "combat_loot_pending", false))
 	expedition_encounter_plan.clear()
 
 	var saved_plan: Array = config.get_value("expedition", "encounter_plan", [])
@@ -11315,6 +11488,7 @@ func load_run():
 		if (
 			expedition_location == "combat"
 			and current_encounter != null
+			and !combat_loot_pending
 		):
 			loaded_pending_encounter = true
 			player_hp = player_hp_at_combat_start
@@ -11350,6 +11524,7 @@ func load_run():
 	for item_data in config.get_value("inventory", "active_food_items", []):
 		if item_data is Dictionary:
 			active_food_items.append(deserialize_consumable(item_data))
+	deserialize_pending_combat_rewards(config.get_value("rewards", "pending_combat_rewards", []))
 	recalculate_active_food_bonuses()
 	update_active_food_icons()
 	for face_data in config.get_value("merchant", "unlocked_faces", []):
@@ -11387,7 +11562,8 @@ func load_run():
 	update_player_hp_label()
 	update_mulligem_button()
 	update_volatile_core_button()
-
+	update_currency_hud()
+	
 	print("Loaded dice count: ", owned_dice.size())
 	print("Loaded face inventory count: ", face_inventory.size())
 	print("Loaded consumable count: ", consumable_inventory.size())
@@ -14417,7 +14593,7 @@ func buy_forest_merchant_fragments():
 	die_fragments += (
 		forest_merchant_fragment_amount
 	)
-
+	update_die_fragment_display()
 	forest_merchant_fragments_sold = true
 
 	AudioManager.play_ui(
@@ -14565,7 +14741,7 @@ func give_junk_fragments() -> Dictionary:
 	var amount := randi_range(1, 6)
 
 	die_fragments += amount
-
+	update_die_fragment_display()
 	refresh_die_crafting_panel()
 
 	return {
@@ -15329,3 +15505,99 @@ func make_shrine_blood_offering() -> DiceFace:
 	save_run()
 
 	return reward_copy
+
+func populate_combat_reward_buttons():
+	# Remove any buttons from a previous display.
+	for child in rewards_container.get_children():
+		child.queue_free()
+
+	# Create one button for each pending reward.
+	for i in range(pending_combat_rewards.size()):
+		var reward: Dictionary = pending_combat_rewards[i]
+
+		var reward_type: String = reward.get("type", "")
+		var amount: int = int(reward.get("amount", 0))
+		var resource: Resource = reward.get("resource", null)
+		var claimed: bool = reward.get("claimed", false)
+		
+		var reward_icon: Texture2D = null
+		var reward_name := ""
+		var reward_tooltip := ""
+
+		match reward_type:
+			"gold":
+				reward_name = "Gold: +" + str(amount)
+				reward_icon = gold_icon
+
+			"volatile_core":
+				reward_name = "Volatile Cores: +" + str(amount)
+				reward_icon = volatile_core_icon
+
+			"die_fragment":
+				reward_name = "Die Fragments: +" + str(amount)
+				reward_icon = die_fragment_shop_icon
+
+			"mulligem":
+				reward_name = "Mulligems: +" + str(amount)
+				reward_icon = mulligem_icon
+
+			"face":
+				if resource is DiceFace:
+					reward_name = get_face_display_name(resource)
+					reward_icon = resource.icon
+
+			"food":
+				if resource is ConsumableItem:
+					reward_name = resource.item_name
+					reward_icon = resource.icon
+
+			"die":
+				if resource is DiceData:
+					reward_name = resource.die_name
+					reward_icon = resource.sprite
+
+			"relic":
+				if resource is RelicData:
+					reward_name = resource.relic_name
+					reward_icon = resource.icon
+
+		var reward_button := Button.new()
+		reward_button.text = reward_name
+		reward_button.tooltip_text = reward_tooltip if reward_tooltip != "" else reward_name
+		reward_button.disabled = claimed
+		reward_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		reward_button.icon = reward_icon
+		reward_button.expand_icon = true
+		reward_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		reward_button.add_theme_constant_override("icon_max_width", 48)
+		reward_button.add_theme_constant_override("h_separation", 12)
+		reward_button.add_theme_color_override("icon_normal_color", Color.WHITE)
+		reward_button.add_theme_color_override("icon_hover_color", Color.WHITE)
+		reward_button.add_theme_color_override("icon_pressed_color", Color.WHITE)
+		reward_button.add_theme_color_override("icon_disabled_color", Color.WHITE)
+		reward_button.add_theme_color_override("icon_focus_color", Color.WHITE)
+		# Make each reward button taller.
+		reward_button.custom_minimum_size = Vector2(0, 64)
+
+		# Increase the reward text size.
+		reward_button.add_theme_font_size_override("font_size", 20)
+
+		# Leave room for an icon on the left.
+		reward_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+
+		rewards_container.add_child(reward_button)
+		reward_button.pressed.connect(claim_combat_reward_button.bind(i))
+		
+func claim_combat_reward_button(reward_index: int):
+	claim_pending_combat_reward(reward_index)
+	update_currency_hud()
+	populate_combat_reward_buttons()
+	update_loot_continue_button()
+	AudioManager.play_ui(coin_purchase_sound)
+
+func update_currency_hud():
+	hud_gold_label.text = str(gold)
+	hud_mulligem_label.text = str(mulligems)
+	hud_volatile_core_label.text = str(volatile_cores)
+	hud_die_fragment_label.text = str(die_fragments)
+	

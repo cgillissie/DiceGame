@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="5_g8hdv"]
 [ext_resource type="Resource" uid="uid://dmjuksyn3qtgr" path="res://Resources/Faces/hit_2_face.tres" id="6_a11xo"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="7_5qokg"]
-[ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_1_face.tres" id="7_a11xo"]
+[ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_5_face.tres" id="7_a11xo"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="9_5qokg"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="9_nh72w"]
 [ext_resource type="SpriteFrames" uid="uid://2oesgg5ytnd7" path="res://Resources/SpriteFrames/GoblinSpriteFrames.tres" id="10_65j85"]

@@ -73,6 +73,9 @@
 [ext_resource type="Texture2D" uid="uid://dsenmc6jkig6i" path="res://Assets/Sprites/UI/Menus/UIFrameBottom.png" id="55_fu7uk"]
 [ext_resource type="Script" uid="uid://cf04t4ovmanqi" path="res://Scripts/sell_face_drop_area.gd" id="55_h6x2e"]
 [ext_resource type="Script" uid="uid://leecl5t62307" path="res://Scripts/face_inventory_drop_area.gd" id="63_cda1e"]
+[ext_resource type="Texture2D" uid="uid://biefayg72ips6" path="res://Assets/Sprites/UI/Menus/Gold01.png" id="67_rijps"]
+[ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="68_ecg3l"]
+[ext_resource type="Texture2D" uid="uid://b7s7kdnkgd0k4" path="res://Assets/Sprites/UI/Menus/DieFragmentsIcon.png" id="69_5c5l3"]
 [ext_resource type="Script" uid="uid://bnrejfli1akip" path="res://Scripts/food_craft_slot.gd" id="70_v78a8"]
 [ext_resource type="Texture2D" uid="uid://cuvepjvja36bq" path="res://Assets/Sprites/UI/Menus/DiceBagIcon.png" id="74_avtp3"]
 [ext_resource type="Texture2D" uid="uid://csbp7231l7d8l" path="res://Assets/Sprites/UI/Relics/BackgroundIconGlow.png" id="76_cda1e"]
@@ -747,7 +750,7 @@ horizontal_alignment = 1
 
 [node name="LootPanel" type="Panel" parent="." unique_id=759087292]
 visible = false
-custom_minimum_size = Vector2(300, 500)
+custom_minimum_size = Vector2(350, 500)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -783,6 +786,15 @@ layout_mode = 2
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
+
+[node name="RewardsScrollContainer" type="ScrollContainer" parent="LootPanel/MarginContainer/LootVBox" unique_id=494469620]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RewardsContainer" type="VBoxContainer" parent="LootPanel/MarginContainer/LootVBox/RewardsScrollContainer" unique_id=506923141]
+layout_mode = 2
+theme_override_constants/separation = 8
 
 [node name="LootContinueButton" type="Button" parent="LootPanel/MarginContainer/LootVBox" unique_id=426157888]
 custom_minimum_size = Vector2(220, 40)
@@ -834,6 +846,99 @@ text = "Restart Run"
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_constants/separation = 8
+
+[node name="CurrencyHUD" type="MarginContainer" parent="." unique_id=870171030]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -520.0
+offset_top = 30.0
+offset_right = -292.0
+offset_bottom = 70.0
+grow_horizontal = 0
+mouse_filter = 2
+
+[node name="CurrencyHBox" type="HBoxContainer" parent="CurrencyHUD" unique_id=526715473]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="GoldDisplay" type="HBoxContainer" parent="CurrencyHUD/CurrencyHBox" unique_id=2091496066]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="CurrencyHUD/CurrencyHBox/GoldDisplay" unique_id=410133520]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+tooltip_text = "Gold
+
+The primary currency used to purchase items and services from merchants."
+mouse_filter = 0
+texture = ExtResource("67_rijps")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CurrencyHUD/CurrencyHBox/GoldDisplay" unique_id=338489747]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "0"
+vertical_alignment = 1
+
+[node name="MulligemDisplay" type="HBoxContainer" parent="CurrencyHUD/CurrencyHBox" unique_id=2105402682]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="CurrencyHUD/CurrencyHBox/MulligemDisplay" unique_id=1218297393]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+tooltip_text = "Mulligems
+
+A special currency used to reroll dice during combat."
+mouse_filter = 0
+texture = ExtResource("68_ecg3l")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CurrencyHUD/CurrencyHBox/MulligemDisplay" unique_id=1498624643]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "0"
+
+[node name="VolatileCoreDisplay" type="HBoxContainer" parent="CurrencyHUD/CurrencyHBox" unique_id=1937937753]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="CurrencyHUD/CurrencyHBox/VolatileCoreDisplay" unique_id=1114493592]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+tooltip_text = "Volatile Cores
+
+A rare resource used for special upgrades and purchases."
+mouse_filter = 0
+texture = ExtResource("26_2n3pb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CurrencyHUD/CurrencyHBox/VolatileCoreDisplay" unique_id=1571567439]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "0"
+
+[node name="DieFragmentDisplay" type="HBoxContainer" parent="CurrencyHUD/CurrencyHBox" unique_id=608476682]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="CurrencyHUD/CurrencyHBox/DieFragmentDisplay" unique_id=1090812998]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+tooltip_text = "Die Fragments
+
+Fragments collected during expeditions that can be used to craft new dice."
+mouse_filter = 0
+texture = ExtResource("69_5c5l3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CurrencyHUD/CurrencyHBox/DieFragmentDisplay" unique_id=1907144635]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_d53gg")
+text = "0"
 
 [node name="LeftMarginContainer" type="MarginContainer" parent="." unique_id=553270972]
 layout_mode = 1

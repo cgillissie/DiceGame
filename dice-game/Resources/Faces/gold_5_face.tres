@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DiceFace" format=3 uid="uid://b82andw54e8jy"]
+
+[ext_resource type="Texture2D" uid="uid://qvfhsu0sul02" path="res://Assets/Sprites/FaceIcons/GoldIcon.png" id="1_ja3p1"]
+[ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_o6arf"]
+
+[resource]
+script = ExtResource("2_o6arf")
+face_name = "Gold"
+result_type = "gold"
+value = 5
+label = "Gold 5"
+icon = ExtResource("1_ja3p1")
+metadata/_custom_type_script = "uid://bdixk2l2ouwaq"

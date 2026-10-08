@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://b7gy6oq85pyt7" path="res://Scripts/bounty_button.gd" id="1_r0oh7"]
 [ext_resource type="FontFile" uid="uid://d231sbcnsfup0" path="res://Assets/Fonts/PixelOperator8.ttf" id="1_ualjb"]
 [ext_resource type="PackedScene" uid="uid://b6dflbb353opi" path="res://Scenes/RewardIcon.tscn" id="3_oeb10"]
-[ext_resource type="Texture2D" uid="uid://qvfhsu0sul02" path="res://Assets/Sprites/FaceIcons/GoldIcon.png" id="4_nxf36"]
+[ext_resource type="Texture2D" uid="uid://biefayg72ips6" path="res://Assets/Sprites/UI/Menus/Gold01.png" id="4_oeb10"]
 [ext_resource type="Texture2D" uid="uid://c1o5rk1wj7jjj" path="res://Assets/Sprites/UI/Menus/MulligemIcon.png" id="5_d7tb8"]
 [ext_resource type="Texture2D" uid="uid://bt3e23o7t1maf" path="res://Assets/Sprites/UI/Menus/VolatileCore.png" id="6_larod"]
 [ext_resource type="Texture2D" uid="uid://d1ck73cvwcthh" path="res://Assets/Sprites/UI/Menus/ReservedDieIcon.png" id="7_oeb10"]
@@ -19,7 +19,7 @@ size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_ualjb")
 script = ExtResource("1_r0oh7")
 reward_icon_scene = ExtResource("3_oeb10")
-gold_icon = ExtResource("4_nxf36")
+gold_icon = ExtResource("4_oeb10")
 mulligem_icon = ExtResource("5_d7tb8")
 volatile_core_icon = ExtResource("6_larod")
 reserve_icon = ExtResource("7_oeb10")
