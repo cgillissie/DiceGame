@@ -290,7 +290,7 @@ func update_visual():
 	elif selected:
 		border_panel.modulate = Color.YELLOW
 	elif came_from_reserve:
-		border_panel.modulate = Color.RED
+		border_panel.modulate = Color.WHITE
 	else:
 		border_panel.modulate = Color.WHITE
 		
@@ -439,7 +439,6 @@ func roll_animated(roll_area: Control, roll_index: int = 0, total_rolls: int = 1
 	global_position.x += offset_x
 	
 	has_exploded = false
-	came_from_reserve = false
 	used = false
 	selected = false
 

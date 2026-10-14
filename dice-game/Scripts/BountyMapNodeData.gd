@@ -25,5 +25,6 @@ var state: NodeState = NodeState.LOCKED
 var encounter_id: String = ""
 var revealed: bool = false
 var encounter: EncounterData = null
+var guaranteed_face_rewards: Array[DiceFace] = []
 var event_type: String = ""
 var boss_icon: Texture2D = null

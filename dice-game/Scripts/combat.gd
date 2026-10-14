@@ -325,6 +325,8 @@ var volatile_cores: int = 0
 var volatile_core_cost: int = 35
 var last_volatile_cores_gained: int = 0
 
+var meditation_beads_healing_this_combat: int = 0
+
 var owned_dice: Array[DiceData] = []
 @export var combat_relic_drop_pool: Array[RelicData]
 @export var combat_relic_drop_chance: float = 0.05
@@ -920,6 +922,9 @@ func has_mulligem_reroll_targets() -> bool:
 		if die.reserved:
 			continue
 
+		if die.came_from_reserve:
+			continue
+
 		if die.assigned_enemy_index != -1:
 			continue
 
@@ -964,6 +969,9 @@ func reroll_available_dice():
 			continue
 
 		if die.reserved:
+			continue
+
+		if die.came_from_reserve:
 			continue
 
 		if die.assigned_enemy_index != -1:
@@ -2239,7 +2247,12 @@ func roll_all_dice():
 	for die in dice_nodes:
 		if !is_instance_valid(die):
 			continue
-
+		print(
+			"MULLIGEM CHECK: ", die.dice_data.die_name,
+			" | reserved: ", die.reserved,
+			" | came_from_reserve: ", die.came_from_reserve,
+			" | turns_remaining: ", die.reserved_turns_remaining
+		)
 		if die.reserved:
 			die.reserved_turns_remaining -= 1
 
@@ -2251,6 +2264,10 @@ func roll_all_dice():
 				die.update_visual()
 
 			continue
+
+		if die.came_from_reserve:
+			die.came_from_reserve = false
+			die.update_visual()
 
 		dice_to_roll.append(die)
 
@@ -3750,14 +3767,36 @@ func win_combat():
 
 			# Stop after awarding one guaranteed relic.
 			break
-	for enemy_data in defeated_enemies:
-		total_gold_reward += enemy_data.gold_reward
-		if enemy_data.face_drop_pool.size() > 0:
-			var face_drop: DiceFace = enemy_data.face_drop_pool.pick_random()
-			var face_copy := face_drop.duplicate(true)
+	var active_reward_node: BountyMapNodeData = null
+
+	if (
+		current_bounty_map != null
+		and active_bounty_map_node_id >= 0
+	):
+		active_reward_node = current_bounty_map.get_node_by_id(
+			active_bounty_map_node_id
+		)
+
+	if active_reward_node != null:
+		for face in active_reward_node.guaranteed_face_rewards:
+			if face == null:
+				continue
+
+			var face_copy: DiceFace = face.duplicate(true)
 
 			last_dropped_faces.append(face_copy)
 			add_pending_combat_reward("face", 0, face_copy)
+
+	for enemy_data in defeated_enemies:
+		total_gold_reward += enemy_data.gold_reward
+
+		if active_reward_node == null:
+			if enemy_data.face_drop_pool.size() > 0:
+				var face_drop: DiceFace = enemy_data.face_drop_pool.pick_random()
+				var face_copy: DiceFace = face_drop.duplicate(true)
+
+				last_dropped_faces.append(face_copy)
+				add_pending_combat_reward("face", 0, face_copy)
 			
 		if randf() <= enemy_data.volatile_core_drop_chance:
 			last_volatile_cores_gained += 1
@@ -4228,7 +4267,7 @@ func lose_combat():
 	
 func restart_run():
 	delete_run_save()
-	get_tree().reload_current_scene()
+	
 	completed_bounties.clear()
 	combat_log_entries.clear()
 	combat_log_button.visible = false
@@ -4253,6 +4292,7 @@ func restart_run():
 	current_bounty_map = null
 	active_bounty_map_node_id = -1
 	awaiting_bounty_map_selection = false
+	get_tree().reload_current_scene()
 	# refresh_relic_panel()
 	
 func clear_food_buffs():
@@ -4330,6 +4370,7 @@ func begin_new_combat():
 func start_new_combat(
 	roll_player_dice: bool = true
 ):
+	meditation_beads_healing_this_combat = 0
 	expedition_is_boss_fight = is_current_encounter_boss()
 	last_echoable_effect.clear()
 	resolving_mind_echo = false
@@ -5634,12 +5675,23 @@ func clear_all_dice_groups():
 # RELIC FUNCTIONALITY ###################################################
 func apply_end_round_relics():
 	if has_relic("Meditation Beads"):
-		var heal_amount := get_reserved_die_count()
+		var healing_cap: int = reserve_slots
+		var healing_remaining: int = healing_cap - meditation_beads_healing_this_combat
+
+		if healing_remaining <= 0:
+			return
+
+		var heal_amount: int = min(
+			get_reserved_die_count(),
+			healing_remaining,
+			combat_max_player_hp - player_hp
+		)
 
 		if heal_amount <= 0:
 			return
 
-		player_hp = min(player_hp + heal_amount, combat_max_player_hp)
+		player_hp += heal_amount
+		meditation_beads_healing_this_combat += heal_amount
 
 		show_popup_text(
 			player_3d_node,
@@ -8727,8 +8779,7 @@ func roll_merchant_stock():
 	current_merchant_relic = null
 
 	if merchant_relic_pool.size() > 0:
-		if randf() <= 0.20:
-			current_merchant_relic = merchant_relic_pool.pick_random()
+		current_merchant_relic = merchant_relic_pool.pick_random()
 	for item in merchant_food_pool:
 		if item.food_tier <= unlocked_food_tier:
 			available_foods.append(item)
@@ -11107,6 +11158,16 @@ func serialize_bounty_map_node(
 	if node == null:
 		return {}
 
+	var saved_face_rewards: Array = []
+
+	for face in node.guaranteed_face_rewards:
+		if face == null:
+			continue
+
+		saved_face_rewards.append(
+			serialize_face(face)
+		)
+
 	return {
 		"node_id": node.node_id,
 		"node_type": int(node.node_type),
@@ -11117,6 +11178,7 @@ func serialize_bounty_map_node(
 		"state": int(node.state),
 		"revealed": node.revealed,
 		"event_type": node.event_type,
+		"guaranteed_face_rewards": saved_face_rewards,
 		"encounter_path":
 			get_resource_path(node.encounter),
 		"boss_icon_path":
@@ -11252,7 +11314,23 @@ func deserialize_bounty_map_node(
 	node.event_type = String(
 		data.get("event_type", "")
 	)
+	var saved_face_rewards: Array = (
+		data.get("guaranteed_face_rewards", [])
+	)
 
+	node.guaranteed_face_rewards.clear()
+
+	for face_data in saved_face_rewards:
+		if !(face_data is Dictionary):
+			continue
+
+		var restored_face: DiceFace = (
+			deserialize_face(face_data)
+		)
+
+		node.guaranteed_face_rewards.append(
+			restored_face
+		)
 	var encounter_path := String(
 		data.get("encounter_path", "")
 	)
@@ -14933,6 +15011,7 @@ func generate_layered_bounty_map(route_length: int) -> BountyMapData:
 	boss_node.revealed = true
 	boss_node.encounter = current_bounty.boss_encounter
 	boss_node.boss_icon = current_bounty.boss_icon
+	generate_bounty_map_face_rewards(boss_node)
 	map.nodes.append(boss_node)
 
 	connect_bounty_map_layers(
@@ -15196,6 +15275,32 @@ func choose_bounty_map_node_type(
 
 	return BountyMapNodeData.NodeType.MERCHANT
 	
+func generate_bounty_map_face_rewards(
+	node: BountyMapNodeData
+) -> void:
+	node.guaranteed_face_rewards.clear()
+
+	if node.encounter == null:
+		return
+
+	for enemy_data in node.encounter.enemies:
+		if enemy_data == null:
+			continue
+
+		if enemy_data.face_drop_pool.is_empty():
+			continue
+
+		var selected_face: DiceFace = (
+			enemy_data.face_drop_pool.pick_random()
+		)
+
+		if selected_face == null:
+			continue
+
+		node.guaranteed_face_rewards.append(
+			selected_face.duplicate(true)
+		)
+
 func assign_bounty_map_node_content(
 	node: BountyMapNodeData
 ) -> void:
@@ -15206,7 +15311,7 @@ func assign_bounty_map_node_content(
 				.expedition_encounter_pool
 				.pick_random()
 			)
-
+			generate_bounty_map_face_rewards(node)
 		BountyMapNodeData.NodeType.EVENT:
 			node.encounter = null
 
@@ -15222,8 +15327,9 @@ func assign_bounty_map_node_content(
 						.expedition_encounter_pool
 						.pick_random()
 				)
-
+				
 				node.event_type = ""
+				generate_bounty_map_face_rewards(node)
 				return
 
 			var chosen_event: String = (
@@ -15600,4 +15706,6 @@ func update_currency_hud():
 	hud_mulligem_label.text = str(mulligems)
 	hud_volatile_core_label.text = str(volatile_cores)
 	hud_die_fragment_label.text = str(die_fragments)
-	
+
+func _on_restart_run_button_pressed() -> void:
+	restart_run()

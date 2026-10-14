@@ -212,6 +212,19 @@ func update_tooltip():
 					+ "\n"
 				)
 
+			if !node_data.guaranteed_face_rewards.is_empty():
+				tooltip_text += "\nRewards:\n"
+
+				for face in node_data.guaranteed_face_rewards:
+					if face == null:
+						continue
+
+					tooltip_text += (
+						"• "
+						+ face.face_name
+						+ "\n"
+					)
+
 		BountyMapNodeData.NodeType.BOSS:
 			tooltip_text = "Boss\n\n"
 
@@ -224,6 +237,19 @@ func update_tooltip():
 					+ enemy.enemy_name
 					+ "\n"
 				)
+
+			if !node_data.guaranteed_face_rewards.is_empty():
+				tooltip_text += "\nGuaranteed Rewards:\n"
+
+				for face in node_data.guaranteed_face_rewards:
+					if face == null:
+						continue
+
+					tooltip_text += (
+						"• "
+						+ face.face_name
+						+ "\n"
+					)
 		BountyMapNodeData.NodeType.EVENT:
 			tooltip_text = "Unknown Event"
 			

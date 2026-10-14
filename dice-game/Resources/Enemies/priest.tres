@@ -4,8 +4,8 @@
 [ext_resource type="Script" uid="uid://bdixk2l2ouwaq" path="res://Scripts/DiceFace.gd" id="2_os3lu"]
 [ext_resource type="Script" uid="uid://cm05r1bi3m8a7" path="res://Scripts/EnemyData.gd" id="3_ive2j"]
 [ext_resource type="Resource" uid="uid://bxhdjt8rdci25" path="res://Resources/Dice/priest_d8.tres" id="3_wuu4g"]
+[ext_resource type="Resource" uid="uid://dxx5utuffbx3w" path="res://Resources/Faces/break_focus_face.tres" id="5_rvi0j"]
 [ext_resource type="Resource" uid="uid://bdegaytpdlf3p" path="res://Resources/Faces/hit_1_face.tres" id="5_wuu4g"]
-[ext_resource type="Resource" uid="uid://b82andw54e8jy" path="res://Resources/Faces/gold_5_face.tres" id="7_iaovh"]
 [ext_resource type="Resource" uid="uid://bys75twtv27tr" path="res://Resources/Consumables/FoodApple.tres" id="8_rvi0j"]
 [ext_resource type="Script" uid="uid://cg2kq5l1graas" path="res://Scripts/ConsumableItem.gd" id="10_lut8i"]
 [ext_resource type="SpriteFrames" uid="uid://cbl1o38c3eud6" path="res://Resources/SpriteFrames/PriestSpriteFrames.tres" id="11_rvi0j"]
@@ -17,7 +17,7 @@ script = ExtResource("3_ive2j")
 enemy_name = "Priest"
 max_hp = 6
 dice_pool = Array[ExtResource("1_twtam")]([ExtResource("3_wuu4g")])
-face_drop_pool = Array[ExtResource("2_os3lu")]([ExtResource("7_iaovh"), ExtResource("5_wuu4g")])
+face_drop_pool = Array[ExtResource("2_os3lu")]([ExtResource("5_wuu4g"), ExtResource("5_rvi0j")])
 dice_drop_chance = 0.1
 gold_reward = 12
 sprite_frames = ExtResource("11_rvi0j")
